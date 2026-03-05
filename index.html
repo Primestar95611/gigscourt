@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,154 +8,206 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    #map { height: 400px; }
-    .tail-container { @apply max-w-7xl mx-auto px-4; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    body { font-family: 'Inter', system_ui, sans-serif; }
+    .logo-font { font-family: 'Space Grotesk', sans-serif; }
+
+    #map { height: 460px; }
+    
+    .dark-input {
+      background-color: #18181b;
+      border: 1px solid #3f3f46;
+    }
+    .dark-input:focus {
+      border-color: #67e8f9;
+      box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.2);
+    }
+    
+    .card {
+      background: linear-gradient(145deg, #27272a, #18181b);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    }
+
+    #results-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #results-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-zinc-950 text-zinc-200 min-h-screen">
   <div class="min-h-screen">
     <!-- NAVBAR -->
-    <nav class="bg-white shadow-sm border-b">
-      <div class="tail-container py-4 flex justify-between items-center">
+    <nav class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold">S</div>
-          <h1 class="text-3xl font-bold text-blue-600">SkillSpot</h1>
+          <div class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-inner">
+            <span class="text-white text-3xl font-bold logo-font tracking-tighter">S</span>
+          </div>
+          <h1 class="text-4xl font-semibold logo-font tracking-tighter text-white">SkillSpot</h1>
         </div>
-        <div id="nav-auth" class="hidden items-center gap-4">
-          <span id="user-name" class="text-sm font-medium"></span>
-          <button onclick="logout()" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl">Logout</button>
+        
+        <div id="nav-auth" class="hidden items-center gap-6">
+          <div class="flex items-center gap-3">
+            <div class="w-7 h-7 bg-zinc-700 rounded-full flex items-center justify-center text-xs font-medium" id="user-initial"></div>
+            <span id="user-name" class="font-medium text-sm"></span>
+          </div>
+          <button onclick="logout()" class="px-5 py-2 text-sm font-medium text-zinc-400 hover:text-red-400 transition">Logout</button>
         </div>
       </div>
     </nav>
 
-    <!-- LOGIN / SIGNUP PAGE -->
-    <div id="auth-page" class="tail-container py-12 max-w-md mx-auto">
-      <div class="bg-white rounded-3xl shadow-xl p-8">
-        <h2 class="text-3xl font-bold text-center mb-8">Welcome to SkillSpot</h2>
+    <!-- LOGIN / SIGNUP -->
+    <div id="auth-page" class="max-w-md mx-auto pt-16 px-6">
+      <div class="card rounded-3xl p-8">
+        <div class="text-center mb-8">
+          <h2 class="text-4xl font-semibold logo-font tracking-tighter text-white">Welcome to SkillSpot</h2>
+          <p class="text-zinc-400 mt-2">Find or offer services in seconds</p>
+        </div>
         
-        <!-- Tabs -->
-        <div class="flex mb-6 border-b">
-          <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3 font-semibold border-b-2 border-blue-600 text-blue-600">Login</button>
-          <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3 font-semibold text-gray-500">Sign Up</button>
+        <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
+          <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3.5 font-semibold rounded-xl transition-all">Login</button>
+          <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3.5 font-semibold rounded-xl transition-all">Sign Up</button>
         </div>
 
-        <!-- LOGIN FORM -->
         <div id="login-form">
-          <input id="login-email" type="email" placeholder="Email" class="w-full px-4 py-3 rounded-2xl border border-gray-200 mb-4 focus:outline-none focus:border-blue-500">
-          <input id="login-password" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-2xl border border-gray-200 mb-6 focus:outline-none focus:border-blue-500">
-          <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition">Login</button>
+          <input id="login-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4">
+          <input id="login-password" type="password" placeholder="Password" class="dark-input w-full px-5 py-4 rounded-2xl mb-6">
+          <button onclick="login()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl">Login</button>
         </div>
 
-        <!-- SIGNUP FORM -->
         <div id="signup-form" class="hidden">
-          <input id="signup-name" type="text" placeholder="Full Name" class="w-full px-4 py-3 rounded-2xl border border-gray-200 mb-4 focus:outline-none focus:border-blue-500">
-          <input id="signup-email" type="email" placeholder="Email" class="w-full px-4 py-3 rounded-2xl border border-gray-200 mb-4 focus:outline-none focus:border-blue-500">
-          <input id="signup-password" type="password" placeholder="Password (min 6 chars)" class="w-full px-4 py-3 rounded-2xl border border-gray-200 mb-4 focus:outline-none focus:border-blue-500">
+          <input id="signup-name" type="text" placeholder="Full name" class="dark-input w-full px-5 py-4 rounded-2xl mb-4">
+          <input id="signup-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4">
+          <input id="signup-password" type="password" placeholder="Password (6+ chars)" class="dark-input w-full px-5 py-4 rounded-2xl mb-6">
           
-          <div class="mb-6">
-            <p class="text-sm text-gray-600 mb-2">I am a:</p>
-            <div class="flex gap-4">
-              <button onclick="selectRole(this)" data-role="customer" class="role-btn flex-1 py-4 border-2 border-gray-200 rounded-2xl hover:border-blue-300 font-medium">Customer</button>
-              <button onclick="selectRole(this)" data-role="provider" class="role-btn flex-1 py-4 border-2 border-gray-200 rounded-2xl hover:border-blue-300 font-medium">Service Provider</button>
+          <div class="mb-8">
+            <p class="text-zinc-400 text-sm mb-3">I am a:</p>
+            <div class="grid grid-cols-2 gap-4">
+              <button onclick="selectRole(this)" data-role="customer" class="role-btn py-4 rounded-2xl border border-zinc-700 font-medium">Customer</button>
+              <button onclick="selectRole(this)" data-role="provider" class="role-btn py-4 rounded-2xl border border-zinc-700 font-medium">Service Provider</button>
             </div>
           </div>
 
-          <button onclick="signup()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition">Create Account</button>
+          <button onclick="signup()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl">Create Account</button>
         </div>
       </div>
-      <p class="text-center text-gray-500 text-sm mt-6">Demo: Works with your Firebase project</p>
     </div>
 
-    <!-- MAIN APP (hidden initially) -->
-    <div id="main-app" class="hidden tail-container py-8">
+    <!-- MAIN APP -->
+    <div id="main-app" class="hidden max-w-7xl mx-auto px-6 py-10">
 
       <!-- CUSTOMER DASHBOARD -->
       <div id="customer-dashboard">
-        <h2 class="text-3xl font-bold mb-6">Find Service Providers Near You</h2>
-        
-        <div class="bg-white rounded-3xl shadow p-6 mb-8">
-          <div class="flex flex-col md:flex-row gap-4">
-            <input id="search-term" type="text" placeholder="e.g. barber, plumber, makeup artist" class="flex-1 px-5 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:border-blue-500">
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-medium whitespace-nowrap">Max distance:</span>
-              <input id="max-distance" type="range" min="1" max="50" value="10" class="w-32 accent-blue-600">
-              <span id="distance-value" class="font-mono w-10 text-right">10 km</span>
-            </div>
-            <button onclick="searchProviders()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-semibold">Search</button>
+        <div class="flex justify-between items-end mb-8">
+          <div>
+            <h2 class="text-4xl font-semibold logo-font tracking-tighter">Find nearby pros</h2>
+            <p class="text-zinc-400">Search • Set distance • See them on map instantly</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Map -->
-          <div class="lg:col-span-2 bg-white rounded-3xl shadow overflow-hidden">
+        <!-- SEARCH BAR -->
+        <div class="card rounded-3xl p-6 mb-10">
+          <div class="flex flex-col lg:flex-row gap-4">
+            <input id="search-term" type="text" placeholder="What service do you need? (barber, plumber...)" 
+                   class="dark-input flex-1 px-6 py-5 rounded-2xl text-white placeholder-zinc-400 text-base">
+            
+            <div class="flex items-center gap-4 bg-zinc-900 rounded-2xl px-6 py-2">
+              <span class="text-xs font-medium text-zinc-400">MAX DISTANCE</span>
+              <input id="max-distance" type="range" min="1" max="50" value="12" class="accent-cyan-400 w-36">
+              <span id="distance-value" class="font-mono text-cyan-400 text-lg w-12">12 km</span>
+            </div>
+            
+            <button onclick="searchProviders()" 
+                    class="bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 text-zinc-950 font-semibold px-12 py-5 rounded-2xl transition-all">
+              SEARCH
+            </button>
+          </div>
+        </div>
+
+        <!-- MAP + LIST SECTION (appears after search) -->
+        <div id="results-section" class="hidden grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <!-- INTEGRATED MAP -->
+          <div class="xl:col-span-8 card rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+            <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-zinc-800">
+              <p class="text-sm font-medium text-cyan-400">📍 LIVE MAP — Providers in your radius</p>
+            </div>
             <div id="map" class="w-full"></div>
           </div>
           
-          <!-- Results list -->
-          <div class="bg-white rounded-3xl shadow p-6 overflow-auto max-h-[500px]">
-            <h3 class="font-semibold mb-4">Providers near you</h3>
-            <div id="results-list" class="space-y-4"></div>
+          <!-- RESULTS LIST -->
+          <div class="xl:col-span-4 card rounded-3xl p-6 flex flex-col">
+            <h3 class="font-medium text-cyan-400 text-sm tracking-widest mb-4">NEARBY PROVIDERS</h3>
+            <div id="results-list" class="flex-1 overflow-auto space-y-4 pr-2 custom-scroll"></div>
           </div>
+        </div>
+
+        <!-- Placeholder before search -->
+        <div id="map-placeholder" class="card rounded-3xl h-96 flex items-center justify-center flex-col border border-dashed border-zinc-700">
+          <div class="text-6xl mb-4">🗺️</div>
+          <p class="text-zinc-400 text-lg">Search a service above to see the map</p>
+          <p class="text-zinc-500 text-sm mt-2">Providers will appear as pins within your chosen distance</p>
         </div>
       </div>
 
       <!-- PROVIDER DASHBOARD -->
       <div id="provider-dashboard" class="hidden">
-        <h2 class="text-3xl font-bold mb-6">Your SkillSpot Profile</h2>
-        
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- Profile Form -->
-          <div class="bg-white rounded-3xl shadow p-8">
-            <h3 class="font-semibold text-lg mb-6">Update Profile</h3>
+          <div class="card rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-8">Update your profile</h3>
+            <input id="provider-service" type="text" placeholder="Your main service" class="dark-input w-full px-6 py-4 rounded-2xl mb-4">
+            <textarea id="provider-bio" rows="4" placeholder="Tell customers about your experience..." class="dark-input w-full px-6 py-4 rounded-2xl mb-6"></textarea>
             
-            <input id="provider-service" type="text" placeholder="Service (e.g. Barber, Plumber)" class="w-full px-5 py-3 rounded-2xl border border-gray-200 mb-4">
-            <textarea id="provider-bio" placeholder="Tell customers about your experience..." class="w-full px-5 py-3 rounded-2xl border border-gray-200 mb-4 h-32"></textarea>
-            
-            <div class="mb-6">
-              <button onclick="getCurrentLocation()" class="w-full bg-gray-100 hover:bg-gray-200 py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
-                📍 Use my current location
-              </button>
-              <p id="location-status" class="text-xs text-center mt-2 text-gray-500"></p>
+            <div onclick="getCurrentLocation()" class="cursor-pointer bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex items-center gap-3">
+              <span class="text-2xl">📍</span>
+              <div>
+                <p class="font-medium">Set my current location</p>
+                <p id="location-status" class="text-xs text-zinc-500">Customers will see you on the map</p>
+              </div>
             </div>
 
-            <div class="mb-6">
-              <p class="text-sm text-gray-600 mb-2">Portfolio Photo</p>
-              <input id="portfolio-file" type="file" accept="image/*" class="w-full">
-              <button onclick="uploadPortfolioPhoto()" class="mt-3 w-full bg-blue-600 text-white py-3 rounded-2xl">Upload Photo</button>
+            <div class="mt-8">
+              <p class="text-xs uppercase text-zinc-400 mb-3">Portfolio photo</p>
+              <input id="portfolio-file" type="file" accept="image/*" class="hidden">
+              <div class="flex gap-3">
+                <button onclick="document.getElementById('portfolio-file').click()" class="flex-1 border border-dashed border-zinc-600 py-8 rounded-2xl">Choose image</button>
+                <button onclick="uploadPortfolioPhoto()" class="flex-1 bg-zinc-800 py-8 rounded-2xl">Upload</button>
+              </div>
             </div>
 
-            <button onclick="saveProviderProfile()" class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold">Save Profile</button>
+            <button onclick="saveProviderProfile()" class="mt-10 w-full bg-white text-zinc-950 py-5 rounded-2xl font-semibold">SAVE PROFILE</button>
           </div>
 
-          <!-- Preview -->
-          <div class="bg-white rounded-3xl shadow p-8">
-            <h3 class="font-semibold text-lg mb-6">Your Current Profile</h3>
-            <div id="profile-preview" class="space-y-6">
-              <!-- Filled by JS -->
-            </div>
+          <div class="card rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-6">How customers see you</h3>
+            <div id="profile-preview" class="space-y-8"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3"></div>
+  <!-- TOAST -->
+  <div id="toast" class="hidden fixed bottom-8 right-8 px-8 py-4 rounded-3xl text-sm font-medium shadow-2xl z-50"></div>
 
   <script type="module">
-    // ================== FIREBASE CONFIG ==================
-    // PASTE YOUR CONFIG HERE ↓↓↓ (from Firebase Console → Project Settings → Your apps)
+    // ================== YOUR REAL FIREBASE CONFIG (already inserted) ==================
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef123456"
+      apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
+      authDomain: "skillspot95611.firebaseapp.com",
+      projectId: "skillspot95611",
+      storageBucket: "skillspot95611.firebasestorage.app",
+      messagingSenderId: "880371869598",
+      appId: "1:880371869598:web:359ba15c51474fd595188f",
+      measurementId: "G-36ELL41V4Q"
     };
-    // ====================================================
+    // =================================================================================
 
-    // Import Firebase (v12.10.0 - March 2026)
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
     import { getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
@@ -173,357 +225,226 @@
     let customerLat = null;
     let customerLng = null;
 
-    // Tailwind script already loaded
-    function initTailwind() {
-      // Already initialized via CDN
-    }
-
-    // ================== HELPER FUNCTIONS ==================
-    function showToast(message, color = 'bg-green-600') {
+    function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
-      toast.className = `flex items-center gap-3 fixed bottom-6 right-6 ${color} text-white px-6 py-4 rounded-2xl shadow-2xl`;
-      toast.innerHTML = `<span>${message}</span>`;
+      toast.style.backgroundColor = type === 'success' ? '#22d3ee' : '#ef4444';
+      toast.style.color = type === 'success' ? '#0a0a0a' : '#fff';
+      toast.textContent = message;
       toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 3000);
+      setTimeout(() => toast.classList.add('hidden'), 2800);
     }
 
-    function showPage(pageId) {
-      document.querySelectorAll('#auth-page, #main-app, #customer-dashboard, #provider-dashboard').forEach(el => {
-        el.classList.add('hidden');
-      });
-      if (pageId === 'auth') {
+    function showPage(page) {
+      document.getElementById('auth-page').classList.add('hidden');
+      document.getElementById('main-app').classList.add('hidden');
+      document.getElementById('customer-dashboard').classList.add('hidden');
+      document.getElementById('provider-dashboard').classList.add('hidden');
+
+      if (page === 'auth') {
         document.getElementById('auth-page').classList.remove('hidden');
       } else {
         document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById(pageId).classList.remove('hidden');
+        document.getElementById(page).classList.remove('hidden');
       }
     }
 
     function switchTab(tab) {
-      const loginForm = document.getElementById('login-form');
-      const signupForm = document.getElementById('signup-form');
+      const login = document.getElementById('login-form');
+      const signup = document.getElementById('signup-form');
       const tabLogin = document.getElementById('tab-login');
       const tabSignup = document.getElementById('tab-signup');
 
       if (tab === 0) {
-        loginForm.classList.remove('hidden');
-        signupForm.classList.add('hidden');
-        tabLogin.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
-        tabSignup.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+        login.classList.remove('hidden'); signup.classList.add('hidden');
+        tabLogin.classList.add('bg-zinc-800', 'text-white');
+        tabSignup.classList.remove('bg-zinc-800', 'text-white');
       } else {
-        loginForm.classList.add('hidden');
-        signupForm.classList.remove('hidden');
-        tabSignup.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
-        tabLogin.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+        login.classList.add('hidden'); signup.classList.remove('hidden');
+        tabSignup.classList.add('bg-zinc-800', 'text-white');
+        tabLogin.classList.remove('bg-zinc-800', 'text-white');
       }
     }
 
     function selectRole(btn) {
-      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('border-blue-600', 'bg-blue-50'));
-      btn.classList.add('border-blue-600', 'bg-blue-50');
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('border-cyan-400', 'bg-zinc-800'));
+      btn.classList.add('border-cyan-400', 'bg-zinc-800');
       window.selectedRole = btn.dataset.role;
     }
 
-    // Haversine distance (km)
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       return R * c;
     }
 
-    // ================== AUTH ==================
+    // AUTH
     async function signup() {
       const name = document.getElementById('signup-name').value.trim();
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value.trim();
       const role = window.selectedRole;
 
-      if (!name || !email || !password || !role) {
-        showToast('Please fill all fields and select a role', 'bg-red-600');
-        return;
-      }
+      if (!name || !email || !password || !role) return showToast('Fill everything & choose role', 'error');
 
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          name: name,
-          email: email,
-          role: role,
-          createdAt: new Date(),
-          services: role === "provider" ? [] : null,
-          bio: "",
-          lat: null,
-          lng: null,
-          photoURL: "",
-          portfolio: []
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name, email, role, services: role === "provider" ? [] : null, bio: "", lat: null, lng: null, portfolio: []
         });
-
         showToast('Account created successfully!');
-        // Auto login will be handled by onAuthStateChanged
-      } catch (error) {
-        showToast(error.message, 'bg-red-600');
-      }
+      } catch (e) { showToast(e.message, 'error'); }
     }
 
     async function login() {
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        showToast(error.message, 'bg-red-600');
-      }
+      try { await signInWithEmailAndPassword(auth, email, password); } 
+      catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function logout() {
-      await signOut(auth);
-      showPage('auth');
-      document.getElementById('nav-auth').classList.add('hidden');
-    }
+    async function logout() { await signOut(auth); }
 
-    // ================== FIREBASE AUTH LISTENER ==================
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          userRole = data.role;
-          document.getElementById('user-name').textContent = data.name;
-          document.getElementById('nav-auth').classList.remove('hidden');
+        const data = (await getDoc(doc(db, "users", user.uid))).data();
+        userRole = data.role;
+        document.getElementById('user-name').textContent = data.name;
+        document.getElementById('user-initial').textContent = data.name[0].toUpperCase();
+        document.getElementById('nav-auth').classList.remove('hidden');
+        showPage('main-app');
 
-          showPage('main-app');
-          if (userRole === 'customer') {
-            document.getElementById('customer-dashboard').classList.remove('hidden');
-            document.getElementById('provider-dashboard').classList.add('hidden');
-            initCustomerMap();
-          } else {
-            document.getElementById('customer-dashboard').classList.add('hidden');
-            document.getElementById('provider-dashboard').classList.remove('hidden');
-            loadProviderProfile();
-          }
+        if (userRole === 'customer') {
+          document.getElementById('customer-dashboard').classList.remove('hidden');
+        } else {
+          document.getElementById('provider-dashboard').classList.remove('hidden');
+          loadProviderProfile();
         }
       } else {
-        currentUser = null;
         showPage('auth');
         document.getElementById('nav-auth').classList.add('hidden');
       }
     });
 
-    // ================== PROVIDER FUNCTIONS ==================
+    // PROVIDER
     async function getCurrentLocation() {
-      if (!navigator.geolocation) {
-        showToast('Geolocation not supported', 'bg-red-600');
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        await setDoc(doc(db, "users", currentUser.uid), {
-          lat: lat,
-          lng: lng
-        }, { merge: true });
-        document.getElementById('location-status').innerHTML = `✅ Location set: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        showToast('Location saved!');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        await setDoc(doc(db, "users", currentUser.uid), { lat: pos.coords.latitude, lng: pos.coords.longitude }, { merge: true });
+        document.getElementById('location-status').innerHTML = `✅ Saved`;
+        showToast('Location saved — you now appear on maps!');
         loadProviderProfile();
-      }, () => {
-        showToast('Unable to get location', 'bg-red-600');
       });
     }
 
     async function uploadPortfolioPhoto() {
-      const fileInput = document.getElementById('portfolio-file');
-      const file = fileInput.files[0];
-      if (!file) return showToast('Select a photo first', 'bg-red-600');
-
+      const file = document.getElementById('portfolio-file').files[0];
+      if (!file) return showToast('Select photo', 'error');
       try {
-        const storageRef = ref(storage, `portfolio/${currentUser.uid}/${Date.now()}_${file.name}`);
+        const storageRef = ref(storage, `portfolio/${currentUser.uid}/${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
-
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        let portfolio = userDoc.data().portfolio || [];
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        let portfolio = snap.data().portfolio || [];
         portfolio.push(url);
-
-        await setDoc(doc(db, "users", currentUser.uid), { portfolio: portfolio }, { merge: true });
-        showToast('Photo uploaded!');
+        await setDoc(doc(db, "users", currentUser.uid), { portfolio }, { merge: true });
+        showToast('Photo added!');
         loadProviderProfile();
-      } catch (e) {
-        showToast('Upload failed', 'bg-red-600');
-      }
+      } catch (e) { showToast('Upload failed', 'error'); }
     }
 
     async function saveProviderProfile() {
       const service = document.getElementById('provider-service').value.trim();
       const bio = document.getElementById('provider-bio').value.trim();
-
-      if (!service) return showToast('Enter your service', 'bg-red-600');
-
-      try {
-        await setDoc(doc(db, "users", currentUser.uid), {
-          services: [service],
-          bio: bio
-        }, { merge: true });
-        showToast('Profile saved!');
-        loadProviderProfile();
-      } catch (e) {
-        showToast('Save failed', 'bg-red-600');
-      }
+      await setDoc(doc(db, "users", currentUser.uid), { services: service ? [service] : [], bio }, { merge: true });
+      showToast('Profile saved');
+      loadProviderProfile();
     }
 
     async function loadProviderProfile() {
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const data = userDoc.data();
-      
-      let html = `
-        <div class="flex items-center gap-4">
-          <img src="${data.photoURL || 'https://via.placeholder.com/80'}" class="w-20 h-20 rounded-2xl object-cover">
-          <div>
-            <h4 class="font-semibold">${data.name}</h4>
-            <p class="text-blue-600">${data.services ? data.services.join(', ') : 'No service set'}</p>
-          </div>
-        </div>
-        <p class="text-sm text-gray-600 mt-4">${data.bio || 'No bio yet'}</p>
-        <div class="mt-6">
-          <p class="text-xs uppercase tracking-widest text-gray-500">Portfolio</p>
-          <div class="flex gap-3 flex-wrap mt-3">
-      `;
-
-      if (data.portfolio && data.portfolio.length) {
-        data.portfolio.forEach(url => {
-          html += `<img src="${url}" class="w-20 h-20 object-cover rounded-2xl">`;
-        });
-      } else {
-        html += `<p class="text-xs text-gray-400">No photos yet</p>`;
-      }
-      html += `</div></div>`;
-
+      const d = (await getDoc(doc(db, "users", currentUser.uid))).data();
+      let html = `<div class="flex gap-6"><div class="w-24 h-24 bg-zinc-800 rounded-3xl overflow-hidden"><img src="${d.portfolio?.[0] || 'https://picsum.photos/id/1015/300/300'}" class="object-cover w-full h-full"></div><div class="flex-1"><div class="font-semibold text-2xl">${d.name}</div><div class="text-cyan-400">${d.services?.[0] || ''}</div><p class="text-zinc-400 mt-3">${d.bio || 'No bio yet'}</p></div></div>`;
       document.getElementById('profile-preview').innerHTML = html;
     }
 
-    // ================== CUSTOMER FUNCTIONS ==================
+    // CUSTOMER — INTEGRATED MAP
     function initCustomerMap() {
       if (map) return;
-      map = L.map('map').setView([9.0, 7.5], 6); // Nigeria center
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+      map = L.map('map').setView([9.0, 7.5], 7);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CartoDB'
       }).addTo(map);
     }
 
     async function searchProviders() {
-      const searchTerm = document.getElementById('search-term').value.trim().toLowerCase();
-      const maxDist = parseFloat(document.getElementById('max-distance').value);
-      document.getElementById('distance-value').textContent = `${maxDist} km`;
+      const term = document.getElementById('search-term').value.trim().toLowerCase();
+      const maxKm = parseFloat(document.getElementById('max-distance').value);
 
-      if (!searchTerm) {
-        showToast('Enter a service (e.g. barber)', 'bg-red-600');
-        return;
-      }
+      if (!term) return showToast('Enter a service name', 'error');
 
-      // Get user location if not set
+      const section = document.getElementById('results-section');
+      const placeholder = document.getElementById('map-placeholder');
+      section.classList.remove('hidden');
+      setTimeout(() => section.classList.add('visible'), 10);
+      placeholder.style.display = 'none';
+
       if (!customerLat) {
         navigator.geolocation.getCurrentPosition(pos => {
           customerLat = pos.coords.latitude;
           customerLng = pos.coords.longitude;
-          performSearch(searchTerm, maxDist);
-        }, () => {
-          showToast('Please allow location access', 'bg-red-600');
+          runSearch(term, maxKm);
         });
         return;
       }
-      performSearch(searchTerm, maxDist);
+      runSearch(term, maxKm);
     }
 
-    async function performSearch(searchTerm, maxDist) {
+    function runSearch(term, maxKm) {
+      initCustomerMap();
+
       const q = query(collection(db, "users"), where("role", "==", "provider"));
-      
       onSnapshot(q, (snapshot) => {
-        const providers = [];
+        let providers = [];
         snapshot.forEach(doc => {
           const p = doc.data();
-          if (p.services && p.services.some(s => s.toLowerCase().includes(searchTerm))) {
-            if (p.lat && p.lng) {
-              const dist = calculateDistance(customerLat, customerLng, p.lat, p.lng);
-              if (dist <= maxDist) {
-                providers.push({ ...p, distance: dist.toFixed(1) });
-              }
-            }
+          if (p.services?.some(s => s.toLowerCase().includes(term)) && p.lat && p.lng) {
+            const dist = calculateDistance(customerLat, customerLng, p.lat, p.lng);
+            if (dist <= maxKm) providers.push({ ...p, distance: dist.toFixed(1) });
           }
         });
 
-        // Clear old markers
         currentMarkers.forEach(m => map.removeLayer(m));
         currentMarkers = [];
 
-        // Add markers
         providers.forEach(p => {
           const marker = L.marker([p.lat, p.lng]).addTo(map)
-            .bindPopup(`
-              <b>${p.name}</b><br>
-              ${p.services.join(', ')}<br>
-              📍 ${p.distance} km away<br>
-              <small>${p.bio || ''}</small>
-            `);
+            .bindPopup(`<b>${p.name}</b><br>${p.services[0]}<br><span class="text-cyan-400">${p.distance} km away</span>`);
           currentMarkers.push(marker);
         });
 
-        // Render list
-        let html = '';
-        if (providers.length === 0) {
-          html = `<p class="text-gray-400">No providers found within ${maxDist} km</p>`;
-        } else {
-          providers.sort((a,b) => a.distance - b.distance).forEach(p => {
-            html += `
-              <div class="border border-gray-100 rounded-2xl p-4 hover:bg-gray-50">
-                <div class="flex justify-between">
-                  <div>
-                    <div class="font-semibold">${p.name}</div>
-                    <div class="text-sm text-blue-600">${p.services.join(', ')}</div>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-xs font-mono bg-gray-100 px-3 py-1 rounded-full">${p.distance} km</div>
-                  </div>
-                </div>
-                ${p.portfolio && p.portfolio.length ? `<img src="${p.portfolio[0]}" class="mt-3 w-full h-32 object-cover rounded-xl">` : ''}
-              </div>`;
-          });
-        }
+        let html = providers.length === 0 
+          ? `<div class="text-center py-12 text-zinc-500">No providers found in range</div>`
+          : providers.sort((a,b) => a.distance - b.distance).map(p => `
+            <div class="bg-zinc-900 rounded-2xl p-5">
+              <div class="flex justify-between">
+                <div><div class="font-medium">${p.name}</div><div class="text-cyan-400">${p.services[0]}</div></div>
+                <div class="font-mono text-xs bg-zinc-800 px-3 py-1 rounded-full">${p.distance} km</div>
+              </div>
+              ${p.portfolio?.[0] ? `<img src="${p.portfolio[0]}" class="mt-5 w-full h-40 object-cover rounded-xl">` : ''}
+            </div>`).join('');
+
         document.getElementById('results-list').innerHTML = html;
 
-        if (providers.length > 0) {
-          map.fitBounds(providers.map(p => [p.lat, p.lng]));
-        }
+        if (providers.length) map.fitBounds(providers.map(p => [p.lat, p.lng]), { padding: [50, 50] });
       });
     }
 
-    // Distance slider live update
-    document.getElementById('max-distance').addEventListener('input', (e) => {
+    document.getElementById('max-distance').addEventListener('input', e => {
       document.getElementById('distance-value').textContent = `${e.target.value} km`;
     });
 
-    // Initial setup
-    window.onload = () => {
-      switchTab(0); // default to login
-      initTailwind();
-      
-      // If config is still default, show alert
-      if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-        setTimeout(() => {
-          showToast('⚠️ Please replace firebaseConfig in the code!', 'bg-yellow-600');
-        }, 800);
-      }
-    };
-
-    // Expose functions to window for onclick handlers
     window.switchTab = switchTab;
     window.selectRole = selectRole;
     window.signup = signup;
@@ -533,6 +454,10 @@
     window.uploadPortfolioPhoto = uploadPortfolioPhoto;
     window.saveProviderProfile = saveProviderProfile;
     window.searchProviders = searchProviders;
+
+    window.onload = () => {
+      switchTab(0);
+    };
   </script>
 </body>
 </html>
