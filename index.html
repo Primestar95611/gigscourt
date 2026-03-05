@@ -1,951 +1,1184 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SkillSpot — Find Skilled Pros Near You</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSpot - Everyone's a Provider</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
 
-```
-:root {
-  --bg: #06060f;
-  --surface: #0d0d1f;
-  --border: #1a1a35;
-  --cyan: #00d4ff;
-  --indigo: #7c5cff;
-  --text: #e8e8f5;
-  --muted: #7070a0;
-  --dim: #2a2a4a;
-}
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .logo-font { font-family: 'Space Grotesk', sans-serif; }
 
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+    #map { height: 500px; }
+    @media (max-width: 768px) { #map { height: 350px; } }
 
-/* ── NOISE TEXTURE OVERLAY ── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.4;
-}
+    .dark-input {
+      background-color: #18181b;
+      border: 1px solid #3f3f46;
+      transition: all 0.2s;
+    }
+    .dark-input:focus {
+      border-color: #67e8f9;
+      box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.2);
+      outline: none;
+    }
 
-/* ── ANIMATED GRID BACKGROUND ── */
-.grid-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: gridMove 20s linear infinite;
-}
-@keyframes gridMove {
-  0% { background-position: 0 0; }
-  100% { background-position: 60px 60px; }
-}
+    .card {
+      background: linear-gradient(145deg, #27272a, #18181b);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    }
 
-/* ── GLOW ORBS ── */
-.orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
-  z-index: 0;
-  animation: orbPulse 8s ease-in-out infinite;
-}
-@keyframes orbPulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.15); }
-}
+    .instagram-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .instagram-grid img {
+      aspect-ratio: 1;
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .instagram-grid img:hover { opacity: 0.8; }
 
-/* ── NAV ── */
-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 0 32px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(6,6,15,0.7);
-  backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(0,212,255,0.08);
-}
-.logo {
-  display: flex; align-items: center; gap: 10px; cursor: pointer;
-  text-decoration: none;
-}
-.logo-icon {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, var(--cyan), var(--indigo));
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px; color: #06060f;
-  box-shadow: 0 0 20px rgba(0,212,255,0.3);
-}
-.logo-text {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px; letter-spacing: 2px; color: #fff;
-}
-.nav-buttons { display: flex; gap: 10px; }
-.btn-outline {
-  padding: 9px 20px;
-  border: 1px solid rgba(0,212,255,0.3);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--cyan);
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px; font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-outline:hover { background: rgba(0,212,255,0.08); }
-.btn-filled {
-  padding: 9px 22px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--cyan), var(--indigo));
-  color: #06060f;
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px; font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(0,212,255,0.25);
-}
-.btn-filled:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,212,255,0.35); }
+    .photo-upload-preview {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .photo-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-upload-preview .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-/* ── HERO ── */
-.hero {
-  position: relative;
-  z-index: 2;
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 100px 40px 60px;
-}
+    .profile-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 100;
+      overflow-y: auto;
+      display: none;
+    }
+    .profile-modal.active { display: block; }
 
-/* Left side */
-.hero-left { display: flex; flex-direction: column; }
+    .mode-toggle {
+      position: relative;
+      background: #18181b;
+      border-radius: 9999px;
+      padding: 4px;
+      display: flex;
+      gap: 4px;
+    }
+    .mode-toggle button {
+      flex: 1;
+      padding: 8px 24px;
+      border-radius: 9999px;
+      font-weight: 600;
+      transition: all 0.3s;
+      position: relative;
+      z-index: 1;
+    }
+    .mode-toggle button.active {
+      background: linear-gradient(to right, #22d3ee, #6366f1);
+      color: #0a0a0a;
+    }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,212,255,0.08);
-  border: 1px solid rgba(0,212,255,0.2);
-  border-radius: 30px;
-  padding: 6px 16px;
-  font-size: 12px;
-  color: var(--cyan);
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-  width: fit-content;
-  animation: fadeInDown 0.8s ease both;
-}
-.badge-dot {
-  width: 6px; height: 6px;
-  background: var(--cyan);
-  border-radius: 50%;
-  animation: blink 1.5s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+    .service-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(34, 211, 238, 0.1);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      border-radius: 9999px;
+      color: #22d3ee;
+      font-size: 0.875rem;
+    }
+    .service-tag button {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      font-size: 1.1em;
+      line-height: 1;
+    }
 
-.hero-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(56px, 8vw, 100px);
-  line-height: 0.95;
-  letter-spacing: 1px;
-  color: #fff;
-  margin-bottom: 24px;
-  animation: fadeInUp 0.9s 0.1s ease both;
-}
-.hero-title .gradient-text {
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--indigo) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  display: block;
-}
-.hero-title .outline-text {
-  -webkit-text-stroke: 2px rgba(255,255,255,0.3);
-  color: transparent;
-  display: block;
-}
+    .loading-skeleton {
+      background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
 
-.hero-desc {
-  font-size: 16px;
-  color: var(--muted);
-  line-height: 1.75;
-  max-width: 460px;
-  margin-bottom: 36px;
-  animation: fadeInUp 0.9s 0.2s ease both;
-}
+    #results-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #results-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-.hero-actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 48px;
-  animation: fadeInUp 0.9s 0.3s ease both;
-}
-.btn-hero-primary {
-  padding: 16px 36px;
-  font-size: 16px;
-  font-weight: 700;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--cyan), var(--indigo));
-  color: #06060f;
-  cursor: pointer;
-  font-family: 'Outfit', sans-serif;
-  transition: all 0.2s;
-  box-shadow: 0 8px 32px rgba(0,212,255,0.3);
-  letter-spacing: 0.3px;
-}
-.btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,212,255,0.45); }
-.btn-hero-secondary {
-  padding: 16px 28px;
-  font-size: 15px;
-  font-weight: 500;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.03);
-  color: var(--text);
-  cursor: pointer;
-  font-family: 'Outfit', sans-serif;
-  transition: all 0.2s;
-}
-.btn-hero-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
-/* Feature chips */
-.chips {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  animation: fadeInUp 0.9s 0.4s ease both;
-}
-.chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 30px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.chip-icon { font-size: 14px; }
-
-/* ── TOOL SLIDESHOW (Right side) ── */
-.hero-right {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  animation: fadeInUp 0.9s 0.2s ease both;
-}
-
-.slideshow-wrap {
-  position: relative;
-  width: 340px;
-  height: 380px;
-}
-
-/* Decorative rings */
-.ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(0,212,255,0.1);
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  animation: spin linear infinite;
-}
-.ring-1 { width: 420px; height: 420px; animation-duration: 30s; }
-.ring-2 { width: 340px; height: 340px; animation-duration: 20s; animation-direction: reverse; border-color: rgba(124,92,255,0.1); }
-@keyframes spin { from{transform:translate(-50%,-50%) rotate(0deg);} to{transform:translate(-50%,-50%) rotate(360deg);} }
-
-/* Ring dots */
-.ring::before, .ring::after {
-  content: '';
-  position: absolute;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--cyan);
-  top: -4px; left: 50%; transform: translateX(-50%);
-  box-shadow: 0 0 10px var(--cyan);
-}
-.ring::after { top: auto; bottom: -4px; background: var(--indigo); box-shadow: 0 0 10px var(--indigo); }
-
-/* Tool cards */
-.tool-card {
-  position: absolute;
-  inset: 20px;
-  border-radius: 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  opacity: 0;
-  transform: scale(0.8) rotate(-8deg);
-  transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1);
-  pointer-events: none;
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(20px);
-}
-.tool-card.active {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-  pointer-events: auto;
-}
-.tool-card.exit {
-  opacity: 0;
-  transform: scale(1.1) rotate(6deg);
-}
-
-.tool-emoji-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.tool-emoji {
-  font-size: 88px;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
-  animation: toolFloat 3s ease-in-out infinite;
-}
-@keyframes toolFloat {
-  0%,100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-12px) rotate(3deg); }
-}
-.tool-glow {
-  position: absolute;
-  width: 140px; height: 140px;
-  border-radius: 50%;
-  filter: blur(40px);
-  opacity: 0.4;
-  animation: glowPulse 3s ease-in-out infinite;
-}
-@keyframes glowPulse { 0%,100%{opacity:0.3;} 50%{opacity:0.6;} }
-
-.tool-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  letter-spacing: 3px;
-  color: #fff;
-}
-.tool-profession {
-  font-size: 14px;
-  color: var(--muted);
-  text-align: center;
-  padding: 0 24px;
-  line-height: 1.4;
-}
-.tool-number {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: rgba(255,255,255,0.2);
-}
-
-/* Slide dots */
-.slide-dots {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-.dot {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--dim);
-  cursor: pointer;
-  transition: all 0.4s ease;
-  width: 20px;
-}
-.dot.active {
-  width: 36px;
-  background: linear-gradient(90deg, var(--cyan), var(--indigo));
-}
-
-/* Progress bar */
-.progress-bar {
-  width: 100%;
-  height: 2px;
-  background: var(--dim);
-  border-radius: 1px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--cyan), var(--indigo));
-  border-radius: 1px;
-  animation: progressAnim 3s linear infinite;
-  transform-origin: left;
-}
-@keyframes progressAnim { from{width:0%;} to{width:100%;} }
-
-/* ── HOW IT WORKS ── */
-.section {
-  position: relative;
-  z-index: 2;
-  padding: 80px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.section-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--cyan);
-  margin-bottom: 14px;
-}
-.section-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(40px, 5vw, 64px);
-  letter-spacing: 1px;
-  color: #fff;
-  margin-bottom: 12px;
-}
-.section-sub {
-  color: var(--muted);
-  font-size: 15px;
-  margin-bottom: 56px;
-}
-
-.divider {
-  position: relative;
-  z-index: 2;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
-  margin: 0 40px;
-}
-
-/* Steps */
-.steps-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-}
-.step-card {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 28px 24px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.3s, transform 0.3s;
-}
-.step-card:hover {
-  border-color: rgba(0,212,255,0.25);
-  transform: translateY(-4px);
-}
-.step-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--cyan), var(--indigo));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.step-card:hover::before { opacity: 1; }
-.step-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 64px;
-  color: rgba(0,212,255,0.08);
-  line-height: 1;
-  margin-bottom: 16px;
-}
-.step-icon { font-size: 36px; margin-bottom: 14px; display: block; }
-.step-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 1px;
-  color: #fff;
-  margin-bottom: 10px;
-}
-.step-desc { color: var(--muted); font-size: 13px; line-height: 1.6; }
-
-/* ── CATEGORIES ── */
-.cats-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-.cat-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  border-radius: 30px;
-  font-size: 14px;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.25s;
-}
-.cat-pill:hover {
-  background: rgba(0,212,255,0.08);
-  border-color: rgba(0,212,255,0.3);
-  color: var(--cyan);
-  transform: translateY(-2px);
-}
-
-/* ── STATS ── */
-.stats-strip {
-  position: relative;
-  z-index: 2;
-  background: rgba(255,255,255,0.02);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.stats-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-}
-.stat-item {
-  text-align: center;
-  padding: 0 20px;
-  border-right: 1px solid var(--border);
-}
-.stat-item:last-child { border-right: none; }
-.stat-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 52px;
-  background: linear-gradient(135deg, var(--cyan), var(--indigo));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 2px;
-}
-.stat-label { color: var(--muted); font-size: 13px; margin-top: 4px; }
-
-/* ── BOTTOM CTA ── */
-.cta-section {
-  position: relative;
-  z-index: 2;
-  padding: 80px 40px;
-  text-align: center;
-}
-.cta-inner {
-  max-width: 640px;
-  margin: 0 auto;
-}
-.cta-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(42px, 6vw, 72px);
-  letter-spacing: 1px;
-  color: #fff;
-  margin-bottom: 16px;
-  line-height: 1;
-}
-.cta-desc {
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.7;
-  margin-bottom: 36px;
-}
-
-/* ── FLOATING TOOL ICONS (background decoration) ── */
-.bg-tool {
-  position: fixed;
-  font-size: 28px;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 0;
-  animation: bgFloat linear infinite;
-}
-@keyframes bgFloat {
-  0% { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(-100vh) rotate(360deg); }
-}
-
-/* ── ANIMATIONS ── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── MOBILE ── */
-@media (max-width: 768px) {
-  .hero {
-    grid-template-columns: 1fr;
-    padding: 90px 20px 40px;
-    text-align: center;
-    gap: 48px;
-  }
-  .hero-left { align-items: center; }
-  .hero-desc { text-align: center; }
-  .hero-actions { justify-content: center; }
-  .chips { justify-content: center; }
-  .slideshow-wrap { width: 280px; height: 320px; }
-  .tool-emoji { font-size: 64px; }
-  nav { padding: 0 16px; }
-  .section { padding: 60px 20px; }
-  .stats-inner { grid-template-columns: 1fr; gap: 24px; }
-  .stat-item { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
-  .stat-item:last-child { border-bottom: none; }
-  .ring-1 { width: 320px; height: 320px; }
-  .ring-2 { width: 260px; height: 260px; }
-  .cta-section { padding: 60px 20px; }
-}
-```
-
+    .image-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-lightbox.active { display: flex; }
+    .image-lightbox img { max-width: 90%; max-height: 90%; object-fit: contain; }
   </style>
 </head>
-<body>
-
-<!-- Background effects -->
-
-<div class="grid-bg"></div>
-<div class="orb" style="width:600px;height:600px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);animation-delay:0s;"></div>
-<div class="orb" style="width:500px;height:500px;bottom:-150px;right:-150px;background:radial-gradient(circle,rgba(124,92,255,0.1),transparent 70%);animation-delay:4s;"></div>
-
-<!-- Floating background tools -->
-
-<div id="bg-tools"></div>
-
-<!-- NAV -->
-
-<nav>
-  <a class="logo" href="#">
-    <div class="logo-icon">S</div>
-    <span class="logo-text">SkillSpot</span>
-  </a>
-  <div class="nav-buttons">
-    <button class="btn-outline" onclick="alert('Sign In clicked!')">Sign In</button>
-    <button class="btn-filled" onclick="alert('Join Free clicked!')">Join Free</button>
-  </div>
-</nav>
-
-<!-- ══ HERO SECTION ══ -->
-
-<section class="hero">
-  <!-- LEFT -->
-  <div class="hero-left">
-    <div class="badge">
-      <div class="badge-dot"></div>
-      Nigeria's #1 Local Skills Platform
-    </div>
-
-```
-<h1 class="hero-title">
-  <span>FIND THE</span>
-  <span class="gradient-text">RIGHT PRO</span>
-  <span class="outline-text">NEAR YOU</span>
-</h1>
-
-<p class="hero-desc">
-  Stop guessing, stop asking around. SkillSpot puts the best barbers, plumbers, photographers, electricians and more right at your fingertips — sorted by distance, verified by their portfolio.
-</p>
-
-<div class="hero-actions">
-  <button class="btn-hero-primary" onclick="alert('Get Started!')">Get Started Free →</button>
-  <button class="btn-hero-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See How It Works</button>
-</div>
-
-<div class="chips">
-  <div class="chip"><span class="chip-icon">📍</span> Location-based</div>
-  <div class="chip"><span class="chip-icon">📷</span> Real portfolios</div>
-  <div class="chip"><span class="chip-icon">🗺️</span> Live map view</div>
-  <div class="chip"><span class="chip-icon">⚡</span> Instant contact</div>
-  <div class="chip"><span class="chip-icon">🆓</span> Free to use</div>
-</div>
-```
-
-  </div>
-
-  <!-- RIGHT — TOOL SLIDESHOW -->
-
-  <div class="hero-right">
-    <div class="slideshow-wrap">
-      <!-- Decorative rings -->
-      <div class="ring ring-1"></div>
-      <div class="ring ring-2"></div>
-      <!-- Tool cards injected by JS -->
-      <div id="tool-stage"></div>
-    </div>
-
-```
-<!-- Dots + progress -->
-<div>
-  <div class="slide-dots" id="slide-dots"></div>
-  <div class="progress-bar" style="width:200px;margin:12px auto 0;">
-    <div class="progress-fill" id="progress-fill"></div>
-  </div>
-</div>
-```
-
-  </div>
-</section>
-
-<!-- STATS STRIP -->
-
-<div class="stats-strip">
-  <div class="stats-inner">
-    <div class="stat-item">
-      <div class="stat-num" id="cnt-providers">0+</div>
-      <div class="stat-label">Skilled Providers</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">15+</div>
-      <div class="stat-label">Service Categories</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">FREE</div>
-      <div class="stat-label">Always Free to Join</div>
-    </div>
-  </div>
-</div>
-
-<div class="divider"></div>
-
-<!-- HOW IT WORKS -->
-
-<section class="section" id="how">
-  <div class="section-label">The Process</div>
-  <div class="section-title">HOW SKILLSPOT WORKS</div>
-  <div class="section-sub">Four simple steps to finding the perfect professional</div>
-
-  <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-num">01</div>
-      <span class="step-icon">🔍</span>
-      <div class="step-title">SEARCH</div>
-      <div class="step-desc">Type any service you need — barber, plumber, photographer, tailor. Set how far you want to travel.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">02</div>
-      <span class="step-icon">🗺️</span>
-      <div class="step-title">DISCOVER</div>
-      <div class="step-desc">See every provider near you appear as pins on a live map. Your exact search radius shown visually.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">03</div>
-      <span class="step-icon">📷</span>
-      <div class="step-title">BROWSE</div>
-      <div class="step-desc">Tap any pin to open their full profile. See their Instagram-style portfolio of real work photos.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">04</div>
-      <span class="step-icon">✅</span>
-      <div class="step-title">CONNECT</div>
-      <div class="step-desc">Contact the one you like directly. The same account lets you offer your own skills to customers too.</div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- CATEGORIES -->
-
-<section class="section" style="text-align:center;">
-  <div class="section-label">Available Services</div>
-  <div class="section-title">FIND ANY SKILL</div>
-  <div class="section-sub">Tap a category to start searching</div>
-  <div class="cats-grid" id="cats-grid"></div>
-</section>
-
-<div class="divider"></div>
-
-<!-- BOTTOM CTA -->
-
-<section class="cta-section">
-  <div class="cta-inner">
-    <div class="cta-title">READY TO GET<br/><span style="background:linear-gradient(135deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">STARTED?</span></div>
-    <p class="cta-desc">Join SkillSpot today. Find professionals around you. Showcase your own skills. All for free.</p>
-    <button class="btn-hero-primary" onclick="alert('Join Free!')">Join SkillSpot — It's Free</button>
-  </div>
-</section>
-
-<script>
-// ── TOOL DATA ────────────────────────────────────────────────────
-const TOOLS = [
-  { emoji:'✂️',  name:'SCISSORS',    profession:'Barbers & Hair Stylists',     color:'rgba(0,212,255,0.12)',   glow:'rgba(0,212,255,0.4)' },
-  { emoji:'🔨',  name:'HAMMER',      profession:'Carpenters & Builders',       color:'rgba(251,146,60,0.12)',  glow:'rgba(251,146,60,0.4)' },
-  { emoji:'⛑️',  name:'HELMET',      profession:'Electricians & Contractors',  color:'rgba(250,204,21,0.1)',   glow:'rgba(250,204,21,0.4)' },
-  { emoji:'🧤',  name:'GLOVES',      profession:'Cleaners & Handymen',         color:'rgba(124,92,255,0.12)',  glow:'rgba(124,92,255,0.4)' },
-  { emoji:'🔧',  name:'WRENCH',      profession:'Plumbers & Mechanics',        color:'rgba(34,197,94,0.1)',    glow:'rgba(34,197,94,0.4)' },
-  { emoji:'📷',  name:'CAMERA',      profession:'Photographers & Videographers',color:'rgba(239,68,68,0.1)',   glow:'rgba(239,68,68,0.4)' },
-  { emoji:'💅',  name:'NAIL POLISH', profession:'Nail Techs & Beauty Pros',    color:'rgba(236,72,153,0.12)', glow:'rgba(236,72,153,0.4)' },
-  { emoji:'🎵',  name:'MUSIC',       profession:'DJs & Musicians',             color:'rgba(168,85,247,0.12)', glow:'rgba(168,85,247,0.4)' },
-  { emoji:'🍳',  name:'CHEF',        profession:'Chefs & Caterers',            color:'rgba(245,158,11,0.1)',   glow:'rgba(245,158,11,0.4)' },
-  { emoji:'🧵',  name:'TAILOR',      profession:'Tailors & Fashion Designers', color:'rgba(20,184,166,0.12)', glow:'rgba(20,184,166,0.4)' },
-  { emoji:'🪚',  name:'SAW',         profession:'Woodworkers & Craftsmen',     color:'rgba(161,98,7,0.12)',   glow:'rgba(161,98,7,0.4)' },
-  { emoji:'💪',  name:'TRAINER',     profession:'Personal Trainers & Coaches', color:'rgba(59,130,246,0.12)', glow:'rgba(59,130,246,0.4)' },
-];
-
-const CATS = [
-  {icon:'✂️',name:'Barber'},{icon:'💇',name:'Hair Stylist'},{icon:'🔧',name:'Plumber'},
-  {icon:'⚡',name:'Electrician'},{icon:'🧹',name:'Cleaner'},{icon:'🎨',name:'Painter'},
-  {icon:'🪚',name:'Carpenter'},{icon:'📷',name:'Photographer'},{icon:'💪',name:'Personal Trainer'},
-  {icon:'💅',name:'Nail Tech'},{icon:'👨‍🍳',name:'Chef'},{icon:'🔩',name:'Mechanic'},
-  {icon:'🪡',name:'Tailor'},{icon:'🎵',name:'DJ'},{icon:'📚',name:'Tutor'},
-  {icon:'🏠',name:'Interior Designer'}
-];
-
-// ── BUILD SLIDESHOW ───────────────────────────────────────────────
-let currentSlide = 0;
-let slideTimer = null;
-let progressTimer = null;
-const SLIDE_DURATION = 3000;
-
-function buildSlideshow() {
-  const stage = document.getElementById('tool-stage');
-  const dotsEl = document.getElementById('slide-dots');
-
-  // Create cards
-  stage.innerHTML = TOOLS.map((t, i) => `
-    <div class="tool-card ${i === 0 ? 'active' : ''}" id="tc-${i}"
-         style="background:${t.color};">
-      <div class="tool-emoji-wrap">
-        <div class="tool-glow" style="background:${t.glow};"></div>
-        <div class="tool-emoji">${t.emoji}</div>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen">
+  
+  <!-- NAVBAR -->
+  <nav class="bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="showDashboard()">
+        <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="text-white text-xl font-bold logo-font">S</span>
+        </div>
+        <h1 class="text-2xl font-semibold logo-font tracking-tighter text-white">SkillSpot</h1>
       </div>
-      <div class="tool-name">${t.name}</div>
-      <div class="tool-profession">${t.profession}</div>
-      <div class="tool-number">${String(i+1).padStart(2,'0')} / ${String(TOOLS.length).padStart(2,'0')}</div>
+
+      <div id="nav-auth" class="hidden items-center gap-6">
+        <div class="mode-toggle" id="mode-switcher" style="display: none;">
+          <button onclick="switchMode('customer')" id="mode-customer" class="active">Find Services</button>
+          <button onclick="switchMode('provider')" id="mode-provider">My Profile</button>
+        </div>
+        <div class="flex items-center gap-3 cursor-pointer" onclick="showMyProfile()">
+          <img id="nav-avatar" src="" class="w-9 h-9 rounded-full object-cover border-2 border-zinc-700 hidden">
+          <div id="nav-initial" class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-full flex items-center justify-center text-sm font-bold"></div>
+        </div>
+        <button onclick="logout()" class="text-sm text-zinc-400 hover:text-red-400 transition">Logout</button>
+      </div>
     </div>
-  `).join('');
+  </nav>
 
-  // Create dots
-  dotsEl.innerHTML = TOOLS.map((_, i) => `
-    <div class="dot ${i===0?'active':''}" id="dot-${i}" onclick="goToSlide(${i})"></div>
-  `).join('');
+  <!-- AUTH PAGE -->
+  <div id="auth-page" class="max-w-md mx-auto pt-12 px-6 pb-20">
+    <div class="card rounded-3xl p-8">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-semibold logo-font text-white mb-2">Welcome to SkillSpot</h2>
+        <p class="text-zinc-400">Offer skills. Find skills. All in one place.</p>
+      </div>
+      
+      <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
+        <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3 font-semibold rounded-xl transition-all bg-zinc-800 text-white">Login</button>
+        <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3 font-semibold rounded-xl transition-all text-zinc-400">Sign Up</button>
+      </div>
 
-  startAutoplay();
-}
+      <div id="login-form">
+        <input id="login-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="login-password" type="password" placeholder="Password" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
+        <button onclick="login()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Login</button>
+      </div>
 
-function goToSlide(n) {
-  const prev = document.getElementById(`tc-${currentSlide}`);
-  const prevDot = document.getElementById(`dot-${currentSlide}`);
-  if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(()=>prev.classList.remove('exit'),600); }
-  if (prevDot) prevDot.classList.remove('active');
-
-  currentSlide = n;
-
-  const next = document.getElementById(`tc-${currentSlide}`);
-  const nextDot = document.getElementById(`dot-${currentSlide}`);
-  if (next) next.classList.add('active');
-  if (nextDot) nextDot.classList.add('active');
-
-  // Reset progress bar
-  restartProgress();
-}
-
-function nextSlide() {
-  goToSlide((currentSlide + 1) % TOOLS.length);
-}
-
-function startAutoplay() {
-  slideTimer = setInterval(nextSlide, SLIDE_DURATION);
-  restartProgress();
-}
-
-function restartProgress() {
-  const fill = document.getElementById('progress-fill');
-  if (!fill) return;
-  fill.style.animation = 'none';
-  fill.offsetHeight; // reflow
-  fill.style.animation = `progressAnim ${SLIDE_DURATION}ms linear`;
-}
-
-window.goToSlide = goToSlide;
-
-// ── BUILD CATEGORIES ──────────────────────────────────────────────
-function buildCats() {
-  const grid = document.getElementById('cats-grid');
-  grid.innerHTML = CATS.map(c => `
-    <div class="cat-pill" onclick="alert('Searching for ${c.name}s...')">
-      <span>${c.icon}</span> ${c.name}
+      <div id="signup-form" class="hidden">
+        <input id="signup-name" type="text" placeholder="Full name" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="signup-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="signup-password" type="password" placeholder="Password (6+ chars)" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
+        <button onclick="signup()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Create Account</button>
+      </div>
     </div>
-  `).join('');
-}
+  </div>
 
-// ── FLOATING BG TOOLS ─────────────────────────────────────────────
-function buildBgTools() {
-  const container = document.getElementById('bg-tools');
-  const bgEmojis = ['✂️','🔨','🔧','⛑️','🧤','📷','💅','🪚','💪','🍳'];
-  bgEmojis.forEach((e, i) => {
-    const el = document.createElement('div');
-    el.className = 'bg-tool';
-    el.textContent = e;
-    el.style.cssText = `
-      left: ${10 + (i * 9)}%;
-      bottom: -60px;
-      animation-duration: ${20 + Math.random() * 20}s;
-      animation-delay: ${Math.random() * 20}s;
-      font-size: ${24 + Math.random() * 20}px;
-    `;
-    container.appendChild(el);
-  });
-}
+  <!-- MAIN APP -->
+  <div id="main-app" class="hidden max-w-7xl mx-auto px-6 py-8">
+    
+    <!-- CUSTOMER MODE: Search & Map -->
+    <div id="customer-view">
+      <div class="mb-8">
+        <h2 class="text-3xl font-semibold logo-font mb-2">Find nearby pros</h2>
+        <p class="text-zinc-400">Search for any service, set your radius, explore profiles</p>
+      </div>
 
-// ── COUNTER ANIMATION ─────────────────────────────────────────────
-function animateCount(el, end, suffix='', duration=2000) {
-  let start = 0;
-  const step = end / (duration / 16);
-  const timer = setInterval(() => {
-    start = Math.min(start + step, end);
-    el.textContent = Math.floor(start) + suffix;
-    if (start >= end) clearInterval(timer);
-  }, 16);
-}
+      <!-- Search Bar -->
+      <div class="card rounded-3xl p-6 mb-8">
+        <div class="flex flex-col lg:flex-row gap-4">
+          <div class="flex-1 relative">
+            <input id="search-term" type="text" placeholder="What service do you need? (barber, plumber, photographer...)" 
+                   class="dark-input w-full px-6 py-5 rounded-2xl text-white placeholder-zinc-500 text-base pr-12"
+                   onkeypress="if(event.key==='Enter') searchProviders()">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
+          </div>
+          
+          <div class="flex items-center gap-4 bg-zinc-900 rounded-2xl px-6 py-3">
+            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Radius</span>
+            <input id="max-distance" type="range" min="1" max="50" value="10" class="accent-cyan-400 w-32 cursor-pointer">
+            <span id="distance-value" class="font-mono text-cyan-400 text-lg w-16 text-right">10 km</span>
+          </div>
+          
+          <button onclick="searchProviders()" 
+                  class="bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 text-zinc-950 font-semibold px-10 py-5 rounded-2xl transition-all flex items-center gap-2">
+            <span>Search</span>
+          </button>
+        </div>
+        
+        <!-- Quick filters -->
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <button onclick="quickSearch('barber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">💈 Barber</button>
+          <button onclick="quickSearch('plumber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">🔧 Plumber</button>
+          <button onclick="quickSearch('photographer')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📸 Photographer</button>
+          <button onclick="quickSearch('tutor')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📚 Tutor</button>
+          <button onclick="quickSearch('chef')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">👨‍🍳 Chef</button>
+        </div>
+      </div>
 
-// Trigger counter when stats come into view
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      animateCount(document.getElementById('cnt-providers'), 100, '+');
-      observer.disconnect();
+      <!-- Results Section -->
+      <div id="results-section" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- Map -->
+        <div class="xl:col-span-2 card rounded-3xl overflow-hidden border border-zinc-800">
+          <div class="bg-zinc-900 px-6 py-3 flex items-center justify-between border-b border-zinc-800">
+            <p class="text-sm font-medium text-cyan-400">📍 Click pins to view profiles</p>
+            <span id="results-count" class="text-xs text-zinc-500">0 providers found</span>
+          </div>
+          <div id="map" class="w-full"></div>
+        </div>
+        
+        <!-- Results List -->
+        <div class="xl:col-span-1 card rounded-3xl p-6 flex flex-col max-h-[600px]">
+          <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Nearby Providers
+          </h3>
+          <div id="results-list" class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="card rounded-3xl h-96 flex items-center justify-center flex-col border border-dashed border-zinc-700 text-center p-8">
+        <div class="text-6xl mb-4">🗺️</div>
+        <h3 class="text-xl font-semibold mb-2">Discover local talent</h3>
+        <p class="text-zinc-500 max-w-md">Search for any service to see providers on the map. Click their pins to view full profiles with portfolios.</p>
+      </div>
+    </div>
+
+    <!-- PROVIDER MODE: My Profile -->
+    <div id="provider-view" class="hidden max-w-4xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Profile Edit -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="card rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">✏️ Edit Profile</h3>
+            
+            <!-- Avatar -->
+            <div class="flex items-center gap-6 mb-8">
+              <div class="relative">
+                <img id="edit-avatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-zinc-800">
+                <label class="absolute bottom-0 right-0 w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-cyan-300 transition">
+                  <span class="text-zinc-900 text-xs">📷</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="updateAvatar(this)">
+                </label>
+              </div>
+              <div>
+                <h4 class="font-semibold text-lg" id="edit-name">Name</h4>
+                <p class="text-zinc-500 text-sm">Update your profile to attract customers</p>
+              </div>
+            </div>
+
+            <!-- Services -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Services You Offer</label>
+              <div class="flex gap-2 mb-3 flex-wrap" id="my-services">
+                <!-- Dynamic tags -->
+              </div>
+              <div class="flex gap-2">
+                <input id="new-service" type="text" placeholder="Add a service (e.g., Haircut, Web Design)" 
+                       class="dark-input flex-1 px-4 py-3 rounded-xl text-white text-sm"
+                       onkeypress="if(event.key==='Enter') addService()">
+                <button onclick="addService()" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium transition">Add</button>
+              </div>
+            </div>
+
+            <!-- Bio -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Bio</label>
+              <textarea id="provider-bio" rows="4" placeholder="Tell customers about your experience, availability, and what makes you unique..." 
+                        class="dark-input w-full px-4 py-3 rounded-xl text-white resize-none"></textarea>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-6 p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-medium flex items-center gap-2">📍 Your Location</span>
+                <button onclick="getCurrentLocation()" class="text-sm text-cyan-400 hover:text-cyan-300 transition">Update Location</button>
+              </div>
+              <p id="location-status" class="text-sm text-zinc-500">Set your location to appear on the map when customers search</p>
+              <div id="location-map-mini" class="mt-3 h-32 rounded-xl bg-zinc-800 hidden"></div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mb-8">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Contact Info</label>
+              <input id="contact-phone" type="tel" placeholder="Phone number (optional)" 
+                     class="dark-input w-full px-4 py-3 rounded-xl text-white mb-3">
+              <input id="contact-instagram" type="text" placeholder="Instagram handle (optional)" 
+                     class="dark-input w-full px-4 py-3 rounded-xl text-white">
+            </div>
+
+            <button onclick="saveProfile()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-4 rounded-2xl font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition">
+              Save Profile
+            </button>
+          </div>
+        </div>
+
+        <!-- Portfolio Upload -->
+        <div class="lg:col-span-1">
+          <div class="card rounded-3xl p-6 sticky top-24">
+            <h3 class="font-semibold mb-4">📸 Portfolio Photos</h3>
+            <p class="text-sm text-zinc-500 mb-4">Upload photos of your work. These appear in your profile gallery.</p>
+            
+            <input type="file" id="portfolio-input" accept="image/*" multiple class="hidden" onchange="previewPhotos(this)">
+            <button onclick="document.getElementById('portfolio-input').click()" 
+                    class="w-full py-4 border-2 border-dashed border-zinc-700 rounded-2xl hover:border-cyan-400 hover:bg-zinc-900/50 transition mb-4 text-zinc-400 hover:text-cyan-400">
+              + Add Photos
+            </button>
+
+            <div id="photo-preview-grid" class="grid grid-cols-2 gap-2">
+              <!-- Preview thumbnails -->
+            </div>
+            
+            <button onclick="uploadPhotos()" id="upload-btn" class="hidden w-full mt-4 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-medium transition">
+              Upload <span id="upload-count">0</span> Photos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Public Profile Modal -->
+  <div id="profile-modal" class="profile-modal" onclick="if(event.target===this) closeProfileModal()">
+    <div class="min-h-screen p-4 md:p-8">
+      <button onclick="closeProfileModal()" class="fixed top-6 right-6 w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800 transition z-10">×</button>
+      
+      <div class="max-w-2xl mx-auto card rounded-3xl overflow-hidden mt-8">
+        <!-- Header -->
+        <div class="relative h-48 bg-gradient-to-br from-cyan-400/20 to-indigo-500/20">
+          <div class="absolute -bottom-16 left-8">
+            <img id="modal-avatar" src="" class="w-32 h-32 rounded-full object-cover border-4 border-zinc-900 bg-zinc-800">
+          </div>
+        </div>
+        
+        <div class="pt-20 px-8 pb-8">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 id="modal-name" class="text-2xl font-bold mb-1"></h2>
+              <p id="modal-services" class="text-cyan-400 flex gap-2 flex-wrap"></p>
+            </div>
+            <div id="modal-distance" class="px-4 py-2 bg-zinc-900 rounded-full text-sm font-mono"></div>
+          </div>
+          
+          <p id="modal-bio" class="text-zinc-300 mb-6 leading-relaxed"></p>
+          
+          <div class="flex gap-4 mb-8">
+            <button onclick="contactProvider()" class="flex-1 bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-3 rounded-xl font-semibold hover:shadow-lg transition">
+              Contact Now
+            </button>
+            <button onclick="shareProfile()" class="px-6 py-3 bg-zinc-900 rounded-xl hover:bg-zinc-800 transition">
+              ↗️ Share
+            </button>
+          </div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-3 gap-4 mb-8 py-6 border-y border-zinc-800">
+            <div class="text-center">
+              <div id="modal-photo-count" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Photos</div>
+            </div>
+            <div class="text-center">
+              <div id="modal-service-count" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Services</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-cyan-400">★</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Available</div>
+            </div>
+          </div>
+
+          <!-- Portfolio Grid -->
+          <h3 class="font-semibold mb-4">Portfolio</h3>
+          <div id="modal-portfolio" class="instagram-grid">
+            <!-- Photos -->
+          </div>
+div>
+
+      <div id="nav-auth" class="hidden items-center gap-6">
+        <div class="mode-toggle" id="mode-switcher" style="display: none;">
+          <button onclick="switchMode('customer')" id="mode-customer" class="active">Find Services</button>
+          <button onclick="switchMode('provider')" id="mode-provider">My Profile</button>
+        </div>
+        <div class="flex items-center gap-3 cursor-pointer" onclick="showMyProfile()">
+          <img id="nav-avatar" src="" class="w-9 h-9 rounded-full object-cover border-2 border-zinc-700 hidden">
+          <div id="nav-initial" class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-indigo-500 rounded-full flex items-center justify-center text-sm font-bold"></div>
+        </div>
+        <button onclick="logout()" class="text-sm text-zinc-400 hover:text-red-400 transition">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- AUTH PAGE -->
+  <div id="auth-page" class="max-w-md mx-auto pt-12 px-6 pb-20">
+    <div class="card rounded-3xl p-8">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-semibold logo-font text-white mb-2">Welcome to SkillSpot</h2>
+        <p class="text-zinc-400">Offer skills. Find skills. All in one place.</p>
+      </div>
+      
+      <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
+        <button onclick="switchTab(0)" id="tab-login" class="flex-1 py-3 font-semibold rounded-xl transition-all bg-zinc-800 text-white">Login</button>
+        <button onclick="switchTab(1)" id="tab-signup" class="flex-1 py-3 font-semibold rounded-xl transition-all text-zinc-400">Sign Up</button>
+      </div>
+
+      <div id="login-form">
+        <input id="login-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="login-password" type="password" placeholder="Password" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
+        <button onclick="login()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Login</button>
+      </div>
+
+      <div id="signup-form" class="hidden">
+        <input id="signup-name" type="text" placeholder="Full name" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="signup-email" type="email" placeholder="Email address" class="dark-input w-full px-5 py-4 rounded-2xl mb-4 text-white">
+        <input id="signup-password" type="password" placeholder="Password (6+ chars)" class="dark-input w-full px-5 py-4 rounded-2xl mb-6 text-white">
+        <button onclick="signup()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 font-semibold py-4 rounded-2xl hover:shadow-lg hover:shadow-cyan-500/25 transition">Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" class="hidden max-w-7xl mx-auto px-6 py-8">
+    
+    <!-- CUSTOMER MODE: Search & Map -->
+    <div id="customer-view">
+      <div class="mb-8">
+        <h2 class="text-3xl font-semibold logo-font mb-2">Find nearby pros</h2>
+        <p class="text-zinc-400">Search for any service, set your radius, explore profiles</p>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="card rounded-3xl p-6 mb-8">
+        <div class="flex flex-col lg:flex-row gap-4">
+          <div class="flex-1 relative">
+            <input id="search-term" type="text" placeholder="What service do you need? (barber, plumber, photographer...)" 
+                   class="dark-input w-full px-6 py-5 rounded-2xl text-white placeholder-zinc-500 text-base pr-12"
+                   onkeypress="if(event.key==='Enter') searchProviders()">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
+          </div>
+          
+          <div class="flex items-center gap-4 bg-zinc-900 rounded-2xl px-6 py-3">
+            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Radius</span>
+            <input id="max-distance" type="range" min="1" max="50" value="10" class="accent-cyan-400 w-32 cursor-pointer">
+            <span id="distance-value" class="font-mono text-cyan-400 text-lg w-16 text-right">10 km</span>
+          </div>
+          
+          <button onclick="searchProviders()" 
+                  class="bg-gradient-to-r from-cyan-400 to-indigo-500 hover:from-cyan-300 text-zinc-950 font-semibold px-10 py-5 rounded-2xl transition-all flex items-center gap-2">
+            <span>Search</span>
+          </button>
+        </div>
+        
+        <!-- Quick filters -->
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <button onclick="quickSearch('barber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">💈 Barber</button>
+          <button onclick="quickSearch('plumber')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">🔧 Plumber</button>
+          <button onclick="quickSearch('photographer')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📸 Photographer</button>
+          <button onclick="quickSearch('tutor')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">📚 Tutor</button>
+          <button onclick="quickSearch('chef')" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-full text-sm text-zinc-300 transition">👨‍🍳 Chef</button>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="results-section" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- Map -->
+        <div class="xl:col-span-2 card rounded-3xl overflow-hidden border border-zinc-800">
+          <div class="bg-zinc-900 px-6 py-3 flex items-center justify-between border-b border-zinc-800">
+            <p class="text-sm font-medium text-cyan-400">📍 Click pins to view profiles</p>
+            <span id="results-count" class="text-xs text-zinc-500">0 providers found</span>
+          </div>
+          <div id="map" class="w-full"></div>
+        </div>
+        
+        <!-- Results List -->
+        <div class="xl:col-span-1 card rounded-3xl p-6 flex flex-col max-h-[600px]">
+          <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Nearby Providers
+          </h3>
+          <div id="results-list" class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="card rounded-3xl h-96 flex items-center justify-center flex-col border border-dashed border-zinc-700 text-center p-8">
+        <div class="text-6xl mb-4">🗺️</div>
+        <h3 class="text-xl font-semibold mb-2">Discover local talent</h3>
+        <p class="text-zinc-500 max-w-md">Search for any service to see providers on the map. Click their pins to view full profiles with portfolios.</p>
+      </div>
+    </div>
+
+    <!-- PROVIDER MODE: My Profile -->
+    <div id="provider-view" class="hidden max-w-4xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Profile Edit -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="card rounded-3xl p-8">
+            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">✏️ Edit Profile</h3>
+            
+            <!-- Avatar -->
+            <div class="flex items-center gap-6 mb-8">
+              <div class="relative">
+                <img id="edit-avatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-zinc-800">
+                <label class="absolute bottom-0 right-0 w-8 h-8 bg-cyan-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-cyan-300 transition">
+                  <span class="text-zinc-900 text-xs">📷</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="updateAvatar(this)">
+                </label>
+              </div>
+              <div>
+                <h4 class="font-semibold text-lg" id="edit-name">Name</h4>
+                <p class="text-zinc-500 text-sm">Update your profile to attract customers</p>
+              </div>
+            </div>
+
+            <!-- Services -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Services You Offer</label>
+              <div class="flex gap-2 mb-3 flex-wrap" id="my-services">
+                <!-- Dynamic tags -->
+              </div>
+              <div class="flex gap-2">
+                <input id="new-service" type="text" placeholder="Add a service (e.g., Haircut, Web Design)" 
+                       class="dark-input flex-1 px-4 py-3 rounded-xl text-white text-sm"
+                       onkeypress="if(event.key==='Enter') addService()">
+                <button onclick="addService()" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium transition">Add</button>
+              </div>
+            </div>
+
+            <!-- Bio -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Bio</label>
+              <textarea id="provider-bio" rows="4" placeholder="Tell customers about your experience, availability, and what makes you unique..." 
+                        class="dark-input w-full px-4 py-3 rounded-xl text-white resize-none"></textarea>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-6 p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-medium flex items-center gap-2">📍 Your Location</span>
+                <button onclick="getCurrentLocation()" class="text-sm text-cyan-400 hover:text-cyan-300 transition">Update Location</button>
+              </div>
+              <p id="location-status" class="text-sm text-zinc-500">Set your location to appear on the map when customers search</p>
+              <div id="location-map-mini" class="mt-3 h-32 rounded-xl bg-zinc-800 hidden"></div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mb-8">
+              <label class="block text-sm font-medium text-zinc-400 mb-3">Contact Info</label>
+              <input id="contact-phone" type="tel" placeholder="Phone number (optional)" 
+                     class="dark-input w-full px-4 py-3 rounded-xl text-white mb-3">
+              <input id="contact-instagram" type="text" placeholder="Instagram handle (optional)" 
+                     class="dark-input w-full px-4 py-3 rounded-xl text-white">
+            </div>
+
+            <button onclick="saveProfile()" class="w-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-4 rounded-2xl font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition">
+              Save Profile
+            </button>
+          </div>
+        </div>
+
+        <!-- Portfolio Upload -->
+        <div class="lg:col-span-1">
+          <div class="card rounded-3xl p-6 sticky top-24">
+            <h3 class="font-semibold mb-4">📸 Portfolio Photos</h3>
+            <p class="text-sm text-zinc-500 mb-4">Upload photos of your work. These appear in your profile gallery.</p>
+            
+            <input type="file" id="portfolio-input" accept="image/*" multiple class="hidden" onchange="previewPhotos(this)">
+            <button onclick="document.getElementById('portfolio-input').click()" 
+                    class="w-full py-4 border-2 border-dashed border-zinc-700 rounded-2xl hover:border-cyan-400 hover:bg-zinc-900/50 transition mb-4 text-zinc-400 hover:text-cyan-400">
+              + Add Photos
+            </button>
+
+            <div id="photo-preview-grid" class="grid grid-cols-2 gap-2">
+              <!-- Preview thumbnails -->
+            </div>
+            
+            <button onclick="uploadPhotos()" id="upload-btn" class="hidden w-full mt-4 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-medium transition">
+              Upload <span id="upload-count">0</span> Photos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Public Profile Modal -->
+  <div id="profile-modal" class="profile-modal" onclick="if(event.target===this) closeProfileModal()">
+    <div class="min-h-screen p-4 md:p-8">
+      <button onclick="closeProfileModal()" class="fixed top-6 right-6 w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-2xl hover:bg-zinc-800 transition z-10">×</button>
+      
+      <div class="max-w-2xl mx-auto card rounded-3xl overflow-hidden mt-8">
+        <!-- Header -->
+        <div class="relative h-48 bg-gradient-to-br from-cyan-400/20 to-indigo-500/20">
+          <div class="absolute -bottom-16 left-8">
+            <img id="modal-avatar" src="" class="w-32 h-32 rounded-full object-cover border-4 border-zinc-900 bg-zinc-800">
+          </div>
+        </div>
+        
+        <div class="pt-20 px-8 pb-8">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 id="modal-name" class="text-2xl font-bold mb-1"></h2>
+              <p id="modal-services" class="text-cyan-400 flex gap-2 flex-wrap"></p>
+            </div>
+            <div id="modal-distance" class="px-4 py-2 bg-zinc-900 rounded-full text-sm font-mono"></div>
+          </div>
+          
+          <p id="modal-bio" class="text-zinc-300 mb-6 leading-relaxed"></p>
+          
+          <div class="flex gap-4 mb-8">
+            <button onclick="contactProvider()" class="flex-1 bg-gradient-to-r from-cyan-400 to-indigo-500 text-zinc-950 py-3 rounded-xl font-semibold hover:shadow-lg transition">
+              Contact Now
+            </button>
+            <button onclick="shareProfile()" class="px-6 py-3 bg-zinc-900 rounded-xl hover:bg-zinc-800 transition">
+              ↗️ Share
+            </button>
+          </div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-3 gap-4 mb-8 py-6 border-y border-zinc-800">
+            <div class="text-center">
+              <div id="modal-photo-count" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Photos</div>
+            </div>
+            <div class="text-center">
+              <div id="modal-service-count" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Services</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-cyan-400">★</div>
+              <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Available</div>
+            </div>
+          </div>
+
+          <!-- Portfolio Grid -->
+          <h3 class="font-semibold mb-4">Portfolio</h3>
+          <div id="modal-portfolio" class="instagram-grid">
+            <!-- Photos -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div id="lightbox" class="image-lightbox" onclick="closeLightbox()">
+    <button class="fixed top-6 right-6 text-white text-4xl hover:text-cyan-400 transition">&times;</button>
+    <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-8 right-8 px-6 py-4 rounded-2xl text-sm font-medium shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300"></div>
+
+  <script type="module">
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
+      authDomain: "skillspot95611.firebaseapp.com",
+      projectId: "skillspot95611",
+      storageBucket: "skillspot95611.firebasestorage.app",
+      messagingSenderId: "880371869598",
+      appId: "1:880371869598:web:359ba15c51474fd595188f",
+      measurementId: "G-36ELL41V4Q"
+    };
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
+    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // State
+    let currentUser = null;
+    let userData = null;
+    let currentMode = 'customer';
+    let map = null;
+    let markers = [];
+    let selectedFiles = [];
+    let currentProviders = [];
+
+    // Initialize
+    window.switchTab = switchTab;
+    window.signup = signup;
+    window.login = login;
+    window.logout = logout;
+    window.switchMode = switchMode;
+    window.searchProviders = searchProviders;
+    window.quickSearch = quickSearch;
+    window.addService = addService;
+    window.removeService = removeService;
+    window.saveProfile = saveProfile;
+    window.getCurrentLocation = getCurrentLocation;
+    window.updateAvatar = updateAvatar;
+    window.previewPhotos = previewPhotos;
+    window.removePreview = removePreview;
+    window.uploadPhotos = uploadPhotos;
+    window.showMyProfile = showMyProfile;
+    window.showDashboard = showDashboard;
+    window.closeProfileModal = closeProfileModal;
+    window.viewProviderProfile = viewProviderProfile;
+    window.openLightbox = openLightbox;
+    window.closeLightbox = closeLightbox;
+    window.contactProvider = contactProvider;
+    window.shareProfile = shareProfile;
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.className = `fixed bottom-8 right-8 px-6 py-4 rounded-2xl text-sm font-medium shadow-2xl z-50 transform transition-all duration-300 ${type === 'success' ? 'bg-cyan-400 text-zinc-900' : 'bg-red-500 text-white'}`;
+      toast.textContent = message;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(20px)';
+        toast.style.opacity = '0';
+      }, 3000);
     }
-  });
-}, { threshold: 0.5 });
 
-// ── INIT ──────────────────────────────────────────────────────────
-buildSlideshow();
-buildCats();
-buildBgTools();
+    function switchTab(tab) {
+      const login = document.getElementById('login-form');
+      const signup = document.getElementById('signup-form');
+      const tabLogin = document.getElementById('tab-login');
+      const tabSignup = document.getElementById('tab-signup');
 
-// Observe stats
-const statsEl = document.querySelector('.stats-strip');
-if (statsEl) observer.observe(statsEl);
-</script>
+      if (tab === 0) {
+        login.classList.remove('hidden');
+        signup.classList.add('hidden');
+        tabLogin.classList.add('bg-zinc-800', 'text-white');
+        tabLogin.classList.remove('text-zinc-400');
+        tabSignup.classList.remove('bg-zinc-800', 'text-white');
+        tabSignup.classList.add('text-zinc-400');
+      } else {
+        login.classList.add('hidden');
+        signup.classList.remove('hidden');
+        tabSignup.classList.add('bg-zinc-800', 'text-white');
+        tabSignup.classList.remove('text-zinc-400');
+        tabLogin.classList.remove('bg-zinc-800', 'text-white');
+        tabLogin.classList.add('text-zinc-400');
+      }
+    }
 
-</body>
-</html>
+    async function signup() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value.trim();
+
+      if (!name || !email || !password) {
+        showToast('Please fill all fields', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        showToast('Password must be 6+ characters', 'error');
+        return;
+      }
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+        
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name,
+          email,
+          services: [],
+          bio: "",
+          lat: null,
+          lng: null,
+          portfolio: [],
+          avatar: null,
+          phone: "",
+          instagram: "",
+          createdAt: new Date().toISOString()
+        });
+        
+        showToast('Account created! Welcome to SkillSpot');
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function logout() {
+      await signOut(auth);
+      currentMode = 'customer';
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        userData = docSnap.data();
+        
+        // Update nav
+        document.getElementById('nav-auth').classList.remove('hidden');
+        document.getElementById('nav-auth').classList.add('flex');
+        document.getElementById('nav-initial').textContent = userData.name[0].toUpperCase();
+        
+        if (userData.avatar) {
+          document.getElementById('nav-avatar').src = userData.avatar;
+          document.getElementById('nav-avatar').classList.remove('hidden');
+          document.getElementById('nav-initial').classList.add('hidden');
+        }
+        
+        document.getElementById('auth-page').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('mode-switcher').style.display = 'flex';
+        
+        switchMode('customer');
+      } else {
+        document.getElementById('auth-page').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('nav-auth').classList.add('hidden');
+        document.getElementById('nav-auth').classList.remove('flex');
+      }
+    });
+
+    function switchMode(mode) {
+      currentMode = mode;
+      const customerBtn = document.getElementById('mode-customer');
+      const providerBtn = document.getElementById('mode-provider');
+      const customerView = document.getElementById('customer-view');
+      const providerView = document.getElementById('provider-view');
+
+      if (mode === 'customer') {
+        customerBtn.classList.add('active');
+        providerBtn.classList.remove('active');
+        customerView.classList.remove('hidden');
+        providerView.classList.add('hidden');
+      } else {
+        providerBtn.classList.add('active');
+        customerBtn.classList.remove('active');
+        customerView.classList.add('hidden');
+        providerView.classList.remove('hidden');
+        loadProviderProfile();
+      }
+    }
+
+    function showDashboard() {
+      switchMode('customer');
+    }
+
+    function showMyProfile() {
+      switchMode('provider');
+    }
+
+    // Provider Profile Functions
+    async function loadProviderProfile() {
+      if (!userData) return;
+      
+      document.getElementById('edit-name').textContent = userData.name;
+      document.getElementById('provider-bio').value = userData.bio || '';
+      document.getElementById('contact-phone').value = userData.phone || '';
+      document.getElementById('contact-instagram').value = userData.instagram || '';
+      
+      if (userData.avatar) {
+        document.getElementById('edit-avatar').src = userData.avatar;
+      } else {
+        document.getElementById('edit-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff&size=128`;
+      }
+
+      // Render services
+      const servicesContainer = document.getElementById('my-services');
+      servicesContainer.innerHTML = (userData.services || []).map(service => `
+        <span class="service-tag">
+          ${service}
+          <button onclick="removeService('${service}')" title="Remove">×</button>
+        </span>
+      `).join('');
+
+      // Render existing portfolio
+      const grid = document.getElementById('photo-preview-grid');
+      grid.innerHTML = (userData.portfolio || []).map((url, idx) => `
+        <div class="photo-upload-preview">
+          <img src="${url}">
+          <button class="remove-btn" onclick="deletePhoto(${idx}, '${url}')">×</button>
+        </div>
+      `).join('');
+
+      // Location status
+      if (userData.lat && userData.lng) {
+        document.getElementById('location-status').innerHTML = `✅ Location set (${userData.lat.toFixed(4)}, ${userData.lng.toFixed(4)})`;
+      }
+    }
+
+    async function addService() {
+      const input = document.getElementById('new-service');
+      const service = input.value.trim();
+      
+      if (!service) return;
+      if (userData.services?.includes(service)) {
+        showToast('Service already added', 'error');
+        return;
+      }
+
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        services: arrayUnion(service)
+      });
+      
+      userData.services = [...(userData.services || []), service];
+      input.value = '';
+      loadProviderProfile();
+      showToast('Service added');
+    }
+
+    async function removeService(service) {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        services: arrayRemove(service)
+      });
+      
+      userData.services = userData.services.filter(s => s !== service);
+      loadProviderProfile();
+      showToast('Service removed');
+    }
+
+    async function saveProfile() {
+      const bio = document.getElementById('provider-bio').value.trim();
+      const phone = document.getElementById('contact-phone').value.trim();
+      const instagram = document.getElementById('contact-instagram').value.trim();
+
+      await updateDoc(doc(db, "users", currentUser.uid), { bio, phone, instagram });
+      userData = { ...userData, bio, phone, instagram };
+      showToast('Profile saved successfully');
+    }
+
+    async function getCurrentLocation() {
+      if (!navigator.geolocation) {
+        showToast('Geolocation not supported', 'error');
+        return;
+      }
+
+      showToast('Getting your location...');
+      
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          lat: latitude,
+          lng: longitude
+        });
+        
+        userData.lat = latitude;
+        userData.lng = longitude;
+        
+        document.getElementById('location-status').innerHTML = `✅ Location updated (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        showToast('Location saved! You will appear on the map');
+      }, (err) => {
+        showToast('Could not get location: ' + err.message, 'error');
+      });
+    }
+
+    async function updateAvatar(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      try {
+        showToast('Uploading avatar...');
+        const storageRef = ref(storage, `avatars/${currentUser.uid}/${Date.now()}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        
+        await updateDoc(doc(db, "users", currentUser.uid), { avatar: url });
+        await updateProfile(currentUser, { photoURL: url });
+        
+        userData.avatar = url;
+        document.getElementById('edit-avatar').src = url;
+        document.getElementById('nav-avatar').src = url;
+        document.getElementById('nav-avatar').classList.remove('hidden');
+        document.getElementById('nav-initial').classList.add('hidden');
+        
+        showToast('Avatar updated');
+      } catch (e) {
+        showToast('Upload failed: ' + e.message, 'error');
+      }
+    }
+
+    // Photo Upload
+    function previewPhotos(input) {
+      selectedFiles = Array.from(input.files);
+      updatePhotoPreview();
+    }
+
+    function removePreview(index) {
+      selectedFiles.splice(index, 1);
+      updatePhotoPreview();
+    }
+
+    function updatePhotoPreview() {
+      const grid = document.getElementById('photo-preview-grid');
+      const existingPhotos = (userData.portfolio || []).map((url, idx) => `
+        <div class="photo-upload-preview">
+          <img src="${url}">
+          <button class="remove-btn" onclick="deletePhoto(${idx}, '${url}')">×</button>
+        </div>
+      `).join('');
+
+      const newPhotos = selectedFiles.map((file, idx) => `
+        <div class="photo-upload-preview opacity-50">
+          <img src="${URL.createObjectURL(file)}">
+          <button class="remove-btn" onclick="removePreview(${idx})">×</button>
+        </div>
+      `).join('');
+
+      grid.innerHTML = existingPhotos + newPhotos;
+
+      const uploadBtn = document.getElementById('upload-btn');
+      const uploadCount = document.getElementById('upload-count');
+      
+      if (selectedFiles.length > 0) {
+        uploadBtn.classList.remove('hidden');
+        uploadCount.textContent = selectedFiles.length;
+      } else {
+        uploadBtn.classList.add('hidden');
+      }
+    }
+
+    async function uploadPhotos() {
+      if (selectedFiles.length === 0) return;
+
+      showToast(`Uploading ${selectedFiles.length} photos...`);
+      const uploadBtn = document.getElementById('upload-btn');
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+
+      try {
+        const urls = [];
+        for (const file of selectedFiles) {
+          const storageRef = ref(storage, `portfolio/${currentUser.uid}/${Date.now()}_${file.name}`);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          urls.push(url);
+        }
+
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          portfolio: arrayUnion(...urls)
+        });
+
+        userData.portfolio = [...(userData.portfolio || []), ...urls];
+        selectedFiles = [];
+        loadProviderProfile();
+        showToast('Photos uploaded successfully');
+      } catch (e) {
+        showToast('Upload failed: ' + e.message, 'error');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload Photos';
+      }
+    }
+
+    async function deletePhoto(index, url) {
+      if (!confirm('Delete this photo?')) return;
+
+      try {
+        // Remove from Firestore
+        const newPortfolio = [...userData.portfolio];
+        newPortfolio.splice(index, 1);
+        await updateDoc(doc(db, "users", currentUser.uid), { portfolio: newPortfolio });
+        
+        // Try to delete from storage (may fail if URL is external)
+        try {
+          const storageRef = ref(storage, url);
+          await deleteObject(storageRef);
+        } catch (e) {
+          // Ignore storage deletion errors
+        }
+
+        userData.portfolio = newPortfolio;
+        loadProviderProfile();
+        showToast('Photo deleted');
+      } catch (e) {
+        showToast('Delete failed', 'error');
+      }
+    }
+
+    // Search & Map Functions
+    function initMap() {
+      if (map) return;
+      map = L.map('map').setView([9.0, 7.5], 6);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CartoDB'
+      }).addTo(map);
+    }
+
+    async function searchProviders() {
+      const term = document.getElementById('search-term').value.trim().toLowerCase();
+      const maxKm = parseFloat(document.getElementById('max-distance').value);
+
+      if (!term) {
+        showToast('Enter a service to search', 'error');
+        return;
+      }
+
+      // Get customer location first
+      showToast('Finding your location...');
+      
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const customerLat = pos.coords.latitude;
+        const customerLng = pos.coords.longitude;
+        
+        await performSearch(term, maxKm, customerLat, customerLng);
+      }, async (err) => {
+        // If location denied, search without distance filter
+        showToast('Location access denied. Showing all providers.', 'error');
+        await performSearch(term, maxKm, null, null);
+      });
+    }
+
+    function quickSearch(term) {
+      document.getElementById('search-term').value = term;
