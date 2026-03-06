@@ -83,6 +83,7 @@ textarea.inp{resize:vertical}
 .provider-cta-sub{color:var(--muted);font-size:15px;font-family:'DM Sans',sans-serif}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ════════════════════════
    AUTH PAGE
@@ -458,7 +459,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     <div class="photo-grid" id="my-photo-grid"></div>
     <div class="add-bar">
       <input id="photo-input" type="file" accept="image/*" multiple style="display:none;" onchange="handlePhotoSelect(this)"/>
-      <button class="btn-ghost-sm" style="flex:1;padding:11px;font-size:13px;font-weight:600;border-style:dashed;"
+      <button id="photo-add-btn" class="btn-ghost-sm" style="flex:1;padding:11px;font-size:13px;font-weight:600;border-style:dashed;"
         onclick="document.getElementById('photo-input').click()" aria-label="Add work photos">＋ Add Work Photos</button>
     </div>
     <div class="previews-wrap" id="photo-previews"></div>
@@ -771,7 +772,6 @@ function renderModal() {
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyAPKUM4Tzk0g80o3AgQRyzcGKNMZx7GJEE",
@@ -782,11 +782,74 @@ const app = initializeApp({
   appId: "1:880371869598:web:359ba15c51474fd595188f"
 });
 
-const auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
+const auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
 let curUser = null, curProfile = null, leafMap = null;
-// FIX: Use a proper array for pending photos (not FileList)
 let pendingPhotos = [], pendingAvatar = null;
+
+// ── CLOUDINARY CONFIG ──
+const CLOUDINARY_CLOUD = 'dszdwnuua';
+const CLOUDINARY_PRESET = 'Gigscourt';
+const CLOUDINARY_FOLDER = 'Gigscourt';
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`;
+
+// ── IMAGE COMPRESSION ──
+// Compresses a File to a canvas-drawn Blob, max 2MB, max 1600px wide, image/* only.
+async function compressImage(file, maxMB = 2, maxPx = 1600) {
+  const ALLOWED = ['image/jpeg','image/png','image/webp','image/gif'];
+  if (!ALLOWED.includes(file.type)) throw new Error(`File type ${file.type} is not allowed. Use JPG, PNG, or WebP.`);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
+        else { width = Math.round(width * maxPx / height); height = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      // Start at quality 0.85, reduce if still over maxMB
+      let quality = 0.85;
+      const tryEncode = () => {
+        canvas.toBlob(blob => {
+          if (!blob) return reject(new Error('Compression failed'));
+          if (blob.size > maxMB * 1024 * 1024 && quality > 0.4) {
+            quality -= 0.1;
+            tryEncode();
+          } else {
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          }
+        }, 'image/jpeg', quality);
+      };
+      tryEncode();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+    img.src = url;
+  });
+}
+
+// ── CLOUDINARY UPLOAD ──
+// Uploads a single File to Cloudinary, returns secure_url string.
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  fd.append('folder', CLOUDINARY_FOLDER);
+
+  const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Upload failed (${res.status})`);
+  }
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('No URL returned from Cloudinary');
+  return data.secure_url;
+}
 
 function refreshNavAv(p) {
   const av = $('nav-av'); if (!av) return;
@@ -1063,21 +1126,50 @@ function updateCompletenessBar(p) {
 }
 
 // ── AVATAR SELECTION ──
-window.handleAvatarSelect = function(input) {
+// Compress immediately on select so the user sees the preview at final quality.
+window.handleAvatarSelect = async function(input) {
   const file = input.files[0]; if (!file) return;
-  pendingAvatar = file;
-  const url = URL.createObjectURL(file);
-  $('prof-av').innerHTML = `<img src="${url}" alt="New profile photo preview"/>`;
-  refreshNavAv({ avatar: url, name: curProfile?.name });
-  toast('Photo ready — tap Save Changes to upload', 'info');
-  switchProfileTab('edit');
+
+  // Show loading state on avatar
+  const av = $('prof-av');
+  av.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;animation:spin 1s linear infinite;">⏳</div>`;
+
+  try {
+    const compressed = await compressImage(file);
+    pendingAvatar = compressed;
+    const url = URL.createObjectURL(compressed);
+    av.innerHTML = `<img src="${url}" alt="New profile photo preview"/>`;
+    refreshNavAv({ avatar: url, name: curProfile?.name });
+    toast('Photo ready — tap Save Changes to upload', 'info');
+    switchProfileTab('edit');
+  } catch(e) {
+    av.textContent = (curProfile?.name || 'U')[0].toUpperCase();
+    toast(e.message, 'error');
+  }
 };
 
 // ── PHOTO SELECTION ──
 // FIX: Stores File objects in a plain array; no FileList dependency
-window.handlePhotoSelect = function(input) {
-  const newFiles = Array.from(input.files);
-  pendingPhotos = [...pendingPhotos, ...newFiles];
+// ── PHOTO SELECTION ──
+// Compress each selected file immediately; store compressed File objects.
+window.handlePhotoSelect = async function(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  // Show compression progress in the button
+  const btn = $('photo-add-btn');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = `<span style="opacity:.7;">⏳ Compressing ${files.length} photo${files.length > 1 ? 's' : ''}…</span>`;
+
+  const compressed = [];
+  for (const f of files) {
+    try { compressed.push(await compressImage(f)); }
+    catch(e) { toast(`Skipped "${f.name}": ${e.message}`, 'error'); }
+  }
+
+  pendingPhotos = [...pendingPhotos, ...compressed];
+  $('photo-input').value = '';
+  if (btn) btn.innerHTML = orig;
   renderPreviews();
 };
 
@@ -1087,12 +1179,10 @@ function renderPreviews() {
       <img src="${URL.createObjectURL(f)}" alt="Preview ${i+1}"/>
       <div class="prev-rm" onclick="window._rmPhoto(${i})" role="button" tabindex="0" aria-label="Remove photo ${i+1}">✕</div>
     </div>`).join('');
-  $('photo-input').value = ''; // reset so same file can be re-added
   if (pendingPhotos.length) $('pending-save-bar').classList.remove('hidden');
   else $('pending-save-bar').classList.add('hidden');
 }
 
-// FIX: Removes from plain array, re-renders correctly
 window._rmPhoto = function(i) {
   pendingPhotos.splice(i, 1);
   renderPreviews();
@@ -1114,36 +1204,49 @@ window.saveProfile = async function() {
         bio = $('edit-bio').value.trim(),
         phone = $('edit-phone').value.trim(),
         location = $('edit-location').value.trim();
-  toast('Saving...', 'info');
 
-  // Avatar upload
+  // Lock save button with loading state
+  const saveBtn = document.querySelector('#panel-edit .btn-blue');
+  const origBtnText = saveBtn ? saveBtn.textContent : '';
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Uploading…'; }
+  toast('Saving…', 'info');
+
+  // ── AVATAR UPLOAD TO CLOUDINARY ──
   let avatarURL = curProfile?.avatar || '';
   if (pendingAvatar) {
     try {
-      const r = ref(storage, `avatars/${curUser.uid}`);
-      await uploadBytes(r, pendingAvatar);
-      avatarURL = await getDownloadURL(r);
+      toast('Uploading profile photo…', 'info');
+      avatarURL = await uploadToCloudinary(pendingAvatar);
       pendingAvatar = null;
-    } catch(e) { toast('Avatar upload failed', 'error'); }
+    } catch(e) {
+      toast(`Avatar upload failed: ${e.message}`, 'error');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origBtnText; }
+      return;
+    }
   }
 
-  // Photo uploads
+  // ── WORK PHOTOS UPLOAD TO CLOUDINARY ──
   let newURLs = [];
-  for (const file of pendingPhotos) {
-    try {
-      const r = ref(storage, `photos/${curUser.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(r, file);
-      newURLs.push(await getDownloadURL(r));
-    } catch(e) { toast('A photo failed to upload', 'error'); }
+  if (pendingPhotos.length) {
+    toast(`Uploading ${pendingPhotos.length} photo${pendingPhotos.length > 1 ? 's' : ''}…`, 'info');
+    for (let i = 0; i < pendingPhotos.length; i++) {
+      if (saveBtn) saveBtn.textContent = `⏳ Photo ${i+1}/${pendingPhotos.length}…`;
+      try {
+        const url = await uploadToCloudinary(pendingPhotos[i]);
+        newURLs.push(url);
+      } catch(e) {
+        toast(`Photo ${i+1} failed: ${e.message}`, 'error');
+        // Continue uploading remaining photos rather than aborting
+      }
+    }
   }
 
-  // Geocode location string if changed
+  // ── GEOCODE LOCATION ──
   let lat = curProfile?.lat || null, lng = curProfile?.lng || null;
   if (location && location !== curProfile?.location) {
     if (location.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/)) {
       [lat, lng] = location.split(',').map(Number);
     } else {
-      // FIX: Add User-Agent header as required by Nominatim policy; graceful fail
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`,
@@ -1156,16 +1259,21 @@ window.saveProfile = async function() {
     }
   }
 
+  // ── SAVE TO FIRESTORE ──
+  // Cloudinary secure_urls are stored directly — they're permanent and always accessible.
   await setDoc(doc(db, 'users', curUser.uid), {
     service, bio, location, phone, lat, lng,
     avatar: avatarURL,
     photos: [...(curProfile?.photos || []), ...newURLs]
   }, { merge: true });
 
+  // Reset state
   pendingPhotos = [];
   $('photo-previews').innerHTML = '';
   $('photo-input').value = '';
   $('pending-save-bar').classList.add('hidden');
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origBtnText; }
+
   toast('Profile saved ✅');
   loadMyProfile();
   switchProfileTab('grid');
@@ -1182,6 +1290,8 @@ function calcDist(lat1, lon1, lat2, lon2) {
 <!--
   ═══════════════════════════════════════════════════════
   FIREBASE SECURITY RULES — paste into Firebase Console
+  Images are now stored in Cloudinary; Firebase Storage
+  is no longer used and those rules are not needed.
   ═══════════════════════════════════════════════════════
 
   FIRESTORE (firestore.rules):
@@ -1198,25 +1308,12 @@ function calcDist(lat1, lon1, lat2, lon2) {
     }
   }
 
-  STORAGE (storage.rules):
+  CLOUDINARY CONFIG (for reference):
   ─────────────────────────────
-  rules_version = '2';
-  service firebase.storage {
-    match /b/{bucket}/o {
-      match /avatars/{uid} {
-        allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == uid
-                     && request.resource.size < 5 * 1024 * 1024
-                     && request.resource.contentType.matches('image/.*');
-      }
-      match /photos/{uid}/{file} {
-        allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == uid
-                     && request.resource.size < 10 * 1024 * 1024
-                     && request.resource.contentType.matches('image/.*');
-      }
-    }
-  }
+  Cloud name : dszdwnuua
+  Upload preset : Gigscourt   (unsigned)
+  Folder : Gigscourt
+  Upload URL : https://api.cloudinary.com/v1_1/dszdwnuua/image/upload
   ═══════════════════════════════════════════════════════
 -->
 
