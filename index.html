@@ -862,8 +862,8 @@ window.doSignup = async function() {
   const name = $('su-name').value.trim(),
         email = $('su-email').value.trim(),
         pass = $('su-pass').value;
-  if (!name || !email || !pass) return toast('Fill in all fields', 'error');
-  if (pass.length < 6) return toast('Password must be 6+ characters', 'error');
+  if (!name || !email || !pass) return window.window.toast('Fill in all fields', 'error');
+  if (pass.length < 6) return window.window.toast('Password must be 6+ characters', 'error');
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
@@ -871,18 +871,34 @@ window.doSignup = async function() {
       avatar: '', service: '', bio: '', location: '', phone: '',
       lat: null, lng: null, photos: [], createdAt: Date.now()
     });
-    toast('Welcome to GigsCourt! 🎉');
-  } catch(e) { toast(e.message.replace('Firebase: ',''), 'error'); }
+    window.window.toast('Welcome to GigsCourt! 🎉');
+  } catch(e) { window.window.toast(e.message.replace('Firebase: ','').replace(/\(auth\/.*?\)\.?/,'').trim(), 'error'); }
 };
 
 window.doLogin = async function() {
   const email = $('li-email').value.trim(), pass = $('li-pass').value;
-  if (!email || !pass) return toast('Fill in all fields', 'error');
-  try { await signInWithEmailAndPassword(auth, email, pass); }
-  catch(e) { toast('Wrong email or password', 'error'); }
+  if (!email || !pass) return window.window.toast('Fill in all fields', 'error');
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    // Surface a clean message for every common Firebase auth error code
+    const code = e.code || '';
+    const msg =
+      code === 'auth/user-not-found'      ? 'No account found with that email.' :
+      code === 'auth/wrong-password'       ? 'Incorrect password. Try again.' :
+      code === 'auth/invalid-email'        ? 'Please enter a valid email address.' :
+      code === 'auth/invalid-credential'   ? 'Wrong email or password.' :
+      code === 'auth/too-many-requests'    ? 'Too many attempts. Try again later.' :
+      code === 'auth/user-disabled'        ? 'This account has been disabled.' :
+      'Sign in failed. Check your details and try again.';
+    window.window.toast(msg, 'error');
+  }
 };
 
-window.doLogout = async function() { await signOut(auth); toast('Signed out', 'info'); };
+window.doLogout = async function() {
+  try { await signOut(auth); window.window.toast('Signed out', 'info'); }
+  catch(e) { window.window.toast('Sign out failed', 'error'); }
+};
 
 onAuthStateChanged(auth, async user => {
   if (user) {
@@ -893,13 +909,13 @@ onAuthStateChanged(auth, async user => {
     $('nav-user').classList.remove('hidden');
     refreshNavAv(curProfile);
     $('bottom-nav').classList.remove('hidden');
-    showPage('page-search'); setActiveNav('nav-h');
+    window.showPage('page-search'); window.setActiveNav('nav-h');
   } else {
     curUser = null; curProfile = null; window._loggedIn = false;
     $('nav-guest').classList.remove('hidden');
     $('nav-user').classList.add('hidden');
     $('bottom-nav').classList.add('hidden');
-    showPage('page-welcome');
+    window.showPage('page-welcome');
   }
 });
 
@@ -915,7 +931,7 @@ window.doSearch = async function() {
 
   navigator.geolocation.getCurrentPosition(
     async pos => await runSearch(term, maxKm, filterCat, pos.coords.latitude, pos.coords.longitude),
-    async () => { toast('Using Lagos as default location', 'info'); await runSearch(term, maxKm, filterCat, 6.5244, 3.3792); },
+    async () => { window.toast('Using Lagos as default location', 'info'); await runSearch(term, maxKm, filterCat, 6.5244, 3.3792); },
     { timeout: 8000 }
   );
 };
@@ -994,7 +1010,7 @@ async function runSearch(term, maxKm, filterCat, uLat, uLng) {
   window._searchProviders = providers;
   window._openFromMap = function(uid) {
     const p = providers.find(x => x.uid === uid);
-    if (p) openModal(p);
+    if (p) window.openModal(p);
   };
 
   // Render cards
@@ -1054,7 +1070,7 @@ function buildCard(p) {
 
 window._openCard = function(uid) {
   const p = (window._searchProviders || []).find(x => x.uid === uid);
-  if (p) openModal(p);
+  if (p) window.openModal(p);
 };
 
 // ── MY PROFILE ──
@@ -1140,16 +1156,14 @@ window.handleAvatarSelect = async function(input) {
     const url = URL.createObjectURL(compressed);
     av.innerHTML = `<img src="${url}" alt="New profile photo preview"/>`;
     refreshNavAv({ avatar: url, name: curProfile?.name });
-    toast('Photo ready — tap Save Changes to upload', 'info');
-    switchProfileTab('edit');
+    window.toast('Photo ready — tap Save Changes to upload', 'info');
+    window.switchProfileTab('edit');
   } catch(e) {
     av.textContent = (curProfile?.name || 'U')[0].toUpperCase();
-    toast(e.message, 'error');
+    window.toast(e.message, 'error');
   }
 };
 
-// ── PHOTO SELECTION ──
-// FIX: Stores File objects in a plain array; no FileList dependency
 // ── PHOTO SELECTION ──
 // Compress each selected file immediately; store compressed File objects.
 window.handlePhotoSelect = async function(input) {
@@ -1164,7 +1178,7 @@ window.handlePhotoSelect = async function(input) {
   const compressed = [];
   for (const f of files) {
     try { compressed.push(await compressImage(f)); }
-    catch(e) { toast(`Skipped "${f.name}": ${e.message}`, 'error'); }
+    catch(e) { window.toast(`Skipped "${f.name}": ${e.message}`, 'error'); }
   }
 
   pendingPhotos = [...pendingPhotos, ...compressed];
@@ -1193,8 +1207,8 @@ window.getMyLocation = function() {
   navigator.geolocation.getCurrentPosition(async pos => {
     $('edit-location').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
     await setDoc(doc(db, 'users', curUser.uid), { lat: pos.coords.latitude, lng: pos.coords.longitude }, { merge: true });
-    toast('Location saved ✅');
-  }, () => toast('Location access denied', 'error'));
+    window.toast('Location saved ✅');
+  }, () => window.toast('Location access denied', 'error'));
 };
 
 // ── SAVE PROFILE ──
@@ -1209,17 +1223,17 @@ window.saveProfile = async function() {
   const saveBtn = document.querySelector('#panel-edit .btn-blue');
   const origBtnText = saveBtn ? saveBtn.textContent : '';
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Uploading…'; }
-  toast('Saving…', 'info');
+  window.toast('Saving…', 'info');
 
   // ── AVATAR UPLOAD TO CLOUDINARY ──
   let avatarURL = curProfile?.avatar || '';
   if (pendingAvatar) {
     try {
-      toast('Uploading profile photo…', 'info');
+      window.toast('Uploading profile photo…', 'info');
       avatarURL = await uploadToCloudinary(pendingAvatar);
       pendingAvatar = null;
     } catch(e) {
-      toast(`Avatar upload failed: ${e.message}`, 'error');
+      window.toast(`Avatar upload failed: ${e.message}`, 'error');
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origBtnText; }
       return;
     }
@@ -1228,14 +1242,14 @@ window.saveProfile = async function() {
   // ── WORK PHOTOS UPLOAD TO CLOUDINARY ──
   let newURLs = [];
   if (pendingPhotos.length) {
-    toast(`Uploading ${pendingPhotos.length} photo${pendingPhotos.length > 1 ? 's' : ''}…`, 'info');
+    window.toast(`Uploading ${pendingPhotos.length} photo${pendingPhotos.length > 1 ? 's' : ''}…`, 'info');
     for (let i = 0; i < pendingPhotos.length; i++) {
       if (saveBtn) saveBtn.textContent = `⏳ Photo ${i+1}/${pendingPhotos.length}…`;
       try {
         const url = await uploadToCloudinary(pendingPhotos[i]);
         newURLs.push(url);
       } catch(e) {
-        toast(`Photo ${i+1} failed: ${e.message}`, 'error');
+        window.toast(`Photo ${i+1} failed: ${e.message}`, 'error');
         // Continue uploading remaining photos rather than aborting
       }
     }
@@ -1254,8 +1268,8 @@ window.saveProfile = async function() {
         );
         const j = await res.json();
         if (j.length) { lat = parseFloat(j[0].lat); lng = parseFloat(j[0].lon); }
-        else toast('Location not found — try a different city name', 'info');
-      } catch(e) { toast('Could not geocode location', 'info'); }
+        else window.toast('Location not found — try a different city name', 'info');
+      } catch(e) { window.toast('Could not geocode location', 'info'); }
     }
   }
 
@@ -1274,9 +1288,9 @@ window.saveProfile = async function() {
   $('pending-save-bar').classList.add('hidden');
   if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = origBtnText; }
 
-  toast('Profile saved ✅');
-  loadMyProfile();
-  switchProfileTab('grid');
+  window.toast('Profile saved ✅');
+  window.loadMyProfile();
+  window.switchProfileTab('grid');
 };
 
 // ── HELPERS ──
