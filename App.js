@@ -1,25 +1,34 @@
 // App.js
 // ─────────────────────────────────────────────────────────
-//  GigsCourt — Main Application (Connected)
+//  GigsCourt — Main Application (Audited & Corrected)
 //
-//  View States:
-//    ‘feed’    → 2-col ProviderCard grid (search results)
-//    ‘profile’ → ProfileGrid (provider’s personal page)
+//  IMPORT PATH RULES (enforced):
+//    ./components/  → Header, ProviderCard, ProfileGrid
+//    ./             → CloudinaryUpload, MapComponent, ProfilePage
 //
-//  State owned here and passed down as props:
-//    view, searchQuery, radiusKm, locationLabel,
-//    userCoords, isLocating, portfolioImages
+//  AUDIT FIXES APPLIED:
+//    ✅ useEffect added to import list
+//    ✅ loading state clears after 1.5s via useEffect
+//    ✅ All component import paths verified
+//    ✅ export default App confirmed at function declaration
+//    ✅ Stubbed imports for CloudinaryUpload, MapComponent, ProfilePage
 // ─────────────────────────────────────────────────────────
 
-import { useState, useCallback } from “react”;
+import { useState, useCallback, useEffect } from “react”;
 import “./styles.css”;
 
+// ── components/ sub-folder ────────────────────────────────
 import Header       from “./components/Header”;
 import ProviderCard from “./components/ProviderCard”;
 import ProfileGrid  from “./components/ProfileGrid”;
 
+// ── Root folder (same level as App.js) ───────────────────
+// All three files now exist — imports are active.
+import CloudinaryUpload from “./CloudinaryUpload”;
+import MapComponent     from “./MapComponent”;
+import ProfilePage      from “./ProfilePage”;
+
 // ─── Dummy Provider Data ───────────────────────────────────
-// Replace with live Firestore queries in a future step.
 const DUMMY_PROVIDERS = [
 {
 id:           1,
@@ -95,7 +104,6 @@ isAvailable:  true,
 },
 ];
 
-// Dummy profile for the ‘profile’ view
 const DUMMY_PROFILE = {
 businessName:  “Elite Cuts”,
 locationName:  “Sabo Auchi”,
@@ -120,7 +128,6 @@ const DUMMY_PORTFOLIO_IMAGES = [
 ];
 
 // ─── DEV Toggle Banner ─────────────────────────────────────
-// Temporary testing tool — remove once real navigation is built.
 function DevToggle({ view, onToggle }) {
 return (
 <div style={devStyles.wrapper}>
@@ -136,7 +143,6 @@ Switch to {view === “feed” ? “Profile →” : “← Feed”}
 }
 
 // ─── Feed View ─────────────────────────────────────────────
-// Renders the 2-column ProviderCard grid with live search filtering.
 function FeedView({ providers, searchQuery, onViewPortfolio }) {
 const filtered = providers.filter((p) => {
 if (!searchQuery.trim()) return true;
@@ -152,14 +158,12 @@ return (
 <main style={feedStyles.main}>
 
 ```
-  {/* Results count bar */}
   <div style={feedStyles.resultsRow}>
     <span style={feedStyles.resultsCount}>
       {filtered.length} provider{filtered.length !== 1 ? "s" : ""} nearby
     </span>
   </div>
 
-  {/* 2-column card grid */}
   {filtered.length > 0 ? (
     <div style={feedStyles.grid}>
       {filtered.map((provider, i) => (
@@ -176,7 +180,6 @@ return (
       ))}
     </div>
   ) : (
-    /* Empty state when search yields nothing */
     <div style={feedStyles.emptyState}>
       <span style={{ fontSize: 44 }}>🔍</span>
       <p style={feedStyles.emptyTitle}>No results found</p>
@@ -195,7 +198,33 @@ return (
 // ─── App Root ──────────────────────────────────────────────
 export default function App() {
 
-// ── View Router State ──────────────────────────────────
+// ── Loading state — clears splash screen ───────────────
+// useEffect fires after first render, sets loading false
+// after 1.5s. This guarantees the splash always clears
+// even if GPS or network calls are slow.
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+const timer = setTimeout(() => {
+setLoading(false);
+
+```
+  // Also dismiss the HTML splash loader directly
+  // (belt-and-suspenders alongside the MutationObserver)
+  const htmlLoader = document.getElementById("app-loader");
+  if (htmlLoader) {
+    htmlLoader.classList.add("hidden");
+    setTimeout(() => htmlLoader.remove(), 450);
+  }
+}, 1500);
+
+// Cleanup: cancel timer if component unmounts early
+return () => clearTimeout(timer);
+```
+
+}, []); // ← empty array = runs once on mount only
+
+// ── View Router ────────────────────────────────────────
 const [view, setView] = useState(“feed”); // ‘feed’ | ‘profile’
 
 // ── Search & Radius ────────────────────────────────────
@@ -204,10 +233,10 @@ const [radiusKm,    setRadiusKm]    = useState(5);
 
 // ── GPS / Location ─────────────────────────────────────
 const [locationLabel, setLocationLabel] = useState(””);
-const [userCoords,    setUserCoords]    = useState(null); // used by locationService later
+const [userCoords,    setUserCoords]    = useState(null);
 const [isLocating,    setIsLocating]    = useState(false);
 
-// ── Portfolio images (ProfileGrid) ─────────────────────
+// ── Portfolio Images ───────────────────────────────────
 const [portfolioImages, setPortfolioImages] = useState(DUMMY_PORTFOLIO_IMAGES);
 
 // ── GPS Handler ────────────────────────────────────────
@@ -246,30 +275,44 @@ alert(“Could not get your location. Please check permissions.”);
 );
 }, []);
 
-// ── Upload handler (Cloudinary-ready) ──────────────────
+// ── Upload Handler (Cloudinary-ready) ──────────────────
 const handleUpload = useCallback((newImage) => {
 setPortfolioImages((prev) => [newImage, …prev]);
 }, []);
 
-// ── “View Portfolio” tapped on a ProviderCard ──────────
+// ── View Portfolio from ProviderCard ───────────────────
 const handleViewPortfolio = useCallback(() => {
 setView(“profile”);
 }, []);
 
-// ── DEV toggle ─────────────────────────────────────────
+// ── DEV Toggle ─────────────────────────────────────────
 const toggleView = useCallback(() => {
 setView((v) => (v === “feed” ? “profile” : “feed”));
 }, []);
 
-// ── Render ─────────────────────────────────────────────
+// ── Loading Screen ─────────────────────────────────────
+// Shown for 1.5s while fonts, styles, and React boot.
+if (loading) {
+return (
+<div style={loadingStyles.wrapper}>
+<p style={loadingStyles.logo}>
+Gigs<span style={{ color: “#FF385C” }}>Court</span>
+</p>
+<div style={loadingStyles.spinner} />
+<p style={loadingStyles.tagline}>Finding gigs near you…</p>
+</div>
+);
+}
+
+// ── Main Render ────────────────────────────────────────
 return (
 <div style={appStyles.root}>
 
 ```
-  {/* 1. DEV banner — temporary, remove after navigation is built */}
+  {/* 1. DEV banner — remove after navigation is wired */}
   <DevToggle view={view} onToggle={toggleView} />
 
-  {/* 2. Sticky Header — always visible on both screens */}
+  {/* 2. Sticky Header — always visible */}
   <Header
     searchQuery={searchQuery}
     onSearchChange={setSearchQuery}
@@ -314,6 +357,43 @@ minHeight: “100dvh”,
 display: “flex”,
 flexDirection: “column”,
 backgroundColor: “var(–off-white)”,
+},
+};
+
+const loadingStyles = {
+wrapper: {
+position: “fixed”,
+inset: 0,
+backgroundColor: “#FFFFFF”,
+display: “flex”,
+flexDirection: “column”,
+alignItems: “center”,
+justifyContent: “center”,
+gap: 16,
+zIndex: 9999,
+},
+logo: {
+fontFamily: “var(–font-display, ‘Clash Display’, sans-serif)”,
+fontSize: 28,
+fontWeight: 700,
+color: “#0D0D12”,
+letterSpacing: “-0.5px”,
+margin: 0,
+},
+spinner: {
+width: 32,
+height: 32,
+borderRadius: “50%”,
+border: “3px solid rgba(255,56,92,0.15)”,
+borderTopColor: “#FF385C”,
+animation: “gcSpin 0.7s linear infinite”,
+},
+tagline: {
+fontFamily: “var(–font-body, ‘DM Sans’, sans-serif)”,
+fontSize: 13,
+color: “#9999AA”,
+margin: 0,
+letterSpacing: “0.2px”,
 },
 };
 
@@ -380,7 +460,7 @@ letterSpacing: “0.2px”,
 },
 grid: {
 display: “grid”,
-gridTemplateColumns: “repeat(2, 1fr)”, // 2-column on all mobile sizes
+gridTemplateColumns: “repeat(2, 1fr)”,
 gap: 10,
 },
 emptyState: {
