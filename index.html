@@ -5,554 +5,373 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>GigsCourt</title>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FIREBASE SDK v9 — Compat build (no ES modules needed)
+       Works inline in a Babel/CDN single-file architecture.
+  ════════════════════════════════════════════════════════ -->
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- React + Babel + Tailwind -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- ═══════════════════════════════════════════════════════
+       FIREBASE INIT — runs synchronously before React mounts.
+       Services exposed as window globals for the Babel script.
+  ════════════════════════════════════════════════════════ -->
+
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
+      authDomain:        "gigscourt.firebaseapp.com",
+      projectId:         "gigscourt",
+      storageBucket:     "gigscourt.firebasestorage.app",
+      messagingSenderId: "1055157379736",
+      appId:             "1:1055157379736:web:215763c63606c2c5a966ed",
+      measurementId:     "G-BY1YBSYJHV"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window.__db   = firebase.firestore();
+    window.__auth = firebase.auth();
+    console.log('[GigsCourt] Firebase initialized OK');
+  </script>
+
   <style>
     :root {
-      --red: #FF385C;
-      --red-light: #FF6B85;
-      --red-dark: #E0203E;
-      --green: #00C48C;
-      --dark: #1A1A2E;
-      --gray: #F7F7F7;
+      --red: #FF385C; --red-light: #FF6B85; --red-dark: #E0203E;
+      --green: #00C48C; --dark: #1A1A2E; --gray: #F7F7F7;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: #FFFFFF;
-      margin: 0;
-      padding: 0;
-      overscroll-behavior: none;
-    }
+    body { font-family: 'DM Sans', sans-serif; background: #FFFFFF; margin: 0; padding: 0; overscroll-behavior: none; }
     h1, h2, h3, .brand { font-family: 'Syne', sans-serif; }
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
 
-```
-/* Scrollbar hide */
-::-webkit-scrollbar { display: none; }
-* { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: #E5E7EB; border-radius: 99px; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--red); cursor: pointer; box-shadow: 0 2px 8px rgba(255,56,92,0.4); }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--red); cursor: pointer; border: none; }
 
-/* Range slider */
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 4px;
-  background: #E5E7EB;
-  border-radius: 99px;
-  outline: none;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--red);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255,56,92,0.4);
-}
-input[type=range]::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--red);
-  cursor: pointer;
-  border: none;
-}
+    .toggle-track { width: 52px; height: 28px; border-radius: 99px; transition: background 0.3s; position: relative; cursor: pointer; }
+    .toggle-thumb { width: 22px; height: 22px; border-radius: 50%; background: white; position: absolute; top: 3px; transition: left 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
 
-/* Toggle switch */
-.toggle-track {
-  width: 52px; height: 28px;
-  border-radius: 99px;
-  transition: background 0.3s;
-  position: relative;
-  cursor: pointer;
-}
-.toggle-thumb {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: white;
-  position: absolute;
-  top: 3px;
-  transition: left 0.3s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-}
+    .provider-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .provider-card:active { transform: scale(0.97); }
+    .bottom-nav { box-shadow: 0 -1px 0 rgba(0,0,0,0.06); }
 
-/* Card hover */
-.provider-card { transition: transform 0.2s, box-shadow 0.2s; }
-.provider-card:active { transform: scale(0.97); }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+    .pulse { animation: pulse-dot 1.6s ease-in-out infinite; }
 
-/* Bottom nav */
-.bottom-nav { box-shadow: 0 -1px 0 rgba(0,0,0,0.06); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.35s ease forwards; }
 
-/* Pulse dot */
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.3); }
-}
-.pulse { animation: pulse-dot 1.6s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.8s linear infinite; }
 
-/* Fade in */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-up { animation: fadeUp 0.35s ease forwards; }
-
-/* Map placeholder */
-.map-grid {
-  background:
-    linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-color: #f0f4f8;
-}
-
-/* Image overlay gradient */
-.img-gradient {
-  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%);
-}
-```
-
+    .map-grid {
+      background: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: 40px 40px; background-color: #f0f4f8;
+    }
+    .img-gradient { background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%); }
   </style>
+
 </head>
 <body>
-
 <div id="root"></div>
 
 <script type="text/babel">
-// ─────────────────────────────────────────────
-//  FIREBASE / CLOUDINARY / MAPS SHELLS
-//  Connect your real services here later.
-// ─────────────────────────────────────────────
 
-/** Shell: Firebase Login — connect Firebase Auth later */
-function handleFirebaseLogin(email, password) {
-  // TODO: import { signInWithEmailAndPassword } from 'firebase/auth';
-  // return signInWithEmailAndPassword(auth, email, password);
-  console.log('[Firebase] Login called with:', email);
+// ════════════════════════════════════════════════════════════
+//  FIREBASE REFERENCES  (initialised in <head>)
+// ════════════════════════════════════════════════════════════
+const db   = window.__db;
+const auth = window.__auth;
+
+// ════════════════════════════════════════════════════════════
+//  ① handleFirebaseSignup  — LIVE
+//    Creates a Firebase Auth user AND a matching Firestore doc.
+// ════════════════════════════════════════════════════════════
+async function handleFirebaseSignup(email, password, displayName) {
+  const cred = await auth.createUserWithEmailAndPassword(email, password);
+  await cred.user.updateProfile({ displayName });
+
+  // Write provider profile to Firestore so user appears in feed immediately
+  await db.collection('providers').doc(cred.user.uid).set({
+    name:      displayName,
+    service:   'New Provider',
+    rating:    5.0,
+    reviews:   0,
+    distance:  0.5,
+    available: true,
+    avatar:    `https://i.pravatar.cc/300?u=${cred.user.uid}`,
+    cover:     'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=80',
+    bio:       'Tell clients about your services…',
+    portfolio: [],
+    price:     'TBD',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  console.log('[Firebase Auth] Signup OK:', cred.user.uid);
+  return cred.user;
 }
 
-/** Shell: Firebase Signup — connect Firebase Auth later */
-function handleFirebaseSignup(email, password, displayName) {
-  // TODO: import { createUserWithEmailAndPassword } from 'firebase/auth';
-  // return createUserWithEmailAndPassword(auth, email, password);
-  console.log('[Firebase] Signup called with:', email, displayName);
+// ════════════════════════════════════════════════════════════
+//  ② handleFirebaseLogin  — LIVE
+// ════════════════════════════════════════════════════════════
+async function handleFirebaseLogin(email, password) {
+  const cred = await auth.signInWithEmailAndPassword(email, password);
+  console.log('[Firebase Auth] Login OK:', cred.user.uid);
+  return cred.user;
 }
 
-/** Shell: Cloudinary Upload — connect Cloudinary SDK later */
+// ════════════════════════════════════════════════════════════
+//  ③ updateProviderAvailability  — LIVE
+//    Writes the new boolean to Firestore; triggers re-render
+//    via the onSnapshot listener in the root App component.
+// ════════════════════════════════════════════════════════════
+async function updateProviderAvailability(providerId, isAvailable) {
+  await db.collection('providers').doc(providerId).update({
+    available: isAvailable,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log(`[Firestore] ${providerId} available → ${isAvailable}`);
+  if (isAvailable) sendAvailabilityPing(providerId, null, null);
+}
+
+// ════════════════════════════════════════════════════════════
+//  SHELLS — wire up later
+// ════════════════════════════════════════════════════════════
+
+/** Shell: Cloudinary Upload */
 async function uploadToCloudinary(imageFile) {
-  // TODO: const formData = new FormData();
-  // formData.append('file', imageFile);
-  // formData.append('upload_preset', 'YOUR_PRESET');
-  // const res = await fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD/image/upload', { method:'POST', body: formData });
-  // return res.json();
-  console.log('[Cloudinary] Upload called with:', imageFile?.name);
-}
-
-/** Shell: Google Maps Init — connect Maps JS API later */
-function initGoogleMaps(mapContainerRef, centerCoords) {
-  // TODO: const map = new google.maps.Map(mapContainerRef.current, {
-  //   center: centerCoords,
-  //   zoom: 14,
-  //   styles: CUSTOM_MAP_STYLES,
+  // TODO: POST to Cloudinary, then arrayUnion the URL into the
+  // provider's portfolio field in Firestore:
+  // await db.collection('providers').doc(uid).update({
+  //   portfolio: firebase.firestore.FieldValue.arrayUnion(secureUrl)
   // });
-  console.log('[GoogleMaps] initGoogleMaps called', centerCoords);
+  console.log('[Cloudinary] Shell: upload', imageFile?.name);
 }
 
-/** Shell: Availability Ping — notify nearby users when provider goes online */
+/** Shell: Google Maps Init */
+function initGoogleMaps(ref, coords) {
+  // TODO: new google.maps.Map(ref.current, { center: coords, zoom: 14 });
+  console.log('[GoogleMaps] Shell: init', coords);
+}
+
+/** Shell: Availability Ping */
 function sendAvailabilityPing(providerId, coords, serviceType) {
-  // TODO: Use Firebase FCM or a Cloud Function to push notifications
-  // to users within radius who have this service type favorited.
-  // await fetch('/api/ping', { method:'POST', body: JSON.stringify({ providerId, coords, serviceType }) });
-  console.log('[Ping] Availability ping sent for provider:', providerId);
+  // TODO: call Firebase Cloud Function / FCM to push notification to nearby users
+  console.log('[Ping] Shell: fired for', providerId);
 }
 
-// ─────────────────────────────────────────────
-//  MOCK DATA
-// ─────────────────────────────────────────────
-
-const PROVIDERS = [
-  {
-    id: 1,
-    name: 'Marcus Okafor',
-    service: 'Master Barber',
-    rating: 4.9,
-    reviews: 312,
-    distance: 0.8,
-    available: true,
-    color: '#1A1A2E',
-    avatar: 'https://i.pravatar.cc/300?img=12',
-    cover: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80',
-    bio: 'Top-rated barber with 8 years of experience. Specializing in fades, line-ups, and beard sculpting. Walk-ins welcome, bookings preferred.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80',
-      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=300&q=80',
-      'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=300&q=80',
-      'https://images.unsplash.com/photo-1560472355-536de3962603?w=300&q=80',
-      'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=300&q=80',
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&q=80',
-    ],
-    price: '$25–$60',
-  },
-  {
-    id: 2,
-    name: 'Aisha Koroma',
-    service: 'Nail Artist',
-    rating: 4.8,
-    reviews: 198,
-    distance: 1.4,
-    available: true,
-    color: '#C2185B',
-    avatar: 'https://i.pravatar.cc/300?img=47',
-    cover: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80',
-    bio: 'Award-winning nail artist. Gel, acrylics, nail art designs, and manicures. Bringing your nail dreams to life since 2017.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
-      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
-      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
-      'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80',
-      'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80',
-      'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80',
-    ],
-    price: '$30–$80',
-  },
-  {
-    id: 3,
-    name: 'Diego Reyes',
-    service: 'Auto Mechanic',
-    rating: 4.7,
-    reviews: 456,
-    distance: 2.3,
-    available: false,
-    color: '#374151',
-    avatar: 'https://i.pravatar.cc/300?img=33',
-    cover: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80',
-    bio: 'Certified mechanic with 15 years experience. On-site repairs, diagnostics, oil changes. Serving your neighborhood — no garage needed.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
-      'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=300&q=80',
-      'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=300&q=80',
-      'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
-    ],
-    price: '$50–$200',
-  },
-  {
-    id: 4,
-    name: 'Fatima Al-Hassan',
-    service: 'Tailor & Seamstress',
-    rating: 5.0,
-    reviews: 87,
-    distance: 3.1,
-    available: true,
-    color: '#6D28D9',
-    avatar: 'https://i.pravatar.cc/300?img=45',
-    cover: 'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=600&q=80',
-    bio: 'Bespoke tailoring and alterations. Custom outfits, wedding attire, and repairs done with precision. 10+ years crafting elegance.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
-      'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80',
-      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
-      'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80',
-      'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80',
-    ],
-    price: '$40–$150',
-  },
-  {
-    id: 5,
-    name: 'James Osei',
-    service: 'Personal Trainer',
-    rating: 4.6,
-    reviews: 224,
-    distance: 4.7,
-    available: true,
-    color: '#065F46',
-    avatar: 'https://i.pravatar.cc/300?img=57',
-    cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80',
-    bio: 'Certified PT & nutrition coach. Home sessions, park workouts, online plans. Helping you build strength and confidence every rep.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80',
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80',
-      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80',
-      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80',
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80',
-      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80',
-    ],
-    price: '$40–$90/hr',
-  },
-  {
-    id: 6,
-    name: 'Priya Nair',
-    service: 'Makeup Artist',
-    rating: 4.9,
-    reviews: 341,
-    distance: 5.9,
-    available: false,
-    color: '#B45309',
-    avatar: 'https://i.pravatar.cc/300?img=49',
-    cover: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
-    bio: 'Bridal, editorial, and everyday glam. Film & TV-trained. Bringing out your best look for every occasion — beauty on your terms.',
-    portfolio: [
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80',
-      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80',
-      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80',
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80',
-      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80',
-      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80',
-    ],
-    price: '$60–$200',
-  },
+// ════════════════════════════════════════════════════════════
+//  MOCK DATA  (fallback when Firestore collection is empty)
+// ════════════════════════════════════════════════════════════
+const MOCK_PROVIDERS = [
+  { id:'mock-1', name:'Marcus Okafor',    service:'Master Barber',      rating:4.9, reviews:312, distance:0.8, available:true,
+    avatar:'https://i.pravatar.cc/300?img=12', cover:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80',
+    bio:'Top-rated barber with 8 years experience. Fades, line-ups, beard sculpting.', price:'$25–$60',
+    portfolio:['https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80','https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=300&q=80','https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=300&q=80','https://images.unsplash.com/photo-1560472355-536de3962603?w=300&q=80','https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=300&q=80','https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&q=80'] },
+  { id:'mock-2', name:'Aisha Koroma',     service:'Nail Artist',        rating:4.8, reviews:198, distance:1.4, available:true,
+    avatar:'https://i.pravatar.cc/300?img=47', cover:'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80',
+    bio:'Award-winning nail artist. Gel, acrylics, nail art & manicures since 2017.', price:'$30–$80',
+    portfolio:['https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80','https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80','https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80','https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80','https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300&q=80','https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=300&q=80'] },
+  { id:'mock-3', name:'Diego Reyes',      service:'Auto Mechanic',      rating:4.7, reviews:456, distance:2.3, available:false,
+    avatar:'https://i.pravatar.cc/300?img=33', cover:'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80',
+    bio:'Certified mechanic 15 yrs. On-site repairs, diagnostics, oil changes.', price:'$50–$200',
+    portfolio:['https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80','https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=300&q=80','https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=300&q=80','https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=300&q=80','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80'] },
+  { id:'mock-4', name:'Fatima Al-Hassan', service:'Tailor & Seamstress', rating:5.0, reviews:87,  distance:3.1, available:true,
+    avatar:'https://i.pravatar.cc/300?img=45', cover:'https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=600&q=80',
+    bio:'Bespoke tailoring & alterations. Custom outfits, wedding attire & repairs.', price:'$40–$150',
+    portfolio:['https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80','https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80','https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80','https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80','https://images.unsplash.com/photo-1562157873-818bc0726f68?w=300&q=80','https://images.unsplash.com/photo-1558171813-db3f694c8db3?w=300&q=80'] },
+  { id:'mock-5', name:'James Osei',       service:'Personal Trainer',   rating:4.6, reviews:224, distance:4.7, available:true,
+    avatar:'https://i.pravatar.cc/300?img=57', cover:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80',
+    bio:'Certified PT & nutrition coach. Home sessions, park workouts, online plans.', price:'$40–$90/hr',
+    portfolio:['https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80','https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80','https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80','https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&q=80','https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80','https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=300&q=80'] },
+  { id:'mock-6', name:'Priya Nair',       service:'Makeup Artist',      rating:4.9, reviews:341, distance:5.9, available:false,
+    avatar:'https://i.pravatar.cc/300?img=49', cover:'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
+    bio:'Bridal, editorial & everyday glam. Film & TV-trained beauty on your terms.', price:'$60–$200',
+    portfolio:['https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80','https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80','https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80','https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80','https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80','https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=300&q=80'] },
 ];
 
-const MAP_PINS = [
-  { id: 1, x: '22%', y: '35%', available: true, name: 'Marcus' },
-  { id: 2, x: '55%', y: '28%', available: true, name: 'Aisha' },
-  { id: 3, x: '70%', y: '55%', available: false, name: 'Diego' },
-  { id: 4, x: '38%', y: '62%', available: true, name: 'Fatima' },
-  { id: 5, x: '15%', y: '68%', available: true, name: 'James' },
-  { id: 6, x: '80%', y: '35%', available: false, name: 'Priya' },
+const MAP_PIN_POS = [
+  { x:'22%',y:'35%' },{ x:'55%',y:'28%' },{ x:'70%',y:'55%' },
+  { x:'38%',y:'62%' },{ x:'15%',y:'68%' },{ x:'80%',y:'35%' },
 ];
 
-// ─────────────────────────────────────────────
-//  ICONS (inline SVG components)
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  SVG ICON LIBRARY
+// ════════════════════════════════════════════════════════════
 const Icon = {
-  Home: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  ),
-  Search: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-  ),
-  Map: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
-    </svg>
-  ),
-  User: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-    </svg>
-  ),
-  Bell: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-  ),
-  Star: ({size=16, filled=true}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#FFB800' : 'none'} stroke="#FFB800" strokeWidth="2">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  ),
-  ArrowLeft: ({size=24, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-    </svg>
-  ),
-  Location: ({size=16, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-    </svg>
-  ),
-  Camera: ({size=20, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-    </svg>
-  ),
-  Settings: ({size=22, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-    </svg>
-  ),
-  Share: ({size=20, color='currentColor'}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-    </svg>
-  ),
-  Heart: ({size=20, color='currentColor', filled=false}) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#FF385C' : 'none'} stroke={filled ? '#FF385C' : color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-    </svg>
-  ),
+  Home:      ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Search:    ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Map:       ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+  User:      ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Bell:      ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  Star:      ({size=16,filled=true}) => <svg width={size} height={size} viewBox="0 0 24 24" fill={filled?'#FFB800':'none'} stroke="#FFB800" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  ArrowLeft: ({size=24,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Location:  ({size=16,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Camera:    ({size=20,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  Settings:  ({size=22,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>,
+  Share:     ({size=20,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  Heart:     ({size=20,color='currentColor',filled=false}) => <svg width={size} height={size} viewBox="0 0 24 24" fill={filled?'#FF385C':'none'} stroke={filled?'#FF385C':color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  Check:     ({size=18,color='currentColor'}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Firebase:  ({size=14}) => <svg width={size} height={size} viewBox="0 0 32 32"><path d="M5.8 25.4L8.6 4.8l7.2 13.4-10 7.2z" fill="#FFA000"/><path d="M20.4 13.2l3.8-7.6 2.8 19.8-16.2-7.4 9.6-4.8z" fill="#F57C00"/><path d="M5.8 25.4l.8-6 9.2 4.2-10 1.8z" fill="#FFCA28"/></svg>,
 };
 
-// ─────────────────────────────────────────────
-//  TOGGLE SWITCH COMPONENT
-// ─────────────────────────────────────────────
-function ToggleSwitch({ value, onChange }) {
+// ════════════════════════════════════════════════════════════
+//  REUSABLE SMALL COMPONENTS
+// ════════════════════════════════════════════════════════════
+
+function ToggleSwitch({ value, onChange, disabled }) {
   return (
-    <div
-      className="toggle-track"
-      style={{ background: value ? 'var(--green)' : '#D1D5DB' }}
-      onClick={() => onChange(!value)}
-    >
-      <div
-        className="toggle-thumb"
-        style={{ left: value ? '27px' : '3px' }}
-      />
+    <div className="toggle-track"
+      style={{ background:value?'var(--green)':'#D1D5DB', opacity:disabled?0.5:1, pointerEvents:disabled?'none':'auto' }}
+      onClick={() => !disabled && onChange(!value)}>
+      <div className="toggle-thumb" style={{ left:value?'27px':'3px' }} />
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-//  STATUS BADGE
-// ─────────────────────────────────────────────
-function StatusBadge({ available, large = false }) {
+function StatusBadge({ available, large=false }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 font-semibold ${large ? 'text-sm px-3 py-1.5' : 'text-xs px-2 py-0.5'} rounded-full`}
-      style={{
-        background: available ? 'rgba(0,196,140,0.12)' : 'rgba(255,56,92,0.1)',
-        color: available ? 'var(--green)' : 'var(--red)',
-      }}
-    >
-      <span
-        className={`rounded-full pulse ${large ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'}`}
-        style={{ background: available ? 'var(--green)' : 'var(--red)', display: 'inline-block' }}
-      />
+    <span className={`inline-flex items-center gap-1 font-semibold ${large?'text-sm px-3 py-1.5':'text-xs px-2 py-0.5'} rounded-full`}
+      style={{ background:available?'rgba(0,196,140,0.12)':'rgba(255,56,92,0.1)', color:available?'var(--green)':'var(--red)' }}>
+      <span className={`rounded-full pulse ${large?'w-2.5 h-2.5':'w-1.5 h-1.5'}`}
+        style={{ background:available?'var(--green)':'var(--red)', display:'inline-block' }} />
       {available ? 'Available' : 'Busy'}
     </span>
   );
 }
 
-// ─────────────────────────────────────────────
+// Firebase connection status banner shown at the top of the Home feed
+function FirebaseBanner({ status, count }) {
+  const cfg = {
+    loading:  { bg:'#FFF8E1', dot:'#FFA000', msg:'Connecting to Firestore…' },
+    live:     { bg:'#E8F5E9', dot:'var(--green)', msg:`Firestore live · ${count} provider${count!==1?'s':''} loaded` },
+    fallback: { bg:'#FFF3E0', dot:'#FF9800', msg:'Demo data · Add docs to "providers" collection in Firestore' },
+    error:    { bg:'#FFEBEE', dot:'var(--red)', msg:'Firestore error · check console for details' },
+  };
+  const c = cfg[status] || cfg.loading;
+  return (
+    <div className="mx-5 mt-3 mb-1 flex items-center gap-2 px-3 py-2 rounded-xl"
+      style={{ background:c.bg, fontSize:11, fontFamily:'DM Sans' }}>
+      <Icon.Firebase size={13} />
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background:c.dot }} />
+      <span className="text-gray-600 flex-1">{c.msg}</span>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 //  PROVIDER CARD
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 function ProviderCard({ provider, onClick, liked, onLike }) {
   return (
-    <div
-      className="provider-card rounded-3xl overflow-hidden bg-white cursor-pointer"
-      style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}
-      onClick={() => onClick(provider)}
-    >
-      {/* Cover image */}
-      <div className="relative" style={{ height: 200 }}>
-        <img
-          src={provider.cover}
-          alt={provider.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+    <div className="provider-card rounded-3xl overflow-hidden bg-white cursor-pointer"
+      style={{ boxShadow:'0 2px 16px rgba(0,0,0,0.08)' }} onClick={() => onClick(provider)}>
+      <div className="relative" style={{ height:200 }}>
+        <img src={provider.cover} alt={provider.name} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 img-gradient" />
-
-        {/* Status badge top-right */}
-        <div className="absolute top-3 right-3">
-          <StatusBadge available={provider.available} />
-        </div>
-
-        {/* Heart */}
-        <button
-          className="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(255,255,255,0.9)' }}
-          onClick={e => { e.stopPropagation(); onLike(provider.id); }}
-        >
+        <div className="absolute top-3 right-3"><StatusBadge available={provider.available} /></div>
+        <button className="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background:'rgba(255,255,255,0.9)' }}
+          onClick={e => { e.stopPropagation(); onLike(provider.id); }}>
           <Icon.Heart size={16} color="#6B7280" filled={liked} />
         </button>
-
-        {/* Bottom info overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end gap-2">
-          <img
-            src={provider.avatar}
-            alt={provider.name}
-            className="w-10 h-10 rounded-full border-2 border-white object-cover"
-          />
+          <img src={provider.avatar} alt={provider.name} className="w-10 h-10 rounded-full border-2 border-white object-cover" />
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm leading-tight truncate" style={{fontFamily:'Syne,sans-serif'}}>{provider.name}</p>
             <p className="text-white text-xs opacity-80">{provider.service}</p>
           </div>
         </div>
       </div>
-
-      {/* Card footer */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <Icon.Star size={14} />
-          <span className="text-sm font-semibold text-gray-800">{provider.rating}</span>
-          <span className="text-xs text-gray-400">({provider.reviews})</span>
+          <span className="text-sm font-semibold text-gray-800">{Number(provider.rating||0).toFixed(1)}</span>
+          <span className="text-xs text-gray-400">({provider.reviews||0})</span>
         </div>
         <div className="flex items-center gap-1 text-gray-500">
           <Icon.Location size={13} color="#9CA3AF" />
           <span className="text-xs">{provider.distance} km away</span>
         </div>
-        <span className="text-xs font-semibold" style={{ color: 'var(--red)' }}>{provider.price}</span>
+        <span className="text-xs font-semibold" style={{ color:'var(--red)' }}>{provider.price}</span>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-//  PROFILE DETAIL VIEW
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  PROFILE DETAIL  (full-screen view)
+// ════════════════════════════════════════════════════════════
 function ProfileDetail({ provider, onBack }) {
   const [booked, setBooked] = React.useState(false);
-  const [liked, setLiked] = React.useState(false);
+  const [liked, setLiked]   = React.useState(false);
 
-  function handleBook() {
-    setBooked(true);
-    // TODO: Connect to booking system / Firebase
-    setTimeout(() => setBooked(false), 3000);
-  }
+  // Subscribe to live availability updates for this specific provider
+  const [liveProvider, setLiveProvider] = React.useState(provider);
+  React.useEffect(() => {
+    if (provider.id.startsWith('mock')) return; // skip Firestore for mock docs
+    const unsub = db.collection('providers').doc(provider.id)
+      .onSnapshot(snap => { if (snap.exists) setLiveProvider({ id: snap.id, ...snap.data(), portfolio: snap.data().portfolio || [] }); });
+    return () => unsub();
+  }, [provider.id]);
+
+  const p = liveProvider;
 
   return (
     <div className="min-h-screen bg-white fade-up">
-      {/* Back header */}
+      {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3"
-        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F3F4F6' }}>
+        style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
+        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'#F3F4F6' }}>
           <Icon.ArrowLeft size={20} color="#111" />
         </button>
-        <span className="font-bold text-base" style={{ fontFamily: 'Syne' }}>{provider.name}</span>
-        <button
-          onClick={() => setLiked(!liked)}
-          className="w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background: '#F3F4F6' }}
-        >
+        <span className="font-bold text-base" style={{ fontFamily:'Syne' }}>{p.name}</span>
+        <button onClick={() => setLiked(!liked)} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'#F3F4F6' }}>
           <Icon.Heart size={18} color="#6B7280" filled={liked} />
         </button>
       </div>
 
       {/* Cover */}
-      <div className="relative" style={{ height: 280, marginTop: 56 }}>
-        <img src={provider.cover} alt="cover" className="w-full h-full object-cover" />
+      <div className="relative" style={{ height:280, marginTop:56 }}>
+        <img src={p.cover} alt="cover" className="w-full h-full object-cover" />
         <div className="absolute inset-0 img-gradient" />
       </div>
 
-      {/* Profile header */}
+      {/* Avatar + name */}
       <div className="px-5 -mt-10 relative z-10 flex items-end justify-between">
         <div className="flex items-end gap-3">
-          <img
-            src={provider.avatar}
-            alt={provider.name}
-            className="w-20 h-20 rounded-2xl border-4 border-white object-cover"
-            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
-          />
+          <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-2xl border-4 border-white object-cover"
+            style={{ boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }} />
           <div className="mb-1">
-            <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>{provider.name}</h2>
-            <p className="text-sm text-gray-500 font-medium">{provider.service}</p>
+            <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily:'Syne' }}>{p.name}</h2>
+            <p className="text-sm text-gray-500 font-medium">{p.service}</p>
           </div>
         </div>
-        <div className="mb-1">
-          <StatusBadge available={provider.available} large />
-        </div>
+        <div className="mb-1"><StatusBadge available={p.available} large /></div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div className="mx-5 mt-5 grid grid-cols-3 gap-3">
-        {[
-          { label: 'Rating', value: `⭐ ${provider.rating}` },
-          { label: 'Reviews', value: provider.reviews },
-          { label: 'Distance', value: `${provider.distance} km` },
-        ].map(s => (
-          <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: '#F9FAFB' }}>
-            <p className="text-base font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>{s.value}</p>
+        {[{label:'Rating',value:`⭐ ${Number(p.rating||0).toFixed(1)}`},{label:'Reviews',value:p.reviews||0},{label:'Distance',value:`${p.distance} km`}].map(s=>(
+          <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background:'#F9FAFB' }}>
+            <p className="text-base font-bold text-gray-900" style={{ fontFamily:'Syne' }}>{s.value}</p>
             <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
           </div>
         ))}
@@ -560,120 +379,97 @@ function ProfileDetail({ provider, onBack }) {
 
       {/* Bio */}
       <div className="mx-5 mt-5">
-        <h3 className="font-bold text-gray-900 mb-2" style={{ fontFamily: 'Syne' }}>About</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">{provider.bio}</p>
+        <h3 className="font-bold text-gray-900 mb-2" style={{ fontFamily:'Syne' }}>About</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">{p.bio}</p>
       </div>
 
       {/* Price */}
       <div className="mx-5 mt-4 flex items-center justify-between rounded-2xl px-4 py-3"
-        style={{ background: 'rgba(255,56,92,0.06)', border: '1px solid rgba(255,56,92,0.12)' }}>
+        style={{ background:'rgba(255,56,92,0.06)', border:'1px solid rgba(255,56,92,0.12)' }}>
         <span className="text-sm text-gray-600 font-medium">Price Range</span>
-        <span className="font-bold text-base" style={{ color: 'var(--red)', fontFamily: 'Syne' }}>{provider.price}</span>
+        <span className="font-bold text-base" style={{ color:'var(--red)',fontFamily:'Syne' }}>{p.price}</span>
       </div>
 
-      {/* Portfolio grid */}
+      {/* ── Instagram-style 3-column portfolio grid ── */}
       <div className="mx-5 mt-6">
-        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Portfolio</h3>
-        <div className="grid grid-cols-3 gap-1.5">
-          {provider.portfolio.map((img, i) => (
-            <div key={i} className="rounded-xl overflow-hidden" style={{ aspectRatio: '1/1' }}>
-              <img src={img} alt={`work-${i}`} className="w-full h-full object-cover" loading="lazy" />
-            </div>
-          ))}
-        </div>
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Portfolio</h3>
+        {p.portfolio && p.portfolio.length > 0 ? (
+          <div className="grid grid-cols-3 gap-1.5">
+            {p.portfolio.map((img,i) => (
+              <div key={i} className="rounded-xl overflow-hidden" style={{ aspectRatio:'1/1' }}>
+                <img src={img} alt={`work-${i}`} className="w-full h-full object-cover" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl py-10 flex flex-col items-center" style={{ background:'#F9FAFB' }}>
+            <Icon.Camera size={28} color="#D1D5DB" />
+            <p className="text-sm text-gray-400 mt-2">No portfolio images yet</p>
+          </div>
+        )}
       </div>
 
-      {/* Book Now CTA */}
+      {/* Book Now */}
       <div className="mx-5 mt-6 mb-32">
-        <button
-          onClick={handleBook}
+        <button onClick={() => { setBooked(true); setTimeout(()=>setBooked(false),3000); }}
           className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all"
-          style={{
-            background: booked ? 'var(--green)' : 'var(--red)',
-            fontFamily: 'Syne',
-            boxShadow: booked ? '0 8px 24px rgba(0,196,140,0.35)' : '0 8px 24px rgba(255,56,92,0.35)',
-          }}
-        >
+          style={{ background:booked?'var(--green)':'var(--red)', fontFamily:'Syne',
+            boxShadow:booked?'0 8px 24px rgba(0,196,140,0.35)':'0 8px 24px rgba(255,56,92,0.35)' }}>
           {booked ? '✓ Booking Confirmed!' : 'Book Now'}
         </button>
         <button className="w-full mt-3 py-3.5 rounded-2xl font-semibold text-gray-700 text-sm flex items-center justify-center gap-2"
-          style={{ background: '#F3F4F6' }}>
-          <Icon.Share size={18} color="#6B7280" />
-          Share Profile
+          style={{ background:'#F3F4F6' }}>
+          <Icon.Share size={18} color="#6B7280" /> Share Profile
         </button>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 //  HOME TAB
-// ─────────────────────────────────────────────
-function HomeTab({ onViewProvider, providers, likedIds, onLike }) {
-  const featured = providers.slice(0, 3);
-  const nearby = providers.filter(p => p.available);
-
+// ════════════════════════════════════════════════════════════
+function HomeTab({ providers, fbStatus, onViewProvider, likedIds, onLike }) {
+  const featured   = providers.slice(0, 3);
+  const available  = providers.filter(p => p.available);
   return (
     <div className="pb-28">
-      {/* Hero greeting */}
-      <div className="px-5 pt-6 pb-4">
+      <div className="px-5 pt-6 pb-3">
         <p className="text-sm text-gray-400 font-medium">Good morning 👋</p>
-        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight mt-0.5" style={{ fontFamily: 'Syne' }}>
-          Find a Pro <br />Near You
-        </h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight mt-0.5" style={{ fontFamily:'Syne' }}>Find a Pro<br />Near You</h1>
       </div>
-
-      {/* Categories scroll */}
-      <div className="flex gap-2 px-5 overflow-x-auto pb-1">
-        {['All', 'Barber', 'Mechanic', 'Tailor', 'Trainer', 'Nails', 'Makeup'].map(cat => (
-          <button
-            key={cat}
-            className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all"
-            style={cat === 'All'
-              ? { background: 'var(--red)', color: 'white' }
-              : { background: '#F3F4F6', color: '#374151' }
-            }
-          >{cat}</button>
+      <FirebaseBanner status={fbStatus} count={providers.length} />
+      <div className="flex gap-2 px-5 mt-4 overflow-x-auto pb-1">
+        {['All','Barber','Mechanic','Tailor','Trainer','Nails','Makeup'].map(cat=>(
+          <button key={cat} className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold"
+            style={cat==='All'?{background:'var(--red)',color:'white'}:{background:'#F3F4F6',color:'#374151'}}>
+            {cat}
+          </button>
         ))}
       </div>
-
-      {/* Featured section */}
       <div className="mt-5 px-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>Featured</h2>
-          <button className="text-sm font-semibold" style={{ color: 'var(--red)' }}>See all</button>
+          <h2 className="font-bold text-gray-900" style={{ fontFamily:'Syne' }}>Featured</h2>
+          <button className="text-sm font-semibold" style={{ color:'var(--red)' }}>See all</button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2">
-          {featured.map(p => (
-            <div key={p.id} className="flex-shrink-0" style={{ width: 260 }}>
-              <ProviderCard
-                provider={p}
-                onClick={onViewProvider}
-                liked={likedIds.includes(p.id)}
-                onLike={onLike}
-              />
+          {featured.map(p=>(
+            <div key={p.id} className="flex-shrink-0" style={{ width:260 }}>
+              <ProviderCard provider={p} onClick={onViewProvider} liked={likedIds.includes(p.id)} onLike={onLike} />
             </div>
           ))}
         </div>
       </div>
-
-      {/* Available Now */}
       <div className="mt-6 px-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-gray-900" style={{ fontFamily: 'Syne' }}>Available Now</h2>
-          <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'rgba(0,196,140,0.1)', color: 'var(--green)' }}>
-            {nearby.length} online
+          <h2 className="font-bold text-gray-900" style={{ fontFamily:'Syne' }}>Available Now</h2>
+          <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background:'rgba(0,196,140,0.1)',color:'var(--green)' }}>
+            {available.length} online
           </span>
         </div>
         <div className="flex flex-col gap-4">
-          {nearby.map(p => (
-            <ProviderCard
-              key={p.id}
-              provider={p}
-              onClick={onViewProvider}
-              liked={likedIds.includes(p.id)}
-              onLike={onLike}
-            />
+          {available.map(p=>(
+            <ProviderCard key={p.id} provider={p} onClick={onViewProvider} liked={likedIds.includes(p.id)} onLike={onLike} />
           ))}
         </div>
       </div>
@@ -681,83 +477,50 @@ function HomeTab({ onViewProvider, providers, likedIds, onLike }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 //  SEARCH TAB
-// ─────────────────────────────────────────────
-function SearchTab({ onViewProvider, providers, likedIds, onLike }) {
-  const [query, setQuery] = React.useState('');
+// ════════════════════════════════════════════════════════════
+function SearchTab({ providers, onViewProvider, likedIds, onLike }) {
+  const [query,  setQuery]  = React.useState('');
   const [radius, setRadius] = React.useState(10);
-
   const filtered = providers.filter(p => {
-    const matchQuery = p.name.toLowerCase().includes(query.toLowerCase())
-      || p.service.toLowerCase().includes(query.toLowerCase());
-    const matchRadius = p.distance <= radius;
-    return matchQuery && matchRadius;
+    const q = query.toLowerCase();
+    return (!q || p.name.toLowerCase().includes(q) || p.service.toLowerCase().includes(q)) && p.distance <= radius;
   });
-
   return (
     <div className="pb-28">
       <div className="px-5 pt-6">
-        <h1 className="text-2xl font-extrabold text-gray-900 mb-4" style={{ fontFamily: 'Syne' }}>Search</h1>
-
-        {/* Search input */}
+        <h1 className="text-2xl font-extrabold text-gray-900 mb-4" style={{ fontFamily:'Syne' }}>Search</h1>
         <div className="relative mb-5">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <Icon.Search size={18} color="#9CA3AF" />
-          </div>
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Barber, mechanic, tailor..."
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm outline-none border"
-            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', fontFamily: 'DM Sans' }}
-          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2"><Icon.Search size={18} color="#9CA3AF" /></div>
+          <input type="text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Barber, mechanic, tailor…"
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm outline-none"
+            style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', fontFamily:'DM Sans' }} />
         </div>
-
-        {/* Distance slider */}
-        <div className="rounded-2xl p-4 mb-5" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+        <div className="rounded-2xl p-4 mb-5" style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-gray-700">Search Radius</span>
-            <span className="font-bold text-base" style={{ color: 'var(--red)', fontFamily: 'Syne' }}>{radius} km</span>
+            <span className="font-bold text-base" style={{ color:'var(--red)',fontFamily:'Syne' }}>{radius} km</span>
           </div>
-          <input
-            type="range"
-            min="1"
-            max="50"
-            value={radius}
-            onChange={e => setRadius(Number(e.target.value))}
-          />
+          <input type="range" min="1" max="50" value={radius} onChange={e=>setRadius(Number(e.target.value))} />
           <div className="flex justify-between mt-1.5">
             <span className="text-xs text-gray-400">1 km</span>
             <span className="text-xs text-gray-400">50 km</span>
           </div>
         </div>
-
-        {/* Results count */}
         <p className="text-sm text-gray-500 mb-4">
           <span className="font-bold text-gray-900">{filtered.length}</span> providers within {radius} km
-          {query && <span> matching "<strong>{query}</strong>"</span>}
+          {query && <span> · "<strong>{query}</strong>"</span>}
         </p>
-
-        {/* Results */}
         {filtered.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">🔍</div>
-            <p className="font-bold text-gray-700" style={{ fontFamily: 'Syne' }}>No results found</p>
+            <p className="font-bold text-gray-700" style={{ fontFamily:'Syne' }}>No results</p>
             <p className="text-sm text-gray-400 mt-1">Try a wider radius or different keyword</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {filtered.map(p => (
-              <ProviderCard
-                key={p.id}
-                provider={p}
-                onClick={onViewProvider}
-                liked={likedIds.includes(p.id)}
-                onLike={onLike}
-              />
-            ))}
+            {filtered.map(p=><ProviderCard key={p.id} provider={p} onClick={onViewProvider} liked={likedIds.includes(p.id)} onLike={onLike} />)}
           </div>
         )}
       </div>
@@ -765,290 +528,346 @@ function SearchTab({ onViewProvider, providers, likedIds, onLike }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 //  MAP TAB
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 function MapTab({ providers, onViewProvider }) {
   const [selectedPin, setSelectedPin] = React.useState(null);
   const mapRef = React.useRef(null);
+  React.useEffect(() => { initGoogleMaps(mapRef, { lat:51.505, lng:-0.09 }); }, []);
 
-  React.useEffect(() => {
-    // Shell: call initGoogleMaps when component mounts
-    initGoogleMaps(mapRef, { lat: 51.505, lng: -0.09 });
-  }, []);
+  // Build pins from live Firestore providers
+  const livePins = providers.slice(0,6).map((p,i) => ({
+    id:p.id, name:p.name.split(' ')[0], available:p.available,
+    x: MAP_PIN_POS[i]?.x || '50%', y: MAP_PIN_POS[i]?.y || '50%',
+  }));
 
-  const selectedProvider = selectedPin ? providers.find(p => p.id === selectedPin) : null;
+  const selected = selectedPin ? providers.find(p=>p.id===selectedPin) : null;
 
   return (
     <div className="pb-28">
       <div className="px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily: 'Syne' }}>Nearby Map</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Tap a pin to see provider details</p>
+        <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily:'Syne' }}>Nearby Map</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Tap a pin to preview a provider</p>
       </div>
-
-      {/* Map container */}
-      <div className="mx-5 rounded-3xl overflow-hidden relative" style={{ height: 360, boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
+      <div className="mx-5 rounded-3xl overflow-hidden relative" style={{ height:360, boxShadow:'0 4px 24px rgba(0,0,0,0.1)' }}>
         <div ref={mapRef} className="map-grid w-full h-full relative">
-
-          {/* "You are here" marker */}
-          <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
-            <div className="w-5 h-5 rounded-full border-4 border-white" style={{ background: '#3B82F6', boxShadow: '0 0 0 8px rgba(59,130,246,0.2)' }} />
+          {/* You marker */}
+          <div className="absolute" style={{ left:'50%',top:'50%',transform:'translate(-50%,-50%)' }}>
+            <div className="w-5 h-5 rounded-full border-4 border-white"
+              style={{ background:'#3B82F6', boxShadow:'0 0 0 8px rgba(59,130,246,0.2)' }} />
           </div>
-
-          {/* Map label */}
-          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5"
-            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <p className="text-xs font-bold text-gray-700" style={{ fontFamily: 'Syne' }}>GigsCourt Live Map</p>
-            <p className="text-xs text-gray-400">Google Maps — connect API key</p>
+          <div className="absolute top-3 left-3 bg-white rounded-xl px-3 py-1.5" style={{ boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}>
+            <p className="text-xs font-bold text-gray-700" style={{ fontFamily:'Syne' }}>GigsCourt Live Map</p>
+            <p className="text-xs text-gray-400">Connect Google Maps API key</p>
           </div>
-
-          {/* Provider pins */}
-          {MAP_PINS.map(pin => (
-            <button
-              key={pin.id}
-              className="absolute flex flex-col items-center"
-              style={{ left: pin.x, top: pin.y, transform: 'translate(-50%,-100%)' }}
-              onClick={() => setSelectedPin(selectedPin === pin.id ? null : pin.id)}
-            >
-              <div
-                className="px-2.5 py-1.5 rounded-xl text-white text-xs font-bold shadow-lg"
-                style={{
-                  background: pin.available ? 'var(--green)' : 'var(--red)',
-                  boxShadow: pin.available
-                    ? '0 4px 12px rgba(0,196,140,0.4)'
-                    : '0 4px 12px rgba(255,56,92,0.4)',
-                  fontFamily: 'Syne',
-                  border: selectedPin === pin.id ? '2px solid white' : 'none',
-                }}
-              >
+          {/* Provider pins — reflect live Firestore availability */}
+          {livePins.map(pin=>(
+            <button key={pin.id} className="absolute flex flex-col items-center"
+              style={{ left:pin.x, top:pin.y, transform:'translate(-50%,-100%)' }}
+              onClick={()=>setSelectedPin(selectedPin===pin.id?null:pin.id)}>
+              <div className="px-2.5 py-1.5 rounded-xl text-white text-xs font-bold shadow-lg"
+                style={{ background:pin.available?'var(--green)':'var(--red)',
+                  boxShadow:pin.available?'0 4px 12px rgba(0,196,140,0.4)':'0 4px 12px rgba(255,56,92,0.4)',
+                  fontFamily:'Syne', border:selectedPin===pin.id?'2px solid white':'none' }}>
                 {pin.name}
               </div>
-              <div className="w-2 h-2 rounded-full mt-0.5"
-                style={{ background: pin.available ? 'var(--green)' : 'var(--red)' }} />
+              <div className="w-2 h-2 rounded-full mt-0.5" style={{ background:pin.available?'var(--green)':'var(--red)' }} />
             </button>
           ))}
         </div>
       </div>
-
-      {/* Selected provider card */}
-      {selectedProvider && (
+      {selected && (
         <div className="mx-5 mt-4 fade-up">
-          <ProviderCard
-            provider={selectedProvider}
-            onClick={onViewProvider}
-            liked={false}
-            onLike={() => {}}
-          />
+          <ProviderCard provider={selected} onClick={onViewProvider} liked={false} onLike={()=>{}} />
         </div>
       )}
-
-      {/* Legend */}
       <div className="mx-5 mt-4 flex gap-3">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(0,196,140,0.08)' }}>
-          <span className="w-3 h-3 rounded-full" style={{ background: 'var(--green)' }} />
-          <span className="text-xs font-medium text-gray-600">Available</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,56,92,0.08)' }}>
-          <span className="w-3 h-3 rounded-full" style={{ background: 'var(--red)' }} />
-          <span className="text-xs font-medium text-gray-600">Busy</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)' }}>
-          <span className="w-3 h-3 rounded-full" style={{ background: '#3B82F6' }} />
-          <span className="text-xs font-medium text-gray-600">You</span>
-        </div>
+        {[{color:'var(--green)',label:'Available'},{color:'var(--red)',label:'Busy'},{color:'#3B82F6',label:'You'}].map(l=>(
+          <div key={l.label} className="flex items-center gap-2 px-3 py-2 rounded-xl"
+            style={{ background:l.color==='var(--green)'?'rgba(0,196,140,0.08)':l.color==='#3B82F6'?'rgba(59,130,246,0.08)':'rgba(255,56,92,0.08)' }}>
+            <span className="w-3 h-3 rounded-full" style={{ background:l.color }} />
+            <span className="text-xs font-medium text-gray-600">{l.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-//  PROFILE / DASHBOARD TAB
-// ─────────────────────────────────────────────
-function ProfileTab() {
-  const [isAvailable, setIsAvailable] = React.useState(true);
-  const [name] = React.useState('Alex Johnson');
-  const [service] = React.useState('Web Developer');
-  const [bookings] = React.useState(24);
-  const [earnings] = React.useState('$1,840');
-  const [rating] = React.useState(4.9);
+// ════════════════════════════════════════════════════════════
+//  AUTH MODAL  (bottom sheet)
+// ════════════════════════════════════════════════════════════
+function AuthModal({ mode, onClose, onSuccess }) {
+  const [email,    setEmail]    = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [name,     setName]     = React.useState('');
+  const [loading,  setLoading]  = React.useState(false);
+  const [error,    setError]    = React.useState('');
+  const [done,     setDone]     = React.useState(false);
 
-  function handleAvailabilityToggle(val) {
-    setIsAvailable(val);
-    // Shell: send availability ping when going online
-    sendAvailabilityPing('current-user-id', { lat: 51.505, lng: -0.09 }, service);
-  }
-
-  function handleUploadPortfolio() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = e => {
-      const file = e.target.files[0];
-      if (file) uploadToCloudinary(file);
-    };
-    input.click();
+  async function submit() {
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    if (mode==='signup' && !name) { setError('Please enter your name.'); return; }
+    setLoading(true); setError('');
+    try {
+      const user = mode==='signup'
+        ? await handleFirebaseSignup(email, password, name)
+        : await handleFirebaseLogin(email, password);
+      setDone(true);
+      setTimeout(() => { onSuccess(user); onClose(); }, 1200);
+    } catch(err) {
+      setError(err.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim());
+    } finally { setLoading(false); }
   }
 
   return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.5)' }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-6 pb-10 fade-up">
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
+        <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>
+          {mode==='signup'?'Join GigsCourt':'Welcome Back'}
+        </h2>
+        <p className="text-sm text-gray-400 mb-5">{mode==='signup'?'Create your provider account':'Sign in to continue'}</p>
+        {done ? (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background:'rgba(0,196,140,0.12)' }}>
+              <Icon.Check size={28} color="var(--green)" />
+            </div>
+            <p className="font-bold text-gray-800" style={{ fontFamily:'Syne' }}>{mode==='signup'?'Account Created!':'Signed In!'}</p>
+          </div>
+        ) : (
+          <>
+            {mode==='signup' && (
+              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full Name"
+                className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+            )}
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password (min 6 chars)"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+            {error && (
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)',color:'var(--red)' }}>
+                {error}
+              </div>
+            )}
+            <button onClick={submit} disabled={loading}
+              className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+              style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+              {loading
+                ? <><span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" /> Processing…</>
+                : (mode==='signup'?'Create Account':'Sign In')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  PROFILE / DASHBOARD TAB  — live availability toggle
+// ════════════════════════════════════════════════════════════
+function ProfileTab({ currentUser }) {
+  const [user,        setUser]        = React.useState(currentUser);
+  const [isAvailable, setIsAvailable] = React.useState(true);
+  const [toggling,    setToggling]    = React.useState(false);
+  const [toggleMsg,   setToggleMsg]   = React.useState('');
+  const [authModal,   setAuthModal]   = React.useState(null); // 'login'|'signup'|null
+
+  // Keep auth in sync
+  React.useEffect(() => {
+    const unsub = auth.onAuthStateChanged(u => setUser(u));
+    return () => unsub();
+  }, []);
+
+  // Subscribe to this user's provider doc so availability reflects Firestore truth
+  React.useEffect(() => {
+    if (!user) return;
+    const unsub = db.collection('providers').doc(user.uid)
+      .onSnapshot(snap => { if (snap.exists) setIsAvailable(snap.data().available ?? true); },
+        err => console.warn('[Firestore] Profile listen:', err.message));
+    return () => unsub();
+  }, [user?.uid]);
+
+  // ── LIVE TOGGLE — writes to Firestore ──
+  async function handleAvailabilityToggle(val) {
+    if (!user) {
+      setToggleMsg('⚠ Sign in to manage your status.');
+      setTimeout(()=>setToggleMsg(''), 3000);
+      return;
+    }
+    setToggling(true);
+    try {
+      await updateProviderAvailability(user.uid, val);
+      setIsAvailable(val);
+      setToggleMsg(val ? '✓ You\'re now visible to clients!' : '✓ Status set to Busy.');
+    } catch(err) {
+      setToggleMsg('⚠ Update failed — check your connection.');
+      console.error('[Toggle]', err.message);
+    } finally {
+      setToggling(false);
+      setTimeout(()=>setToggleMsg(''), 3000);
+    }
+  }
+
+  function handleUploadPortfolio() {
+    if (!user) { alert('Sign in first to upload portfolio images.'); return; }
+    const inp = document.createElement('input');
+    inp.type='file'; inp.accept='image/*';
+    inp.onchange = e => { if (e.target.files[0]) uploadToCloudinary(e.target.files[0]); };
+    inp.click();
+  }
+
+  const displayName  = user?.displayName || 'Guest User';
+  const displayEmail = user?.email       || 'Not signed in';
+
+  return (
     <div className="pb-28">
-      {/* Profile header */}
+      {authModal && (
+        <AuthModal mode={authModal} onClose={()=>setAuthModal(null)} onSuccess={u=>setUser(u)} />
+      )}
       <div className="px-5 pt-6">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily: 'Syne' }}>Dashboard</h1>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F3F4F6' }}>
+          <h1 className="text-2xl font-extrabold text-gray-900" style={{ fontFamily:'Syne' }}>Dashboard</h1>
+          <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'#F3F4F6' }}>
             <Icon.Settings size={18} color="#6B7280" />
           </button>
         </div>
 
-        {/* Profile card */}
+        {/* Dark provider card */}
         <div className="rounded-3xl p-5 mb-5"
-          style={{
-            background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D44 100%)',
-            boxShadow: '0 8px 32px rgba(26,26,46,0.3)',
-          }}>
+          style={{ background:'linear-gradient(135deg,#1A1A2E 0%,#2D2D44 100%)', boxShadow:'0 8px 32px rgba(26,26,46,0.3)' }}>
+          {/* Avatar + identity */}
           <div className="flex items-center gap-4 mb-5">
             <div className="relative">
-              <img
-                src="https://i.pravatar.cc/300?img=60"
-                alt="me"
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-white"
-              />
-              <button
+              <img src={user ? `https://i.pravatar.cc/300?u=${user.uid}` : 'https://i.pravatar.cc/300?img=60'}
+                alt="me" className="w-16 h-16 rounded-2xl object-cover border-2 border-white" />
+              <button onClick={handleUploadPortfolio}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: 'var(--red)' }}
-              >
+                style={{ background:'var(--red)' }}>
                 <Icon.Camera size={12} color="white" />
               </button>
             </div>
-            <div>
-              <h2 className="text-white font-bold text-lg" style={{ fontFamily: 'Syne' }}>{name}</h2>
-              <p className="text-gray-400 text-sm">{service}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <Icon.Star size={12} filled />
-                <span className="text-yellow-400 text-xs font-bold">{rating}</span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-bold text-lg truncate" style={{ fontFamily:'Syne' }}>{displayName}</h2>
+              <p className="text-gray-400 text-xs truncate">{displayEmail}</p>
+              {user && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Icon.Firebase size={11} />
+                  <span className="text-xs" style={{ color:'var(--green)' }}>Firebase Auth active</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Stats row */}
+          {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mb-5">
-            {[
-              { label: 'Bookings', value: bookings },
-              { label: 'Earnings', value: earnings },
-              { label: 'Rating', value: rating },
-            ].map(s => (
-              <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                <p className="text-white font-bold" style={{ fontFamily: 'Syne' }}>{s.value}</p>
-                <p className="text-gray-400 text-xs mt-0.5">{s.label}</p>
+            {[{l:'Bookings',v:user?'24':'—'},{l:'Earnings',v:user?'$1,840':'—'},{l:'Rating',v:'4.9'}].map(s=>(
+              <div key={s.l} className="rounded-2xl p-3 text-center" style={{ background:'rgba(255,255,255,0.07)' }}>
+                <p className="text-white font-bold" style={{ fontFamily:'Syne' }}>{s.v}</p>
+                <p className="text-gray-400 text-xs mt-0.5">{s.l}</p>
               </div>
             ))}
           </div>
 
-          {/* Availability toggle */}
-          <div className="flex items-center justify-between rounded-2xl p-4"
-            style={{ background: 'rgba(255,255,255,0.07)' }}>
-            <div>
-              <p className="text-white font-semibold text-sm">Availability Status</p>
-              <p className="text-gray-400 text-xs mt-0.5">
-                {isAvailable ? 'You\'re visible to clients nearby' : 'You\'re hidden from search'}
-              </p>
+          {/* ── LIVE AVAILABILITY TOGGLE ── */}
+          <div className="rounded-2xl p-4" style={{ background:'rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-white font-semibold text-sm">Availability Status</p>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  {user
+                    ? (isAvailable ? 'Visible to nearby clients' : 'Hidden from search')
+                    : 'Sign in to manage status'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 ml-3">
+                <StatusBadge available={isAvailable} />
+                <ToggleSwitch value={isAvailable} onChange={handleAvailabilityToggle} disabled={toggling} />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge available={isAvailable} />
-              <ToggleSwitch value={isAvailable} onChange={handleAvailabilityToggle} />
-            </div>
+            {/* Firestore write feedback message */}
+            {(toggleMsg || toggling) && (
+              <div className="mt-3 rounded-xl px-3 py-2 text-xs font-medium fade-up flex items-center gap-2"
+                style={{ background:'rgba(255,255,255,0.1)', color: toggleMsg.startsWith('✓') ? 'var(--green)' : toggleMsg.startsWith('⚠') ? '#FFA000' : '#FFF' }}>
+                {toggling && <span className="w-3 h-3 rounded-full border border-white border-t-transparent spin inline-block flex-shrink-0" />}
+                {toggleMsg || 'Saving to Firestore…'}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Quick actions */}
-        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Quick Actions</h3>
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Quick Actions</h3>
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[
-            { label: 'Upload Work', sub: 'Add to portfolio', icon: '📸', action: handleUploadPortfolio },
-            { label: 'View Bookings', sub: '3 pending', icon: '📅', action: () => {} },
-            { label: 'Edit Profile', sub: 'Update your info', icon: '✏️', action: () => {} },
-            { label: 'Earnings', sub: 'View payouts', icon: '💰', action: () => {} },
-          ].map(a => (
-            <button
-              key={a.label}
-              onClick={a.action}
-              className="rounded-2xl p-4 text-left transition-all active:scale-95"
-              style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}
-            >
+            {label:'Upload Work',   sub:'Add to portfolio',icon:'📸',action:handleUploadPortfolio},
+            {label:'View Bookings', sub:'3 pending',       icon:'📅',action:()=>{}},
+            {label:'Edit Profile',  sub:'Update your info',icon:'✏️',action:()=>{}},
+            {label:'Earnings',      sub:'View payouts',    icon:'💰',action:()=>{}},
+          ].map(a=>(
+            <button key={a.label} onClick={a.action}
+              className="rounded-2xl p-4 text-left active:scale-95 transition-all"
+              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }}>
               <span className="text-2xl">{a.icon}</span>
-              <p className="font-semibold text-gray-800 text-sm mt-2" style={{ fontFamily: 'Syne' }}>{a.label}</p>
+              <p className="font-semibold text-gray-800 text-sm mt-2" style={{ fontFamily:'Syne' }}>{a.label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{a.sub}</p>
             </button>
           ))}
         </div>
 
-        {/* Auth actions */}
-        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily: 'Syne' }}>Account</h3>
-        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: '#E5E7EB' }}>
+        {/* Account section */}
+        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Account</h3>
+        <div className="rounded-2xl overflow-hidden border" style={{ borderColor:'#E5E7EB' }}>
           {[
-            { label: 'Sign In with Firebase', action: () => handleFirebaseLogin('user@email.com', 'password') },
-            { label: 'Create New Account', action: () => handleFirebaseSignup('user@email.com', 'password', 'Alex') },
-            { label: 'Notifications', action: () => {} },
-            { label: 'Help & Support', action: () => {} },
-          ].map((item, i, arr) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className="w-full px-4 py-3.5 text-left text-sm font-medium text-gray-700 flex items-center justify-between"
-              style={{ borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none' }}
-            >
+            { label: user ? '✓ Signed in via Firebase' : 'Sign In', action:()=>!user&&setAuthModal('login'), active:!!user },
+            { label:'Create Account', action:()=>setAuthModal('signup'), active:false },
+            { label:'Notifications',  action:()=>{},                    active:false },
+            { label:'Help & Support', action:()=>{},                    active:false },
+          ].map((item,i,arr)=>(
+            <button key={item.label} onClick={item.action}
+              className="w-full px-4 py-3.5 text-left text-sm font-medium flex items-center justify-between"
+              style={{ color:item.active?'var(--green)':'#374151', borderBottom:i<arr.length-1?'1px solid #F3F4F6':'none' }}>
               {item.label}
-              <span className="text-gray-300">›</span>
+              <span className="text-gray-300">{item.active?'✓':'›'}</span>
             </button>
           ))}
         </div>
-
-        <button
-          className="w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold"
-          style={{ color: 'var(--red)', background: 'rgba(255,56,92,0.06)', border: '1px solid rgba(255,56,92,0.15)' }}
-        >
-          Sign Out
-        </button>
+        {user && (
+          <button onClick={()=>auth.signOut()} className="w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold"
+            style={{ color:'var(--red)', background:'rgba(255,56,92,0.06)', border:'1px solid rgba(255,56,92,0.15)' }}>
+            Sign Out
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 //  BOTTOM NAV
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 function BottomNav({ activeTab, onChange }) {
   const tabs = [
-    { id: 'home', label: 'Home', Icon: Icon.Home },
-    { id: 'search', label: 'Search', Icon: Icon.Search },
-    { id: 'map', label: 'Map', Icon: Icon.Map },
-    { id: 'profile', label: 'Profile', Icon: Icon.User },
+    {id:'home',label:'Home',I:Icon.Home},{id:'search',label:'Search',I:Icon.Search},
+    {id:'map',label:'Map',I:Icon.Map},{id:'profile',label:'Profile',I:Icon.User},
   ];
-
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-50 bottom-nav"
-      style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
+    <div className="fixed bottom-0 left-0 right-0 z-50 bottom-nav"
+      style={{ background:'rgba(255,255,255,0.97)', backdropFilter:'blur(16px)', paddingBottom:'env(safe-area-inset-bottom)' }}>
       <div className="flex">
         {tabs.map(tab => {
-          const active = activeTab === tab.id;
+          const active = activeTab===tab.id;
           return (
-            <button
-              key={tab.id}
-              onClick={() => onChange(tab.id)}
-              className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-all"
-            >
-              <tab.Icon size={22} color={active ? 'var(--red)' : '#9CA3AF'} />
-              <span
-                className="text-xs font-semibold mt-0.5"
-                style={{ color: active ? 'var(--red)' : '#9CA3AF', fontFamily: 'DM Sans' }}
-              >
-                {tab.label}
-              </span>
-              {active && (
-                <span className="w-1 h-1 rounded-full" style={{ background: 'var(--red)' }} />
-              )}
+            <button key={tab.id} onClick={()=>onChange(tab.id)} className="flex-1 flex flex-col items-center py-3 gap-0.5 transition-all">
+              <tab.I size={22} color={active?'var(--red)':'#9CA3AF'} />
+              <span className="text-xs font-semibold mt-0.5" style={{ color:active?'var(--red)':'#9CA3AF', fontFamily:'DM Sans' }}>{tab.label}</span>
+              {active && <span className="w-1 h-1 rounded-full" style={{ background:'var(--red)' }} />}
             </button>
           );
         })}
@@ -1057,124 +876,120 @@ function BottomNav({ activeTab, onChange }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 //  TOP HEADER
-// ─────────────────────────────────────────────
-function TopHeader({ tab }) {
-  const [notifCount] = React.useState(3);
-
+// ════════════════════════════════════════════════════════════
+function TopHeader({ currentUser }) {
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 py-3"
-      style={{
-        background: 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(0,0,0,0.05)',
-        paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
-      }}
-    >
+    <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 py-3"
+      style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(16px)',
+        borderBottom:'1px solid rgba(0,0,0,0.05)', paddingTop:'calc(env(safe-area-inset-top) + 12px)' }}>
       <div className="flex items-center gap-1">
-        <span className="text-xl font-extrabold" style={{ fontFamily: 'Syne', color: 'var(--red)' }}>Gigs</span>
-        <span className="text-xl font-extrabold" style={{ fontFamily: 'Syne', color: '#1A1A2E' }}>Court</span>
+        <span className="text-xl font-extrabold" style={{ fontFamily:'Syne',color:'var(--red)' }}>Gigs</span>
+        <span className="text-xl font-extrabold" style={{ fontFamily:'Syne',color:'#1A1A2E' }}>Court</span>
         <span className="text-lg">⚡</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="relative">
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: '#F3F4F6' }}
-          >
+          <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'#F3F4F6' }}>
             <Icon.Bell size={18} color="#374151" />
           </button>
-          {notifCount > 0 && (
-            <span
-              className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white text-xs font-bold flex items-center justify-center"
-              style={{ background: 'var(--red)', fontSize: 9 }}
-            >
-              {notifCount}
-            </span>
-          )}
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white flex items-center justify-center"
+            style={{ background:'var(--red)', fontSize:9, fontWeight:700 }}>3</span>
         </div>
-        <button className="w-9 h-9 rounded-full overflow-hidden border-2" style={{ borderColor: 'var(--red)' }}>
-          <img src="https://i.pravatar.cc/36?img=60" alt="me" className="w-full h-full object-cover" />
+        <button className="w-9 h-9 rounded-full overflow-hidden border-2" style={{ borderColor:'var(--red)' }}>
+          <img src={currentUser?`https://i.pravatar.cc/36?u=${currentUser.uid}`:'https://i.pravatar.cc/36?img=60'}
+            alt="me" className="w-full h-full object-cover" />
         </button>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-//  ROOT APP
-// ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  ROOT APP  — Firestore onSnapshot listener for providers feed
+// ════════════════════════════════════════════════════════════
 function App() {
-  const [tab, setTab] = React.useState('home');
-  const [viewingProvider, setViewingProvider] = React.useState(null);
-  const [providers, setProviders] = React.useState(PROVIDERS);
-  const [likedIds, setLikedIds] = React.useState([]);
+  const [tab,             setTab]         = React.useState('home');
+  const [viewingProvider, setViewing]     = React.useState(null);
+  const [providers,       setProviders]   = React.useState([]);
+  const [fbStatus,        setFbStatus]    = React.useState('loading');
+  const [likedIds,        setLikedIds]    = React.useState([]);
+  const [currentUser,     setCurrentUser] = React.useState(null);
+
+  // Auth observer
+  React.useEffect(() => {
+    const unsub = auth.onAuthStateChanged(u => setCurrentUser(u));
+    return () => unsub();
+  }, []);
+
+  // ── LIVE Firestore listener on "providers" collection ──
+  // Automatically re-renders when any provider's availability changes.
+  React.useEffect(() => {
+    setFbStatus('loading');
+
+    let query;
+    try {
+      // Try ordered query — requires a Firestore index (auto-created)
+      query = db.collection('providers').orderBy('createdAt', 'desc');
+    } catch(e) {
+      query = db.collection('providers');
+    }
+
+    const unsub = query.onSnapshot(
+      snap => {
+        if (snap.empty) {
+          console.log('[Firestore] providers collection empty — using mock data');
+          setProviders(MOCK_PROVIDERS);
+          setFbStatus('fallback');
+        } else {
+          const docs = snap.docs.map(d => ({
+            id: d.id,
+            ...d.data(),
+            portfolio: d.data().portfolio || [],
+          }));
+          console.log(`[Firestore] ${docs.length} provider(s) live`);
+          setProviders(docs);
+          setFbStatus('live');
+        }
+      },
+      err => {
+        console.error('[Firestore] onSnapshot error:', err.code, err.message);
+        setProviders(MOCK_PROVIDERS);
+        setFbStatus(err.code==='permission-denied' ? 'fallback' : 'error');
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   function handleLike(id) {
-    setLikedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setLikedIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
   }
 
   function handleViewProvider(provider) {
-    setViewingProvider(provider);
+    setViewing(provider);
     window.scrollTo(0, 0);
   }
 
-  function handleBack() {
-    setViewingProvider(null);
-    window.scrollTo(0, 0);
-  }
-
-  // If viewing a provider, show detail full-screen
   if (viewingProvider) {
-    return (
-      <div>
-        <ProfileDetail provider={viewingProvider} onBack={handleBack} />
-      </div>
-    );
+    return <ProfileDetail provider={viewingProvider} onBack={() => { setViewing(null); window.scrollTo(0,0); }} />;
   }
 
   return (
     <div className="max-w-md mx-auto min-h-screen">
-      <TopHeader tab={tab} />
-
-      {/* Tab content — add top padding for fixed header */}
-      <div style={{ paddingTop: 64 }}>
-        {tab === 'home' && (
-          <HomeTab
-            providers={providers}
-            onViewProvider={handleViewProvider}
-            likedIds={likedIds}
-            onLike={handleLike}
-          />
-        )}
-        {tab === 'search' && (
-          <SearchTab
-            providers={providers}
-            onViewProvider={handleViewProvider}
-            likedIds={likedIds}
-            onLike={handleLike}
-          />
-        )}
-        {tab === 'map' && (
-          <MapTab providers={providers} onViewProvider={handleViewProvider} />
-        )}
-        {tab === 'profile' && (
-          <ProfileTab />
-        )}
+      <TopHeader currentUser={currentUser} />
+      <div style={{ paddingTop:64 }}>
+        {tab==='home'    && <HomeTab    providers={providers} fbStatus={fbStatus} onViewProvider={handleViewProvider} likedIds={likedIds} onLike={handleLike} />}
+        {tab==='search'  && <SearchTab  providers={providers} onViewProvider={handleViewProvider} likedIds={likedIds} onLike={handleLike} />}
+        {tab==='map'     && <MapTab     providers={providers} onViewProvider={handleViewProvider} />}
+        {tab==='profile' && <ProfileTab currentUser={currentUser} />}
       </div>
-
       <BottomNav activeTab={tab} onChange={setTab} />
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-//  RENDER
-// ─────────────────────────────────────────────
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 
