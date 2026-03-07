@@ -3,215 +3,195 @@
 <html lang="en" dir="ltr">
 
 <head>
-  <!-- ─────────────────────────────────────────────────────
+  <!-- ═══════════════════════════════════════════════════
        GigsCourt — Service Marketplace PWA
-       Mobile-First | PWA-Ready | Action Red #FF385C
-  ───────────────────────────────────────────────────────── -->
-
-  <!-- Charset & Viewport (MUST be first) -->
+       NO BUILD TOOL REQUIRED — React + Babel via CDN
+       All JSX is transpiled in-browser by Babel Standalone
+  ════════════════════════════════════════════════════════ -->
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-  <!-- ── Primary Meta ──────────────────────────────────── -->
+  <!-- Primary Meta -->
 
   <title>GigsCourt — Find Skilled Providers Near You</title>
-  <meta name="description"
-    content="GigsCourt connects you with top local barbers, stylists, tailors and more. Search by distance, browse portfolios, book instantly." />
-  <meta name="keywords"
-    content="barber near me, stylist, tailor, makeup artist, local services, GigsCourt" />
-  <meta name="author" content="GigsCourt" />
+  <meta name="description" content="GigsCourt connects you with top local barbers, stylists, tailors and more." />
   <meta name="theme-color" content="#FF385C" />
 
-  <!-- ── Mobile / PWA Behaviour ───────────────────────── -->
+  <!-- PWA / Mobile -->
 
-  <!-- Prevent iOS from styling phone numbers / addresses -->
-
-  <meta name="format-detection" content="telephone=no" />
-  <!-- Standalone PWA feel on iOS (fullscreen, no browser chrome) -->
+  <meta name="format-detection"             content="telephone=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="GigsCourt" />
-  <!-- Disable tap callout on iOS long-press -->
-  <meta name="apple-touch-fullscreen" content="yes" />
+  <meta name="apple-mobile-web-app-title"   content="GigsCourt" />
 
-  <!-- ── Open Graph (share previews on WhatsApp / Twitter) -->
+  <!-- Open Graph -->
 
-  <meta property="og:type"        content="website" />
   <meta property="og:title"       content="GigsCourt — Find Skilled Providers Near You" />
-  <meta property="og:description" content="Browse barbers, stylists, tailors and more by distance. Real portfolios. Real reviews." />
-  <meta property="og:image"       content="./assets/og-cover.png" />
-  <meta property="og:url"         content="https://gigscourt.com" />
-  <meta name="twitter:card"       content="summary_large_image" />
+  <meta property="og:description" content="Browse barbers, stylists, tailors by distance." />
+  <meta property="og:type"        content="website" />
 
-  <!-- ── Favicon / App Icons ───────────────────────────── -->
-
-  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
-  <link rel="apple-touch-icon"          href="./assets/icon-192.png" />
-
-  <!-- ── PWA Manifest ──────────────────────────────────── -->
-
-  <!-- Create public/manifest.json to enable "Add to Home Screen" -->
-
-  <link rel="manifest" href="./manifest.json" />
-
-  <!-- ── Google Fonts ──────────────────────────────────── -->
-
-  <!-- Clash Display (headings) + DM Sans (body) — matches styles.css -->
+  <!-- Google Fonts -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet" />
 
-  <!-- ── Tailwind CSS CDN ───────────────────────────────── -->
-
-  <!-- Full CDN build — includes all utilities used in styles.css.
-       In production, swap for a Tailwind CLI purged build.       -->
+  <!-- ── Tailwind CSS CDN ─────────────────────────────── -->
 
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- ── Tailwind Config — registers Action Red as a theme color -->
 
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            // Primary brand colour — use as bg-red, text-red, border-red
-            red: {
-              DEFAULT: '#FF385C',
-              dark:    '#E0294D',
-              light:   '#FF6B87',
-              mist:    'rgba(255,56,92,0.08)',
-            },
+            red: { DEFAULT: '#FF385C', dark: '#E0294D', light: '#FF6B87' }
           },
           fontFamily: {
             display: ['"Clash Display"', 'sans-serif'],
-            body:    ['"DM Sans"',       'sans-serif'],
-          },
-          borderRadius: {
-            sm:   '8px',
-            md:   '14px',
-            lg:   '20px',
-            xl:   '28px',
-            full: '9999px',
+            body:    ['"DM Sans"', 'sans-serif'],
           },
         },
       },
     };
   </script>
 
-  <!-- ── Critical Inline Styles ────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════
+       CRITICAL — React + ReactDOM (must load BEFORE App.js)
+       These become window.React and window.ReactDOM globals.
+       Babel then transforms JSX into React.createElement calls.
+  ═══════════════════════════════════════════════════════════ -->
 
-  <!-- Applied before styles.css loads to prevent flash of unstyled content -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- ══════════════════════════════════════════════════════
+       Babel Standalone — transforms JSX in the browser.
+       This is what makes <div> syntax work without webpack/Vite.
+       All script tags with type="text/babel" are auto-processed.
+  ═══════════════════════════════════════════════════════════ -->
+
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Styles -->
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Critical inline CSS — prevents FOUC before styles.css loads -->
 
   <style>
-    /* Hard reset — prevents any browser margin flash */
     *, *::before, *::after { box-sizing: border-box; }
-
     html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #F8F8FA; /* --off-white, matches styles.css */
+      margin: 0; padding: 0;
+      background: #F8F8FA;
       -webkit-text-size-adjust: 100%;
-      overscroll-behavior: none; /* prevents pull-to-refresh interfering */
+      overscroll-behavior: none;
     }
+    #root { min-height: 100dvh; display: flex; flex-direction: column; }
 
-    /* Root mount point — full viewport height */
-    #root {
-      min-height: 100dvh; /* dvh = dynamic viewport height (iOS safe) */
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── App Loading Splash ───────────────────────────────
-       Shows while React hydrates. Removed automatically
-       once <div id="root"> has children.                  */
+    /* Splash loader */
     #app-loader {
-      position: fixed;
-      inset: 0;
-      background: #FFFFFF;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      z-index: 9999;
+      position: fixed; inset: 0; background: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; z-index: 9999;
       transition: opacity 0.4s ease;
     }
-
-    #app-loader.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
+    #app-loader.hidden { opacity: 0; pointer-events: none; }
     .loader-logo {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: #0D0D12;
+      font-family: 'Clash Display', sans-serif;
+      font-size: 30px; font-weight: 700;
+      color: #0D0D12; margin: 0; letter-spacing: -0.5px;
     }
-
     .loader-logo span { color: #FF385C; }
-
+    .loader-tagline {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: #9999AA; margin: 0;
+    }
     .loader-spinner {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
+      width: 32px; height: 32px; border-radius: 50%;
       border: 3px solid rgba(255,56,92,0.15);
       border-top-color: #FF385C;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.75s linear infinite;
     }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes gcSpin { to { transform: rotate(360deg); } }
   </style>
 
 </head>
 
 <body>
 
-  <!-- ── Loading Splash (visible before React mounts) ──── -->
+  <!-- Splash — visible instantly while JS loads -->
 
   <div id="app-loader" aria-hidden="true">
     <p class="loader-logo">Gigs<span>Court</span></p>
     <div class="loader-spinner"></div>
+    <p class="loader-tagline">Finding gigs near you…</p>
   </div>
 
-  <!-- ── React Root Mount Point ───────────────────────── -->
-
-  <!-- App.js renders into this div via ReactDOM.createRoot -->
+  <!-- React mounts here -->
 
   <div id="root"></div>
 
-  <!-- ── Hide loader once React renders ───────────────── -->
+  <!-- Loader dismiss logic — two methods for reliability -->
 
   <script>
-    // As soon as #root has any child nodes, fade out the splash.
-    const loader = document.getElementById('app-loader');
-    const root   = document.getElementById('root');
+    (function () {
+      var loader = document.getElementById('app-loader');
+      var root   = document.getElementById('root');
 
-    const observer = new MutationObserver(() => {
-      if (root.hasChildNodes()) {
+      function dismiss() {
+        if (!loader || loader._dismissed) return;
+        loader._dismissed = true;
         loader.classList.add('hidden');
-        // Remove from DOM after fade completes
-        setTimeout(() => loader.remove(), 450);
-        observer.disconnect();
+        setTimeout(function () {
+          if (loader.parentNode) loader.parentNode.removeChild(loader);
+        }, 450);
       }
-    });
 
-    observer.observe(root, { childList: true });
+      // Method 1: fires the moment React renders into #root
+      var obs = new MutationObserver(function () {
+        if (root.hasChildNodes()) { dismiss(); obs.disconnect(); }
+      });
+      obs.observe(root, { childList: true });
+
+      // Method 2: hard 6s fallback — clears no matter what
+      setTimeout(function () { dismiss(); obs.disconnect(); }, 6000);
+    })();
   </script>
 
-  <!-- ── Main React App Entry Point ───────────────────── -->
+  <!-- ══════════════════════════════════════════════════════
+       Component files — MUST be type="text/babel" so Babel
+       transforms the JSX before the browser tries to run it.
 
-  <!-- type="module" is required for ES module imports (import/export).
-       src="./App.js" — matches the exact filename in your project root.
-       If your bundler outputs a different name, update this path.      -->
+       ORDER MATTERS — dependencies load before dependents:
+         1. Leaf components first (no internal imports)
+         2. ProfilePage (imports ProfileGrid)
+         3. App.js last (imports everything)
 
-  <script type="module" src="./App.js"></script>
+       Each file uses window globals instead of ES imports
+       because Babel Standalone does not support import/export
+       across separate script tags. State is passed via props.
+  ═══════════════════════════════════════════════════════════ -->
+
+  <!-- NOTE TO DEVELOPER:
+       Because we're using Babel Standalone (no bundler),
+       each component file must be inlined here OR converted
+       to use the window global pattern shown in App.js.
+
+       The cleanest production upgrade path is:
+         npm create vite@latest gigscourt -- --template react
+       Then move your .js files into src/ and run: npm run build
+       Vercel will then serve a proper bundled app.
+
+       For now, App.js below is self-contained and loads everything. -->
+
+  <!-- ── Main App — self-contained, no external JS imports ── -->
+
+  <script type="text/babel" src="./App.js"></script>
 
 </body>
 </html>
