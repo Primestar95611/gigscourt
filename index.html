@@ -7,95 +7,440 @@
   <title>GigsCourt</title>
   <meta name="theme-color" content="#FF385C" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-
-  <!-- Fonts -->
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind -->
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { brand: '#FF385C' },
-          fontFamily: {
-            display: ['"Clash Display"', 'sans-serif'],
-            body:    ['"DM Sans"', 'sans-serif'],
-          },
-        },
-      },
-    }
-  </script>
-
-  <!-- React 18 -->
-
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-
-  <!-- Babel (JSX transform) -->
-
-  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
-
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    *,*::before,*::after{box-sizing:border-box}
-    body{margin:0;font-family:'DM Sans',sans-serif;background:#F8F8FA;-webkit-text-size-adjust:100%;overscroll-behavior:none}
-    #root{min-height:100dvh;display:flex;flex-direction:column}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    .spin{animation:spin .7s linear infinite}
-    .fade-up{animation:fadeUp .35s ease both}
-    input[type=range]{-webkit-appearance:none;height:4px;border-radius:9999px;outline:none;cursor:pointer}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:2.5px solid #FF385C;box-shadow:0 4px 12px rgba(255,56,92,.35)}
-    input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2.5px solid #FF385C}
-    .search-input:focus{outline:none;border-color:#FF385C !important;box-shadow:0 0 0 3px rgba(255,56,92,.12) !important;background:#fff !important}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .skeleton{background:linear-gradient(90deg,#f0f0f5 25%,#e4e4eb 50%,#f0f0f5 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #F8F8FA; font-family: 'DM Sans', sans-serif; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+    #root { min-height: 100dvh; display: flex; flex-direction: column; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .gc-spin { animation: spin 0.75s linear infinite; }
+    .gc-fade { animation: fadeUp 0.3s ease both; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .gc-skel { background: linear-gradient(90deg,#f0f0f5 25%,#e4e4eb 50%,#f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    input[type=range] { -webkit-appearance: none; height: 4px; border-radius: 9999px; outline: none; cursor: pointer; width: 100%; display: block; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2.5px solid #FF385C; box-shadow: 0 2px 8px rgba(255,56,92,0.4); }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2.5px solid #FF385C; }
+    * { -webkit-tap-highlight-color: transparent; }
   </style>
-
 </head>
 <body>
-
-  <!-- ============================================================
-       TEMPORARY DEBUG TOOL — REMOVE AFTER FIXING ERRORS
-       This adds a green floating button on screen.
-       Tap it to see all console errors on your iPhone.
-       DELETE these 2 lines once the app is working correctly.
-  =============================================================== -->
-
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-
-  <script>eruda.init();</script>
-
-  <!-- ============================================================
-       END OF TEMPORARY DEBUG TOOL
-  =============================================================== -->
-
   <div id="root"></div>
 
-  <!--
-    COMPONENT FILES — loaded in dependency order.
-    Each file uses type="text/babel" so Babel transforms JSX.
-    Leaf components first, App.js last.
-  -->
+  <script type="text/babel" data-presets="react">
 
-  <script type="text/babel" src="./components/Header.js"      data-presets="react"></script>
+    // ─────────────────────────────────────────────────────
+    // GIGSCOURT — Single File App
+    // All components defined here. No external JS imports.
+    // Babel transforms JSX inline — zero CORS risk on Vercel.
+    // ─────────────────────────────────────────────────────
 
-  <script type="text/babel" src="./components/ProviderCard.js" data-presets="react"></script>
+    const { useState, useEffect, useCallback, useRef, Fragment } = React
 
-  <script type="text/babel" src="./components/ProfileGrid.js"  data-presets="react"></script>
+    // ── Constants ────────────────────────────────────────
+    const RED   = '#FF385C'
+    const FD    = "'Clash Display', sans-serif"
+    const FB    = "'DM Sans', sans-serif"
+    const btnR  = { background:RED, color:'#fff', border:'none', borderRadius:9999, fontFamily:FB, fontWeight:700, cursor:'pointer', boxShadow:'0 4px 14px rgba(255,56,92,0.35)' }
 
-  <script type="text/babel" src="./ProfilePage.js"             data-presets="react"></script>
+    // ── Data ─────────────────────────────────────────────
+    const PROVIDERS = [
+      { id:1, name:'Elite Cuts',     area:'Sabo Auchi', km:1.2,  stars:4.9, reviews:214, cat:'Barber',  img:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80', verified:true,  open:true  },
+      { id:2, name:'Glam Studio NG', area:'Iyamho',     km:3.7,  stars:4.7, reviews:98,  cat:'Stylist', img:'https://images.unsplash.com/photo-1560066984-138daaa0ce8f?w=400&q=80', verified:true,  open:true  },
+      { id:3, name:'Stitch & Silk',  area:'Fugar',      km:6.1,  stars:4.5, reviews:61,  cat:'Tailor',  img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', verified:false, open:true  },
+      { id:4, name:'Fade King',      area:'Auchi Town', km:8.4,  stars:4.6, reviews:177, cat:'Barber',  img:'https://images.unsplash.com/photo-1521490683712-35a1cb235d1c?w=400&q=80', verified:true,  open:false },
+      { id:5, name:'Gloss & Glow',   area:'Jattu',      km:12.0, stars:4.8, reviews:43,  cat:'Makeup',  img:'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&q=80', verified:false, open:true  },
+      { id:6, name:'Royal Tailors',  area:'Uzairue',    km:15.5, stars:4.4, reviews:29,  cat:'Tailor',  img:'https://images.unsplash.com/photo-1594938298603-c8148c4b4691?w=400&q=80', verified:true,  open:true  },
+    ]
 
-  <script type="text/babel" src="./MapComponent.js"            data-presets="react"></script>
+    const PROFILE = {
+      name:'Elite Cuts', area:'Sabo Auchi', cat:'Barber', stars:4.9, reviews:214,
+      bio:'Sharp fades. Clean lines. Premium cuts for the modern gentleman.',
+      jobs:847, followers:1203, verified:true,
+      avatar:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=200&q=80',
+    }
 
-  <script type="text/babel" src="./CloudinaryUpload.js"        data-presets="react"></script>
+    const PORTFOLIO = [
+      { id:1, url:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&q=80', featured:true  },
+      { id:2, url:'https://images.unsplash.com/photo-1521490683712-35a1cb235d1c?w=300&q=80', featured:false },
+      { id:3, url:'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=300&q=80', featured:false },
+      { id:4, url:'https://images.unsplash.com/photo-1534297635766-a262cdcb8ee4?w=300&q=80', featured:false },
+      { id:5, url:'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=300&q=80', featured:false },
+      { id:6, url:'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80', featured:false },
+    ]
 
-  <script type="text/babel" src="./App.js"                     data-presets="react"></script>
+    // ════════════════════════════════════════════════════
+    // EMPTY SHELLS — wire these up when ready
+    // ════════════════════════════════════════════════════
+
+    function handleFirebaseLogin() {
+      // EMPTY SHELL: Firebase Auth
+      // import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+      // signInWithPopup(auth, new GoogleAuthProvider())
+      alert('Booking coming soon! 🎉')
+    }
+
+    function uploadToCloudinary(file) {
+      // EMPTY SHELL: Cloudinary Upload
+      // const fd = new FormData()
+      // fd.append('file', file)
+      // fd.append('upload_preset', 'YOUR_PRESET')
+      // return fetch('https://api.cloudinary.com/v1_1/YOUR_CLOUD/image/upload', { method:'POST', body:fd }).then(r => r.json())
+      return Promise.resolve({ url: URL.createObjectURL(file) })
+    }
+
+    function RenderGoogleMap({ lat, lng, radius }) {
+      // EMPTY SHELL: Google Maps
+      // Replace this div with @react-google-maps/api component
+      return (
+        <div style={{ background:'#E8EDF2', borderRadius:16, padding:40, textAlign:'center', color:'#9999AA' }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>🗺️</div>
+          <p style={{ margin:0, fontFamily:FD, fontWeight:700, color:'#0D0D12', fontSize:16 }}>Map View</p>
+          <p style={{ margin:'6px 0 0', fontFamily:FB, fontSize:13 }}>Google Maps connects here · {radius}km radius</p>
+        </div>
+      )
+    }
+
+    // ════════════════════════════════════════════════════
+    // COMPONENT: Header
+    // ════════════════════════════════════════════════════
+    function Header({ query, onQuery, radius, onRadius, locLabel, onGPS, locating }) {
+      const [val, setVal] = useState(25)
+      const fill = ((val - 1) / 49 * 100).toFixed(1)
+      const kmLabel = val >= 50 ? '50+ km' : `${val} km`
+
+      const onSlide = e => {
+        const v = Number(e.target.value)
+        setVal(v)
+        onRadius(v)
+      }
+
+      return (
+        <header style={{ position:'sticky', top:0, zIndex:100, background:'#fff', borderBottom:'1px solid #F0F0F5', padding:'14px 16px', boxShadow:'0 1px 6px rgba(0,0,0,0.06)' }}>
+
+          {/* Logo + GPS */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <h1 style={{ margin:0, fontFamily:FD, fontSize:22, fontWeight:700, letterSpacing:'-0.4px', color:'#0D0D12' }}>
+              Gigs<span style={{ color:RED }}>Court</span>
+            </h1>
+            <button onClick={onGPS} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:9999, border:'1px solid #E8E8EE', background:'none', cursor:'pointer', maxWidth:160 }}>
+              {locLabel
+                ? <><span style={{ width:7, height:7, borderRadius:'50%', background:RED, display:'inline-block', flexShrink:0 }} /><span style={{ fontSize:12, color:RED, fontWeight:500, fontFamily:FB, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{locLabel}</span></>
+                : <span style={{ fontSize:12, color:'#9999AA', fontFamily:FB }}>📍 Set location</span>
+              }
+            </button>
+          </div>
+
+          {/* Search */}
+          <div style={{ position:'relative', marginBottom:12 }}>
+            <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, pointerEvents:'none' }}>🔍</span>
+            <input
+              type="search"
+              placeholder="Find barbers, stylists, tailors…"
+              value={query}
+              onChange={e => onQuery(e.target.value)}
+              style={{ width:'100%', height:46, paddingLeft:40, paddingRight:50, fontFamily:FB, fontSize:15, background:'#F2F2F7', border:'1.5px solid transparent', borderRadius:9999, outline:'none', color:'#0D0D12', display:'block' }}
+              onFocus={e => { e.target.style.background='#fff'; e.target.style.borderColor=RED; e.target.style.boxShadow='0 0 0 3px rgba(255,56,92,0.1)' }}
+              onBlur={e  => { e.target.style.background='#F2F2F7'; e.target.style.borderColor='transparent'; e.target.style.boxShadow='none' }}
+            />
+            <button onClick={onGPS} style={{ ...btnR, position:'absolute', right:7, top:'50%', transform:'translateY(-50%)', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, opacity: locating ? 0.6 : 1 }}>
+              {locating
+                ? <span className="gc-spin" style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', borderRadius:'50%', display:'inline-block' }} />
+                : '🎯'
+              }
+            </button>
+          </div>
+
+          {/* Distance slider */}
+          <div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+              <span style={{ fontSize:11, fontWeight:600, color:'#5A5A6E', textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:FB }}>📍 Distance</span>
+              <span style={{ fontSize:13, fontWeight:700, color:RED, fontFamily:FD, padding:'2px 10px', background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.18)', borderRadius:9999 }}>{kmLabel}</span>
+            </div>
+            <input type="range" min={1} max={50} step={1} value={val} onChange={onSlide} style={{ background:`linear-gradient(to right,${RED} ${fill}%,#E8E8EE ${fill}%)` }} />
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'#9999AA', fontFamily:FB, marginTop:3 }}>
+              <span>1 km</span><span>25 km</span><span>50 km</span>
+            </div>
+          </div>
+
+        </header>
+      )
+    }
+
+    // ════════════════════════════════════════════════════
+    // COMPONENT: ProviderCard
+    // ════════════════════════════════════════════════════
+    function ProviderCard({ p, onView }) {
+      const [loaded,  setLoaded]  = useState(false)
+      const [pressed, setPressed] = useState(false)
+      const dist = p.km < 1 ? `${Math.round(p.km * 1000)}m` : p.km < 10 ? `${p.km.toFixed(1)}km` : `${Math.round(p.km)}km`
+
+      return (
+        <div
+          style={{ background:'#fff', borderRadius:20, overflow:'hidden', display:'flex', flexDirection:'column', transition:'transform .15s, box-shadow .15s', transform: pressed ? 'scale(0.97)' : 'scale(1)', boxShadow: pressed ? '0 2px 6px rgba(0,0,0,0.06)' : '0 4px 16px rgba(0,0,0,0.08)', cursor:'pointer' }}
+          onMouseDown={() => setPressed(true)} onMouseUp={() => setPressed(false)} onMouseLeave={() => setPressed(false)}
+          onTouchStart={() => setPressed(true)} onTouchEnd={() => setPressed(false)}
+        >
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 10px 8px', gap:4 }}>
+            <span style={{ fontSize:11, color:'#5A5A6E', fontWeight:500, fontFamily:FB, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>📍 {p.area}{p.verified ? ' ✅' : ''}</span>
+            <span style={{ fontSize:10, fontWeight:700, color:RED, background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.15)', borderRadius:9999, padding:'2px 7px', whiteSpace:'nowrap', fontFamily:FB }}>{dist} away</span>
+          </div>
+
+          <div style={{ position:'relative', width:'100%', aspectRatio:'1/1', background:'#F2F2F7', overflow:'hidden' }}>
+            {!loaded && <div className="gc-skel" style={{ position:'absolute', inset:0 }} />}
+            <img src={p.img} alt={p.name} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', opacity: loaded ? 1 : 0, transition:'opacity 0.3s' }} onLoad={() => setLoaded(true)} />
+            <div style={{ position:'absolute', top:8, right:8, width:8, height:8, borderRadius:'50%', background: p.open ? '#22C55E' : '#94A3B8', border:'2px solid #fff' }} />
+          </div>
+
+          <div style={{ padding:'10px 10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+            <p style={{ margin:0, fontFamily:FD, fontSize:13, fontWeight:700, color:'#0D0D12', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              {[0,1,2,3,4].map(i => <span key={i} style={{ fontSize:11, color: i < Math.floor(p.stars) ? RED : '#DDD' }}>★</span>)}
+              <span style={{ fontSize:11, fontWeight:600, color:'#0D0D12', fontFamily:FB }}>{p.stars.toFixed(1)}</span>
+              <span style={{ fontSize:10, color:'#9999AA', fontFamily:FB }}>({p.reviews})</span>
+            </div>
+            <button onClick={() => onView(p)} style={{ ...btnR, width:'100%', height:34, fontSize:12, fontFamily:FB, marginTop:2 }}>View Portfolio →</button>
+          </div>
+        </div>
+      )
+    }
+
+    // ════════════════════════════════════════════════════
+    // COMPONENT: ProfileGrid (Instagram-style 3-col grid)
+    // ════════════════════════════════════════════════════
+    function ProfileGrid({ profile, images, onUpload }) {
+      const [uploading, setUploading] = useState(false)
+      const inputRef = useRef(null)
+      const initials = profile.name.split(' ').slice(0,2).map(w => w[0]?.toUpperCase() || '').join('')
+
+      const handleFile = async e => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        const result = await uploadToCloudinary(file)
+        onUpload({ id: Date.now(), url: result.url, featured: false })
+        setUploading(false)
+        e.target.value = ''
+      }
+
+      return (
+        <div style={{ background:'#F8F8FA', minHeight:'100dvh' }}>
+
+          {/* Profile header */}
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', background:'#fff', padding:'28px 20px 24px', borderBottom:'1px solid #F0F0F5', gap:6 }}>
+            <div style={{ width:90, height:90, borderRadius:'50%', padding:3, background:'linear-gradient(135deg,#FF385C,#FF6B87)', boxShadow:'0 4px 20px rgba(255,56,92,0.35)', marginBottom:6 }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', overflow:'hidden', border:'2.5px solid #fff', background:'#F2F2F7' }}>
+                {profile.avatar
+                  ? <img src={profile.avatar} alt={profile.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:FD, fontSize:28, fontWeight:700, color:'#fff', background:'linear-gradient(135deg,#1a1a2e,#16213e)' }}>{initials}</div>
+                }
+              </div>
+            </div>
+            <h2 style={{ margin:0, fontFamily:FD, fontSize:22, fontWeight:700, color:'#0D0D12' }}>{profile.name}{profile.verified ? ' ✅' : ''}</h2>
+            <span style={{ padding:'4px 14px', background:'rgba(255,56,92,0.08)', border:'1px solid rgba(255,56,92,0.2)', borderRadius:9999, fontSize:12, fontWeight:600, color:RED, fontFamily:FB }}>{profile.cat}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'#5A5A6E', fontFamily:FB }}>
+              <span>📍 {profile.area}</span>
+              <span style={{ color:'#ddd' }}>|</span>
+              <span>⭐ {profile.stars.toFixed(1)} ({profile.reviews})</span>
+            </div>
+            {profile.bio && <p style={{ margin:'4px 0 0', fontFamily:FB, fontSize:13, lineHeight:1.55, color:'#5A5A6E', textAlign:'center', maxWidth:280 }}>{profile.bio}</p>}
+            <div style={{ display:'flex', alignItems:'center', width:'100%', maxWidth:290, background:'#F2F2F7', borderRadius:14, overflow:'hidden', border:'1px solid #F0F0F5', marginTop:4 }}>
+              {[['Jobs', profile.jobs], ['Followers', profile.followers], ['Rating', `${profile.stars.toFixed(1)}★`]].map(([lbl, val], i, arr) => (
+                <Fragment key={lbl}>
+                  <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', padding:'10px 0', gap:2 }}>
+                    <strong style={{ fontFamily:FD, fontSize:16, fontWeight:700, color:'#0D0D12', lineHeight:1 }}>{val}</strong>
+                    <span style={{ fontSize:9, fontWeight:600, color:'#9999AA', textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:FB }}>{lbl}</span>
+                  </div>
+                  {i < arr.length - 1 && <div style={{ width:1, height:28, background:'#E8E8EE' }} />}
+                </Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid header */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px 8px' }}>
+            <span style={{ fontFamily:FD, fontWeight:700, fontSize:15, color:'#0D0D12' }}>🖼 Work Portfolio</span>
+            <span style={{ fontSize:12, color:'#9999AA', fontFamily:FB }}>{images.length} photos</span>
+          </div>
+
+          {/* 3-column Instagram grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, background:'#E8E8EE' }}>
+            <button onClick={() => inputRef.current?.click()} disabled={uploading} style={{ aspectRatio:'1/1', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:5, background:'#F2F2F7', border:'2px dashed rgba(255,56,92,0.35)', cursor:'pointer', padding:0 }}>
+              <input ref={inputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleFile} />
+              {uploading
+                ? <span className="gc-spin" style={{ width:24, height:24, border:'3px solid rgba(255,56,92,0.15)', borderTopColor:RED, borderRadius:'50%', display:'inline-block' }} />
+                : <>
+                    <div style={{ width:36, height:36, borderRadius:'50%', background:RED, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'#fff', boxShadow:'0 4px 12px rgba(255,56,92,0.35)' }}>＋</div>
+                    <span style={{ fontSize:11, fontWeight:600, color:RED, fontFamily:FB }}>Add Work</span>
+                  </>
+              }
+            </button>
+            {images.map((img, i) => (
+              <div key={img.id || i} style={{ aspectRatio:'1/1', overflow:'hidden', background:'#F2F2F7', position:'relative' }}>
+                <img src={img.url} alt={`Work ${i+1}`} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                {img.featured && <span style={{ position:'absolute', bottom:4, left:4, padding:'2px 6px', background:RED, borderRadius:9999, fontSize:8, fontWeight:700, color:'#fff', textTransform:'uppercase', fontFamily:FB }}>Featured</span>}
+              </div>
+            ))}
+          </div>
+
+          {images.length === 0 && (
+            <div style={{ textAlign:'center', padding:'32px 24px', color:'#9999AA' }}>
+              <div style={{ fontSize:40 }}>📸</div>
+              <p style={{ fontWeight:700, color:'#0D0D12', margin:'8px 0 4px', fontFamily:FD }}>No photos yet</p>
+              <p style={{ fontSize:13, margin:0, fontFamily:FB }}>Tap <strong style={{ color:RED }}>+</strong> to upload your first work photo</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // ════════════════════════════════════════════════════
+    // ROOT APP
+    // ════════════════════════════════════════════════════
+    function App() {
+
+      // 2-second guaranteed splash clear
+      const [ready, setReady] = useState(false)
+      useEffect(() => {
+        const t = setTimeout(() => setReady(true), 2000)
+        return () => clearTimeout(t)
+      }, [])
+
+      const [view,     setView]     = useState('home')   // 'home' | 'profile' | 'map'
+      const [selected, setSelected] = useState(PROFILE)
+      const [query,    setQuery]    = useState('')
+      const [radius,   setRadius]   = useState(25)
+      const [locLabel, setLocLabel] = useState('')
+      const [locating, setLocating] = useState(false)
+      const [coords,   setCoords]   = useState(null)
+      const [images,   setImages]   = useState(PORTFOLIO)
+
+      const getGPS = useCallback(() => {
+        if (!navigator.geolocation) { alert('GPS not supported.'); return }
+        setLocating(true)
+        navigator.geolocation.getCurrentPosition(
+          async ({ coords: { latitude: lat, longitude: lng } }) => {
+            setCoords({ lat, lng })
+            try {
+              const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+              const d = await r.json()
+              setLocLabel(d.address?.suburb || d.address?.town || d.address?.village || d.address?.city || 'My Location')
+            } catch {
+              setLocLabel(`${lat.toFixed(2)}, ${lng.toFixed(2)}`)
+            }
+            setLocating(false)
+          },
+          () => { setLocating(false); alert('Location denied. Check permissions.') },
+          { enableHighAccuracy:true, timeout:10000 }
+        )
+      }, [])
+
+      // Splash
+      if (!ready) {
+        return (
+          <div style={{ position:'fixed', inset:0, background:'#fff', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, zIndex:9999 }}>
+            <h1 style={{ margin:0, fontFamily:FD, fontSize:32, fontWeight:700, color:'#0D0D12', letterSpacing:'-0.5px' }}>
+              Gigs<span style={{ color:RED }}>Court</span>
+            </h1>
+            <span className="gc-spin" style={{ width:28, height:28, border:'3px solid rgba(255,56,92,0.15)', borderTopColor:RED, borderRadius:'50%', display:'inline-block' }} />
+            <p style={{ margin:0, fontFamily:FB, fontSize:13, color:'#9999AA' }}>Finding gigs near you…</p>
+          </div>
+        )
+      }
+
+      // Filter providers
+      const filtered = PROVIDERS.filter(p => {
+        if (p.km > radius) return false
+        if (!query.trim()) return true
+        const q = query.toLowerCase()
+        return p.name.toLowerCase().includes(q) || p.area.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)
+      })
+
+      return (
+        <div style={{ display:'flex', flexDirection:'column', minHeight:'100dvh', background:'#F8F8FA' }}>
+
+          {/* ── PROFILE VIEW ── */}
+          {view === 'profile' && (
+            <div style={{ display:'flex', flexDirection:'column', minHeight:'100dvh' }}>
+              <nav style={{ position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', background:'#fff', borderBottom:'1px solid #F0F0F5', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', gap:8 }}>
+                <button onClick={() => setView('home')} style={{ padding:'6px 14px', borderRadius:9999, border:'none', background:'#F2F2F7', fontSize:13, fontWeight:600, color:'#5A5A6E', cursor:'pointer', fontFamily:FB }}>← Back</button>
+                <span style={{ fontFamily:FD, fontSize:16, fontWeight:700, color:'#0D0D12', flex:1, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{selected.name}</span>
+                <button onClick={handleFirebaseLogin} style={{ ...btnR, padding:'6px 16px', fontSize:13, fontFamily:FB }}>Book</button>
+              </nav>
+              <div style={{ flex:1, paddingBottom:80 }}>
+                <ProfileGrid profile={selected} images={images} onUpload={img => setImages(prev => [img, ...prev])} />
+              </div>
+              <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#fff', borderTop:'1px solid #F0F0F5', boxShadow:'0 -4px 20px rgba(0,0,0,0.08)', gap:12 }}>
+                <div>
+                  <p style={{ margin:0, fontFamily:FD, fontWeight:700, fontSize:14, color:'#0D0D12' }}>{selected.name}</p>
+                  <p style={{ margin:0, fontSize:12, color:'#9999AA', fontFamily:FB }}>⭐ {selected.stars.toFixed(1)} · 📍 {selected.area}</p>
+                </div>
+                <button onClick={handleFirebaseLogin} style={{ ...btnR, padding:'0 24px', height:42, fontSize:14, fontFamily:FB, flexShrink:0 }}>Book Now</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── HOME + MAP VIEWS ── */}
+          {view !== 'profile' && (
+            <>
+              <Header query={query} onQuery={setQuery} radius={radius} onRadius={setRadius} locLabel={locLabel} onGPS={getGPS} locating={locating} />
+
+              {view === 'home' && (
+                <main style={{ flex:1, padding:'12px 10px 80px' }}>
+                  <p style={{ margin:'0 0 10px 4px', fontSize:12, color:'#9999AA', fontFamily:FB }}>
+                    {filtered.length} provider{filtered.length !== 1 ? 's' : ''} within {radius}km
+                  </p>
+                  {filtered.length > 0
+                    ? (
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
+                        {filtered.map((p, i) => (
+                          <div key={p.id} className="gc-fade" style={{ animationDelay:`${i * 0.05}s` }}>
+                            <ProviderCard p={p} onView={p => { setSelected(p); setView('profile') }} />
+                          </div>
+                        ))}
+                      </div>
+                    )
+                    : (
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 24px', gap:10, textAlign:'center' }}>
+                        <span style={{ fontSize:48 }}>🔍</span>
+                        <p style={{ margin:0, fontFamily:FD, fontSize:20, fontWeight:700, color:'#0D0D12' }}>No providers found</p>
+                        <p style={{ margin:0, fontSize:14, color:'#9999AA', fontFamily:FB }}>Try widening your radius or a different search.</p>
+                      </div>
+                    )
+                  }
+                </main>
+              )}
+
+              {view === 'map' && (
+                <div style={{ flex:1, padding:16 }}>
+                  <RenderGoogleMap lat={coords?.lat || 0} lng={coords?.lng || 0} radius={radius} />
+                </div>
+              )}
+
+              {/* Bottom nav */}
+              <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, display:'flex', alignItems:'center', background:'#fff', borderTop:'1px solid #F0F0F5', boxShadow:'0 -2px 12px rgba(0,0,0,0.06)' }}>
+                {[{ id:'home', icon:'🏠', label:'Home' }, { id:'map', icon:'🗺️', label:'Map' }].map(tab => (
+                  <button key={tab.id} onClick={() => setView(tab.id)} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', padding:'10px 0 12px', border:'none', background:'none', cursor:'pointer', gap:2 }}>
+                    <span style={{ fontSize:22 }}>{tab.icon}</span>
+                    <span style={{ fontSize:10, fontWeight:600, fontFamily:FB, color: view === tab.id ? RED : '#9999AA' }}>{tab.label}</span>
+                    {view === tab.id && <span style={{ width:4, height:4, borderRadius:'50%', background:RED }} />}
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
+
+        </div>
+      )
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+
+  </script>
 
 </body>
 </html>
