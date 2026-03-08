@@ -234,22 +234,37 @@ async function handleEmailChange(user, newEmail, currentPassword) {
 let _recaptchaVerifier = null;
 let _phoneConfirmation = null;
 
-async function initRecaptcha() {
-  // Always clear and re-create — prevents stale widget errors on retry
+// Clears the reCAPTCHA widget — call this from every .catch() block so
+// the user can retry without a page refresh.
+function safeResetRecaptcha() {
   if (_recaptchaVerifier) {
     try { _recaptchaVerifier.clear(); } catch(e) {}
     _recaptchaVerifier = null;
+  }
+  if (window.grecaptcha) {
+    try { window.grecaptcha.reset(); } catch(e) {}
+  }
+  console.log('[reCAPTCHA] Cleared — ready for next attempt');
+}
+
+async function initRecaptcha() {
+  // Reuse the existing verifier if it is already rendered and healthy.
+  // Only create a new one when none exists (or after safeResetRecaptcha clears it).
+  // This prevents the "already rendered" error when the button is clicked again.
+  if (_recaptchaVerifier) {
+    console.log('[reCAPTCHA] Reusing existing verifier');
+    return _recaptchaVerifier;
   }
   _recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     size: 'invisible',
     callback: () => console.log('[reCAPTCHA] Solved'),
     'expired-callback': () => {
-      if (_recaptchaVerifier) { try { _recaptchaVerifier.clear(); } catch(e) {} }
-      _recaptchaVerifier = null;
-      console.warn('[reCAPTCHA] Expired — cleared for next attempt');
+      // Verifier expired — clear it so the next call re-creates it fresh
+      safeResetRecaptcha();
     },
   });
   await _recaptchaVerifier.render();
+  console.log('[reCAPTCHA] New verifier rendered');
   return _recaptchaVerifier;
 }
 
@@ -1270,24 +1285,51 @@ function EmailChangeModal({ user, onClose }) {
 
 // ════════════════════════════════════════════════════════════
 //  MFA ENROLL MODAL  — phone second factor enrollment
+//  • Country code dropdown (default +234 Nigeria) + E.164 builder
+//  • reCAPTCHA: reuses existing verifier if already rendered,
+//    clears it on any error so user can retry without a refresh
 // ════════════════════════════════════════════════════════════
 function MFAEnrollModal({ user, onClose, onSuccess }) {
-  const [phone,    setPhone]    = React.useState('');
-  const [otp,      setOtp]      = React.useState('');
-  const [verId,    setVerId]    = React.useState('');
-  const [step,     setStep]     = React.useState(1); // 1=enter phone, 2=enter OTP, 3=done
-  const [loading,  setLoading]  = React.useState(false);
-  const [error,    setError]    = React.useState('');
-  const cleanErr = e => e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+  const [phone,       setPhone]       = React.useState('');
+  const [countryCode, setCountryCode] = React.useState('+234'); // default Nigeria
+  const [otp,         setOtp]         = React.useState('');
+  const [verId,       setVerId]       = React.useState('');
+  const [step,        setStep]        = React.useState(1); // 1=enter phone, 2=enter OTP, 3=done
+  const [loading,     setLoading]     = React.useState(false);
+  const [error,       setError]       = React.useState('');
+
+  // Same friendly error translator as AuthModal
+  function cleanErr(e) {
+    const code = (e.code || '');
+    const map = {
+      'auth/wrong-password':        'Incorrect password. Please try again.',
+      'auth/invalid-credential':    'Incorrect password. Please try again.',
+      'auth/user-not-found':        'No account found with this email.',
+      'auth/invalid-email':         'Please enter a valid email address.',
+      'auth/too-many-requests':     'Too many attempts. Please wait a moment and try again.',
+      'auth/invalid-phone-number':  'Invalid phone number. Check the country code and digits.',
+      'auth/missing-phone-number':  'Please enter a phone number.',
+      'auth/quota-exceeded':        'SMS quota exceeded. Please try again later.',
+      'auth/captcha-check-failed':  'reCAPTCHA check failed. Please close and reopen this dialog.',
+    };
+    if (map[code]) return map[code];
+    return e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+  }
 
   async function sendOTP() {
-    if (!phone) { setError('Enter a phone number with country code.'); return; }
+    if (!phone) { setError('Enter your phone number (digits only, no leading 0).'); return; }
+    // Build E.164: strip leading zeros, prepend selected country code
+    const localNum = phone.replace(/^0+/, '');
+    const e164     = countryCode + localNum;
     setLoading(true); setError('');
     try {
-      const verificationId = await handleMFAEnroll(user, phone);
+      const verificationId = await handleMFAEnroll(user, e164);
       setVerId(verificationId);
       setStep(2);
-    } catch(err) { setError(cleanErr(err)); }
+    } catch(err) {
+      safeResetRecaptcha(); // clear so next attempt gets a fresh widget
+      setError(cleanErr(err));
+    }
     finally { setLoading(false); }
   }
 
@@ -1298,11 +1340,23 @@ function MFAEnrollModal({ user, onClose, onSuccess }) {
       await handleMFAEnrollVerify(user, verId, otp, 'Phone');
       setStep(3);
       setTimeout(() => { onSuccess(); onClose(); }, 2000);
-    } catch(err) { setError(cleanErr(err)); }
+    } catch(err) {
+      safeResetRecaptcha();
+      setError(cleanErr(err));
+    }
     finally { setLoading(false); }
   }
 
   const Spinner = () => <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" />;
+
+  // Country options — same list as phone signup tab
+  const COUNTRIES = [
+    ['+234','🇳🇬 +234'],['+1','🇺🇸 +1'],['+44','🇬🇧 +44'],['+233','🇬🇭 +233'],
+    ['+254','🇰🇪 +254'],['+27','🇿🇦 +27'],['+251','🇪🇹 +251'],['+255','🇹🇿 +255'],
+    ['+256','🇺🇬 +256'],['+237','🇨🇲 +237'],['+225','🇨🇮 +225'],['+221','🇸🇳 +221'],
+    ['+49','🇩🇪 +49'],['+33','🇫🇷 +33'],['+91','🇮🇳 +91'],['+86','🇨🇳 +86'],
+    ['+55','🇧🇷 +55'],['+61','🇦🇺 +61'],
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.55)' }}
@@ -1320,27 +1374,56 @@ function MFAEnrollModal({ user, onClose, onSuccess }) {
             <p className="font-bold text-gray-800" style={{ fontFamily:'Syne' }}>MFA Enabled!</p>
             <p className="text-sm text-gray-500 text-center">Your account is now protected. You&apos;ll receive a confirmation email.</p>
           </div>
+
         ) : step === 1 ? (
           <>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7700 900000"
-              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
-              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
-            {error && <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)', color:'var(--red)' }}>{error}</div>}
+            {/* Country code dropdown + local number — builds E.164 on send */}
+            <div className="flex gap-2 mb-1">
+              <select value={countryCode} onChange={e => setCountryCode(e.target.value)}
+                className="px-3 py-3.5 rounded-2xl text-sm outline-none font-semibold flex-shrink-0"
+                style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', width:120 }}>
+                {COUNTRIES.map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
+                ))}
+              </select>
+              <input type="tel" value={phone}
+                onChange={e => setPhone(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="8012345678"
+                className="flex-1 px-4 py-3.5 rounded-2xl text-sm outline-none"
+                style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+            </div>
+            <p className="text-xs text-gray-400 mb-3 pl-1">Enter number without leading 0</p>
+
+            {error && (
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm font-semibold"
+                style={{ background:'rgba(255,56,92,0.07)', color:'var(--red)', border:'1px solid rgba(255,56,92,0.15)' }}>
+                {error}
+              </div>
+            )}
             <button onClick={sendOTP} disabled={loading}
               className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
               style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
               {loading ? <><Spinner /> Sending code…</> : 'Send Verification Code'}
             </button>
+            <p className="text-xs text-gray-400 text-center mt-2">Protected by invisible reCAPTCHA</p>
           </>
+
         ) : (
           <>
             <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
-              Code sent to {phone}
+              Code sent to {countryCode}{phone}
             </div>
-            <input type="text" inputMode="numeric" maxLength="6" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
-              placeholder="6-digit code" className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold"
+            <input type="text" inputMode="numeric" maxLength="6" value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
+              placeholder="6-digit code"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold"
               style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', fontSize:22, letterSpacing:8 }} />
-            {error && <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)', color:'var(--red)' }}>{error}</div>}
+            {error && (
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm font-semibold"
+                style={{ background:'rgba(255,56,92,0.07)', color:'var(--red)', border:'1px solid rgba(255,56,92,0.15)' }}>
+                {error}
+              </div>
+            )}
             <button onClick={verifyOTP} disabled={loading}
               className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
               style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
@@ -1569,7 +1652,29 @@ function AuthModal({ mode, onClose, onSuccess }) {
   const [doneLabel,  setDoneLabel]  = React.useState('');
 
   const isSignup = (mode === 'signup');
-  const cleanErr = e => e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+
+  // Translates Firebase error codes into plain human language
+  function cleanErr(e) {
+    const code = (e.code || '');
+    const map = {
+      'auth/wrong-password':        'Incorrect password. Please try again.',
+      'auth/invalid-credential':    'Incorrect password. Please try again.',
+      'auth/user-not-found':        'No account found with this email.',
+      'auth/email-already-in-use':  'An account with this email already exists.',
+      'auth/invalid-email':         'Please enter a valid email address.',
+      'auth/weak-password':         'Password must be at least 6 characters.',
+      'auth/too-many-requests':     'Too many attempts. Please wait a moment and try again.',
+      'auth/network-request-failed':'Network error. Check your connection and try again.',
+      'auth/popup-closed-by-user':  'Sign-in window was closed. Please try again.',
+      'auth/invalid-phone-number':  'Invalid phone number. Check the country code and digits.',
+      'auth/missing-phone-number':  'Please enter a phone number.',
+      'auth/quota-exceeded':        'SMS quota exceeded. Please try again later.',
+      'auth/captcha-check-failed':  'reCAPTCHA check failed. Please refresh and try again.',
+    };
+    if (map[code]) return map[code];
+    // Fallback: strip Firebase boilerplate from the raw message
+    return e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+  }
 
   // ── Email / Password flow ──────────────────────────────────
   async function submitEmail() {
@@ -1676,7 +1781,8 @@ function AuthModal({ mode, onClose, onSuccess }) {
 
             {/* Error / success banners */}
             {error && (
-              <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.07)', color:'var(--red)' }}>
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm font-semibold"
+                style={{ background:'rgba(255,56,92,0.07)', color:'var(--red)', border:'1px solid rgba(255,56,92,0.18)' }}>
                 {error}
               </div>
             )}
@@ -1782,7 +1888,7 @@ function AuthModal({ mode, onClose, onSuccess }) {
                   </>
                 ) : (
                   <>
-                    <div className="rounded-xl px-4 py-3 mb-3 text-sm flex items-center gap-2"
+                    <div className="rounded-xl px-4 py-3 mb-3 text-sm font-semibold flex items-center gap-2"
                       style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
                       <Icon.Check size={15} color="var(--green)" />
                       OTP sent to {countryCode}{phone}
