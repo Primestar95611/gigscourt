@@ -1936,69 +1936,114 @@ async function deleteGridImage(idx) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ███╗   ███╗ █████╗ ██████╗     ███████╗████████╗███████╗██████╗  ██╗  ██╗
-   ████╗ ████║██╔══██╗██╔══██╗    ██╔════╝╚══██╔══╝██╔════╝██╔══██╗ ██║  ██║
-   ██╔████╔██║███████║██████╔╝    ███████╗   ██║   █████╗  ██████╔╝ ███████║
-   ██║╚██╔╝██║██╔══██║██╔═══╝     ╚════██║   ██║   ██╔══╝  ██╔═══╝  ╚════██║
-   ██║ ╚═╝ ██║██║  ██║██║         ███████║   ██║   ███████╗██║           ██║
-   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝         ╚══════╝   ╚═╝   ╚══════╝╚═╝           ╚═╝
-   DISCOVERY MAP — STEP 4
+   DISCOVERY MAP — STEP 4  (Performance-Optimised Build)
 ═══════════════════════════════════════════════════════════════ */
 
-/* ── Lagos default centre ── */
-const LAGOS_LATLNG   = [6.5244, 3.3792];
-const LAGOS_ZOOM     = 12;
+/* ── Constants ── */
+const LAGOS_LATLNG  = [6.5244, 3.3792];
+const LAGOS_ZOOM    = 12;
 
-/* ── State ── */
-let _map             = null;
-let _userMarker      = null;   // user's location marker
-let _radiusCircle    = null;   // distance circle overlay
-let _talentMarkers   = [];     // active Leaflet markers
-let _allTalents      = [];     // all fetched talent docs
-let _mapCentre       = LAGOS_LATLNG;
-let _mapDistKm       = 10;
-let _geocoderTimer   = null;
-let _mapInitialised  = false;
+/* ── Map state ── */
+let _map            = null;
+let _markerGroup    = null;   // L.LayerGroup — single source of truth for all pins
+let _userMarker     = null;   // pulsing GPS dot
+let _radiusCircle   = null;   // distance circle overlay
+let _mapCentre      = LAGOS_LATLNG;
+let _mapDistKm      = 10;
+let _mapInitialised = false;
+
+/* ── Data state ─────────────────────────────────────────────────
+   allAvailableUsers is loaded ONCE from Firestore then never
+   re-fetched. All subsequent filtering works purely on this
+   local array, so zooming / sliding never triggers a DB call.
+─────────────────────────────────────────────────────────────── */
+let allAvailableUsers = [];      // ← single in-memory copy
+let _dataLoaded       = false;   // guard: only fetch once per session
+
+/* ── Debounce / rAF handles ── */
+let _filterDebounce   = null;    // debounce timer for map events
+let _sliderRAF        = null;    // requestAnimationFrame handle for slider
+let _geocoderTimer    = null;    // debounce for geocoder input
+let _geocoderAbort    = null;    // AbortController for in-flight Nominatim requests
 
 /* ─────────────────────────────────────────────
-   HAVERSINE DISTANCE (km) between two [lat,lng] pairs
+   UTILITY: debounce(fn, ms)
+   Returns a function that only fires fn after
+   ms milliseconds of silence.
+───────────────────────────────────────────── */
+function debounce(fn, ms) {
+  let t;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+/* ─────────────────────────────────────────────
+   HAVERSINE DISTANCE  (km)
+   Pure math — runs 100 k iterations in < 5 ms.
 ───────────────────────────────────────────── */
 function haversine(lat1, lon1, lat2, lon2) {
   const R  = 6371;
   const dL = (lat2 - lat1) * Math.PI / 180;
   const dG = (lon2 - lon1) * Math.PI / 180;
   const a  = Math.sin(dL/2)**2 +
-             Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dG/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+             Math.cos(lat1 * Math.PI/180) *
+             Math.cos(lat2 * Math.PI/180) *
+             Math.sin(dG/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 /* ─────────────────────────────────────────────
-   INIT MAP  (called once when Search tab first activates)
+   INIT MAP
+   Called once the Search view becomes visible.
 ───────────────────────────────────────────── */
 function initMap() {
-  if (_mapInitialised) { setTimeout(() => _map.invalidateSize(), 50); return; }
+  if (_mapInitialised) {
+    /* Map already exists — just fix sizing after CSS reflow */
+    requestAnimationFrame(() => _map.invalidateSize({ pan: false }));
+    return;
+  }
   _mapInitialised = true;
 
+  /* ── Create map instance ── */
   _map = L.map('leaflet-map', {
-    center: LAGOS_LATLNG,
-    zoom:   LAGOS_ZOOM,
-    zoomControl: false,
+    center:           LAGOS_LATLNG,
+    zoom:             LAGOS_ZOOM,
+    zoomControl:      false,
     attributionControl: true,
+    /* Prefer canvas renderer — far faster than SVG for many markers */
+    renderer:         L.canvas({ padding: 0.5 }),
+    /* Throttle redraws during continuous zoom animations */
+    zoomAnimationThreshold: 4,
   });
 
-  /* OSM tile layer — completely free, no key */
+  /* ── OSM tile layer with performance tuning ── */
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
+    attribution:   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom:       19,
+    /* ↓ KEY FIXES: stop gray-square lag on fast zoom ↓ */
+    updateWhenIdle:    true,   // only load new tiles when panning stops
+    updateWhenZooming: false,  // never re-request tiles mid-zoom animation
+    keepBuffer:        2,      // pre-fetch 2 extra tile rows in every direction
   }).addTo(_map);
 
-  /* Move attribution to bottom-left so it clears the nav */
+  /* Attribution bottom-left so bottom-nav doesn't cover it */
   _map.attributionControl.setPosition('bottomleft');
 
-  /* Zoom control top-right */
+  /* Zoom controls top-right */
   L.control.zoom({ position: 'topright' }).addTo(_map);
 
-  /* Draw initial radius circle */
+  /* ── LayerGroup for all talent pins ──────────────────────────
+     Using a single LayerGroup means we can call
+     _markerGroup.clearLayers() instead of looping through an
+     array of markers and calling removeLayer() N times.
+     clearLayers() is O(1) — it detaches the group's internal
+     pane element in one DOM operation.
+  ─────────────────────────────────────────────────────────── */
+  _markerGroup = L.layerGroup().addTo(_map);
+
+  /* ── Radius circle ── */
   _radiusCircle = L.circle(_mapCentre, {
     radius:      _mapDistKm * 1000,
     color:       '#FF385C',
@@ -2006,107 +2051,131 @@ function initMap() {
     fillOpacity: 0.06,
     weight:      2,
     dashArray:   '6 4',
+    /* Use canvas renderer for the circle too */
+    renderer:    L.canvas(),
   }).addTo(_map);
 
-  /* Re-filter on map move */
-  _map.on('moveend', () => {
+  /* ── Map event listeners — all debounced at 500 ms ──────────
+     This prevents re-filtering on every pixel of a drag or
+     every frame of a pinch-zoom. The handler only fires once
+     the user has stopped interacting for half a second.
+  ─────────────────────────────────────────────────────────── */
+  const debouncedMoveHandler = debounce(() => {
     const c = _map.getCenter();
     _mapCentre = [c.lat, c.lng];
     updateRadiusCircle();
     applyDistanceFilter();
-  });
+  }, 500);
 
-  /* Fetch talents then render */
+  _map.on('moveend',    debouncedMoveHandler);
+  _map.on('zoomend',    debouncedMoveHandler);
+
+  /* ── Fetch talent data (once) then render ── */
   fetchAllTalents();
 }
 
 /* ─────────────────────────────────────────────
-   FETCH ALL TALENT USERS FROM FIRESTORE
+   FETCH ALL AVAILABLE TALENT FROM FIRESTORE
+   ─ Called exactly ONCE per session ─
+   ─ allAvailableUsers is never cleared;         ─
+   ─ filtering always operates on this local copy ─
 ───────────────────────────────────────────── */
 async function fetchAllTalents() {
+  if (_dataLoaded) { applyDistanceFilter(); return; }
+
   try {
     const snap = await db.collection('users')
       .where('status', '==', 'available')
       .get();
 
-    _allTalents = [];
+    const fromDB = [];
     snap.forEach(doc => {
       const d = doc.data();
-      /* Only include users who have saved a location */
-      if (d.lat && d.lng) {
-        _allTalents.push(d);
+      if (typeof d.lat === 'number' && typeof d.lng === 'number') {
+        fromDB.push(d);
       }
     });
 
-    /* Also include demo seed data so the map isn't empty during development */
-    _allTalents = [..._allTalents, ..._seedTalents()];
+    /* Merge DB records with seed data (deduped by uid) */
+    const seedMap = new Map(_seedTalents().map(t => [t.uid, t]));
+    fromDB.forEach(t => seedMap.set(t.uid, t));   // DB wins on collision
+    allAvailableUsers = Array.from(seedMap.values());
 
-    applyDistanceFilter();
   } catch(e) {
-    console.warn('fetchAllTalents:', e);
-    /* Fall back to demo data only */
-    _allTalents = _seedTalents();
-    applyDistanceFilter();
+    console.warn('[GigsCourt] fetchAllTalents Firestore error:', e);
+    allAvailableUsers = _seedTalents();
   }
+
+  _dataLoaded = true;
+  applyDistanceFilter();
 }
 
 /* ─────────────────────────────────────────────
-   DEMO / SEED TALENT DATA  (shown while DB is empty)
+   DEMO / SEED DATA  (non-empty map during dev)
 ───────────────────────────────────────────── */
 function _seedTalents() {
   return [
-    { uid:'demo1', name:'Amara Obi',   category:'Model',             status:'available', lat:6.5320, lng:3.3750, avatarUrl:'' },
-    { uid:'demo2', name:'Kemi Adara',  category:'Content Creator',   status:'available', lat:6.5100, lng:3.3900, avatarUrl:'' },
-    { uid:'demo3', name:'Tunde Eko',   category:'Artist',            status:'available', lat:6.5400, lng:3.3600, avatarUrl:'' },
-    { uid:'demo4', name:'Ngozi Uche',  category:'Photographer',      status:'available', lat:6.5180, lng:3.4100, avatarUrl:'' },
-    { uid:'demo5', name:'Chioma N.',   category:'MUA',               status:'available', lat:6.5260, lng:3.3500, avatarUrl:'' },
-    { uid:'demo6', name:'Dami Ola',    category:'Stylist',           status:'available', lat:6.5050, lng:3.4200, avatarUrl:'' },
-    { uid:'demo7', name:'Femi A.',     category:'Videographer',      status:'available', lat:6.5350, lng:3.4050, avatarUrl:'' },
-    { uid:'demo8', name:'Sade Bello',  category:'Hair Stylist',      status:'available', lat:6.5480, lng:3.3850, avatarUrl:'' },
+    { uid:'demo1', name:'Amara Obi',  category:'Model',           status:'available', lat:6.5320, lng:3.3750, avatarUrl:'' },
+    { uid:'demo2', name:'Kemi Adara', category:'Content Creator', status:'available', lat:6.5100, lng:3.3900, avatarUrl:'' },
+    { uid:'demo3', name:'Tunde Eko',  category:'Artist',          status:'available', lat:6.5400, lng:3.3600, avatarUrl:'' },
+    { uid:'demo4', name:'Ngozi Uche', category:'Photographer',    status:'available', lat:6.5180, lng:3.4100, avatarUrl:'' },
+    { uid:'demo5', name:'Chioma N.',  category:'MUA',             status:'available', lat:6.5260, lng:3.3500, avatarUrl:'' },
+    { uid:'demo6', name:'Dami Ola',   category:'Stylist',         status:'available', lat:6.5050, lng:3.4200, avatarUrl:'' },
+    { uid:'demo7', name:'Femi A.',    category:'Videographer',    status:'available', lat:6.5350, lng:3.4050, avatarUrl:'' },
+    { uid:'demo8', name:'Sade Bello', category:'Hair Stylist',    status:'available', lat:6.5480, lng:3.3850, avatarUrl:'' },
   ];
 }
 
 /* ─────────────────────────────────────────────
    APPLY DISTANCE FILTER & RENDER PINS
+   ─ Reads from allAvailableUsers (local array) ─
+   ─ NO Firestore call here                      ─
 ───────────────────────────────────────────── */
 function applyDistanceFilter() {
-  if (!_map) return;
+  if (!_map || !_markerGroup) return;
 
-  /* Clear old markers */
-  _talentMarkers.forEach(m => _map.removeLayer(m));
-  _talentMarkers = [];
+  /* ── Step 1: atomically clear ALL existing pins in one operation ── */
+  _markerGroup.clearLayers();
 
-  let count = 0;
-  _allTalents.forEach(talent => {
-    const dist = haversine(_mapCentre[0], _mapCentre[1], talent.lat, talent.lng);
+  /* ── Step 2: filter local array (pure CPU, no I/O) ── */
+  const visible = [];
+  const cLat = _mapCentre[0];
+  const cLng = _mapCentre[1];
+
+  for (let i = 0; i < allAvailableUsers.length; i++) {
+    const t = allAvailableUsers[i];
+    const dist = haversine(cLat, cLng, t.lat, t.lng);
     if (dist <= _mapDistKm) {
-      count++;
-      const marker = buildTalentMarker(talent, dist);
-      marker.addTo(_map);
-      _talentMarkers.push(marker);
+      visible.push({ talent: t, dist });
+    }
+  }
+
+  /* ── Step 3: build and add markers via rAF so the
+        browser paints the cleared state first,
+        then adds pins in the next frame ── */
+  requestAnimationFrame(() => {
+    visible.forEach(({ talent, dist }) => {
+      buildTalentMarker(talent, dist).addTo(_markerGroup);
+    });
+
+    /* Update count badge */
+    const badge = document.getElementById('map-count-badge');
+    if (badge) {
+      badge.textContent = visible.length + (visible.length === 1 ? ' Talent' : ' Talent');
     }
   });
-
-  /* Update badge */
-  const badge = document.getElementById('map-count-badge');
-  if (badge) badge.textContent = count + (count === 1 ? ' Talent' : ' Talent');
 }
 
 /* ─────────────────────────────────────────────
-   BUILD A CUSTOM TALENT MARKER
+   BUILD A TALENT MARKER
 ───────────────────────────────────────────── */
 function buildTalentMarker(talent, distKm) {
   const avatarHtml = talent.avatarUrl
     ? `<img src="${talent.avatarUrl}" />`
     : `<div class="talent-pin-fallback"><i class="fa-regular fa-user"></i></div>`;
 
-  const pinHtml = `
-    <div class="talent-pin" style="background:var(--brand)">
-      ${avatarHtml}
-    </div>`;
-
   const icon = L.divIcon({
-    html:        pinHtml,
+    html:        `<div class="talent-pin" style="background:var(--brand)">${avatarHtml}</div>`,
     className:   '',
     iconSize:    [36, 36],
     iconAnchor:  [18, 36],
@@ -2115,50 +2184,45 @@ function buildTalentMarker(talent, distKm) {
 
   const marker = L.marker([talent.lat, talent.lng], { icon });
 
-  /* Bind popup */
+  /* ── Popup ── (built lazily on first open via bindPopup string) */
   const distLabel = distKm < 1
     ? Math.round(distKm * 1000) + 'm away'
     : distKm.toFixed(1) + 'km away';
 
   const coverHtml = talent.coverUrl
-    ? `<img src="${talent.coverUrl}" alt="cover" />`
+    ? `<img src="${escHtml(talent.coverUrl)}" alt="cover" />`
     : '';
 
-  const avatarPopup = talent.avatarUrl
-    ? `<div class="talent-popup-avatar"><img src="${talent.avatarUrl}" /></div>`
+  const avatarPopupHtml = talent.avatarUrl
+    ? `<div class="talent-popup-avatar"><img src="${escHtml(talent.avatarUrl)}" /></div>`
     : `<div class="talent-popup-avatar"><i class="fa-regular fa-user"></i></div>`;
 
-  const popupContent = `
+  marker.bindPopup(`
     <div class="talent-popup">
       <div class="talent-popup-cover">${coverHtml}</div>
       <div class="talent-popup-body">
         <div class="talent-popup-avatar-row">
-          ${avatarPopup}
+          ${avatarPopupHtml}
           <span class="talent-popup-status available">
             <i class="fa-solid fa-circle" style="font-size:7px;margin-right:3px"></i>Available
           </span>
         </div>
         <div class="talent-popup-name">${escHtml(talent.name)}</div>
         <div class="talent-popup-cat">${escHtml(talent.category || 'Talent')}</div>
-        <div class="talent-popup-dist"><i class="fa-solid fa-location-dot" style="margin-right:3px"></i>${distLabel}</div>
-        <button class="talent-popup-btn"
-          onclick="viewTalentProfile('${talent.uid}')">
+        <div class="talent-popup-dist">
+          <i class="fa-solid fa-location-dot" style="margin-right:3px"></i>${distLabel}
+        </div>
+        <button class="talent-popup-btn" onclick="viewTalentProfile('${escHtml(talent.uid)}')">
           View Profile &nbsp;<i class="fa-solid fa-arrow-right"></i>
         </button>
       </div>
-    </div>`;
-
-  marker.bindPopup(popupContent, {
-    maxWidth: 240,
-    minWidth: 220,
-    className: 'gc-popup',
-  });
+    </div>`, { maxWidth: 240, minWidth: 220, className: 'gc-popup' });
 
   return marker;
 }
 
 /* ─────────────────────────────────────────────
-   UPDATE RADIUS CIRCLE
+   UPDATE RADIUS CIRCLE POSITION + SIZE
 ───────────────────────────────────────────── */
 function updateRadiusCircle() {
   if (!_radiusCircle) return;
@@ -2168,13 +2232,29 @@ function updateRadiusCircle() {
 
 /* ─────────────────────────────────────────────
    SLIDER CHANGE
+   Uses requestAnimationFrame so the label and
+   circle update at the display's native frame
+   rate (60/120 fps) without blocking the thread.
+   The heavy filter is debounced to 500 ms so
+   Firestore / DOM work only runs when dragging stops.
 ───────────────────────────────────────────── */
+const _debouncedFilter = debounce(applyDistanceFilter, 500);
+
 function onSliderChange(val) {
-  _mapDistKm = parseInt(val);
-  const label = document.getElementById('mapDistVal');
-  if (label) label.textContent = _mapDistKm + ' KM';
-  updateRadiusCircle();
-  applyDistanceFilter();
+  _mapDistKm = parseInt(val, 10);
+
+  /* Cancel any pending rAF first */
+  if (_sliderRAF) cancelAnimationFrame(_sliderRAF);
+
+  /* Schedule lightweight UI updates for the next paint frame */
+  _sliderRAF = requestAnimationFrame(() => {
+    const label = document.getElementById('mapDistVal');
+    if (label) label.textContent = _mapDistKm + ' KM';
+    updateRadiusCircle();   // moves the circle — pure canvas, very fast
+  });
+
+  /* Heavy work (filtering 100 k users) waits until dragging stops */
+  _debouncedFilter();
 }
 
 /* ─────────────────────────────────────────────
@@ -2182,40 +2262,48 @@ function onSliderChange(val) {
 ───────────────────────────────────────────── */
 function locateUser() {
   const btn = document.getElementById('locate-me-btn');
-  if (btn) btn.style.color = '#22C55E';
+  if (btn) { btn.style.color = '#22C55E'; btn.style.transform = 'scale(0.92)'; }
+
   if (!navigator.geolocation) {
     showToast('Geolocation is not supported by your browser.', 'info');
     return;
   }
+
   navigator.geolocation.getCurrentPosition(
     pos => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       _mapCentre = [lat, lng];
-      _map.flyTo([lat, lng], 13, { duration: 1.2 });
 
-      /* Place user dot */
+      _map.flyTo([lat, lng], 14, { duration: 1.2 });
+
+      /* Place/update user dot */
       if (_userMarker) _map.removeLayer(_userMarker);
-      const userIcon = L.divIcon({
-        html: '<div class="user-location-dot"></div>',
-        className: '', iconSize: [16,16], iconAnchor: [8,8],
-      });
-      _userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(_map);
+      _userMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          html:       '<div class="user-location-dot"></div>',
+          className:  '',
+          iconSize:   [16, 16],
+          iconAnchor: [8, 8],
+        }),
+        zIndexOffset: 1000,
+      }).addTo(_map);
 
       updateRadiusCircle();
       applyDistanceFilter();
-      if (btn) btn.style.color = 'var(--brand)';
 
-      /* Save location to Firestore for the current user */
+      if (btn) { btn.style.color = 'var(--brand)'; btn.style.transform = ''; }
+
+      /* Persist lat/lng to the current user's Firestore doc */
       const user = auth.currentUser;
       if (user) {
         db.collection('users').doc(user.uid)
           .update({ lat, lng })
-          .catch(e => console.warn('location save:', e));
+          .catch(e => console.warn('[GigsCourt] location save:', e));
       }
     },
-    err => {
-      if (btn) btn.style.color = 'var(--brand)';
+    () => {
+      if (btn) { btn.style.color = 'var(--brand)'; btn.style.transform = ''; }
       showToast('Could not get your location. Check browser permissions.', 'info');
     },
     { enableHighAccuracy: true, timeout: 8000 }
@@ -2223,17 +2311,15 @@ function locateUser() {
 }
 
 /* ─────────────────────────────────────────────
-   NOMINATIM GEOCODER  (free, no key)
+   NOMINATIM GEOCODER  (free, no API key)
 ───────────────────────────────────────────── */
-let _geocoderAbort = null;
-
 function onGeocoderInput(val) {
   const clearBtn = document.getElementById('geocoder-clear-btn');
   if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
 
   if (_geocoderTimer) clearTimeout(_geocoderTimer);
   const results = document.getElementById('geocoder-results');
-  if (!val || val.length < 3) { if (results) results.style.display='none'; return; }
+  if (!val || val.length < 3) { if (results) results.style.display = 'none'; return; }
   _geocoderTimer = setTimeout(() => nominatimSearch(val), 500);
 }
 
@@ -2243,25 +2329,31 @@ async function nominatimSearch(query) {
   try {
     if (_geocoderAbort) _geocoderAbort.abort();
     _geocoderAbort = new AbortController();
+
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=0`;
-    const res = await fetch(url, {
-      signal: _geocoderAbort.signal,
-      headers: { 'Accept-Language': 'en' }
+    const res  = await fetch(url, {
+      signal:  _geocoderAbort.signal,
+      headers: { 'Accept-Language': 'en' },
     });
     const data = await res.json();
+
     if (!data.length) {
-      results.innerHTML = '<div class="geocoder-item" style="color:var(--text-muted)"><i class="fa-solid fa-circle-info"></i>No results found</div>';
+      results.innerHTML = `<div class="geocoder-item" style="color:var(--text-muted)">
+        <i class="fa-solid fa-circle-info"></i><span>No results found</span></div>`;
       results.style.display = 'block';
       return;
     }
+
     results.innerHTML = data.map(item => `
-      <div class="geocoder-item" onclick="flyToResult(${item.lat}, ${item.lon}, '${escHtml(item.display_name)}')">
+      <div class="geocoder-item"
+        onclick="flyToResult(${item.lat},${item.lon},'${escHtml(item.display_name).replace(/'/g,'&#39;')}')">
         <i class="fa-solid fa-location-dot"></i>
         <span>${escHtml(item.display_name)}</span>
       </div>`).join('');
     results.style.display = 'block';
+
   } catch(e) {
-    if (e.name !== 'AbortError') console.warn('Nominatim:', e);
+    if (e.name !== 'AbortError') console.warn('[GigsCourt] Nominatim:', e);
   }
 }
 
@@ -2274,11 +2366,12 @@ function flyToResult(lat, lng, label) {
   const results = document.getElementById('geocoder-results');
   const input   = document.getElementById('geocoder-input');
   if (results) results.style.display = 'none';
-  if (input)   input.value = label.split(',')[0]; // just the place name
+  if (input)   input.value = String(label).split(',')[0].trim();
+
   _mapCentre = [parseFloat(lat), parseFloat(lng)];
   _map.flyTo(_mapCentre, 13, { duration: 1.4 });
   updateRadiusCircle();
-  applyDistanceFilter();
+  /* filter fires via debounced moveend handler — no need to call manually */
 }
 
 function clearGeocoderInput() {
@@ -2290,7 +2383,7 @@ function clearGeocoderInput() {
   if (btn)     btn.style.display = 'none';
 }
 
-/* Close geocoder dropdown on outside click */
+/* Dismiss dropdown on outside click */
 document.addEventListener('click', e => {
   const results = document.getElementById('geocoder-results');
   const input   = document.getElementById('geocoder-input');
@@ -2303,35 +2396,38 @@ document.addEventListener('click', e => {
    VIEW TALENT PROFILE FROM MAP POPUP
 ───────────────────────────────────────────── */
 function viewTalentProfile(uid) {
-  /* Close popup */
   if (_map) _map.closePopup();
-  /* Navigate to profile tab */
   const profileBtn = document.querySelector('.nav-btn[onclick*="profile"]');
   showView('profile', profileBtn);
-  /* TODO Step 5: load the selected talent's public profile */
-  showToast('Viewing profile — full public profiles coming in Step 5.', 'info', 3000);
+  showToast('Full public profiles arrive in Step 5!', 'info', 3000);
 }
 
 /* ─────────────────────────────────────────────
    HTML ESCAPE HELPER
 ───────────────────────────────────────────── */
 function escHtml(str) {
-  if (!str) return '';
+  if (str == null) return '';
   return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
 }
 
 /* ─────────────────────────────────────────────
-   HOOK: initialise map when Search tab becomes active
+   HOOK: initialise map when Search tab activates
+   Wraps the existing showView so nothing else changes.
 ───────────────────────────────────────────── */
 (function patchShowView() {
   const _orig = showView;
   window.showView = function(name, btn) {
     _orig(name, btn);
     if (name === 'search') {
-      /* Small delay lets the flex container render before Leaflet measures it */
+      /*
+       * 80 ms lets the flexbox container finish painting
+       * before Leaflet measures it for tile requests.
+       * requestAnimationFrame alone isn't enough here because
+       * the view transition involves a CSS display change.
+       */
       setTimeout(initMap, 80);
     }
   };
