@@ -1,14 +1,15 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · premium talent</title>
+    <title>GigsCourt · loop</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-    <!-- Font Awesome 6 (free icons) -->
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
@@ -40,7 +41,7 @@
             overflow: hidden;
         }
 
-        /* Main content area with scrolling */
+        /* main scrollable panel */
         #panel {
             flex: 1;
             overflow-y: auto;
@@ -53,19 +54,20 @@
             display: none;
         }
 
-        /* Bottom Navigation */
+        /* bottom nav – blurred, deep */
         .bottom-nav {
-            background: rgba(10, 10, 11, 0.95);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid #242426;
+            background: rgba(10, 10, 11, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,56,92,0.15);
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 12px 0 24px 0;
             margin: 0;
-            box-shadow: 0 -8px 20px rgba(0,0,0,0.8);
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.7);
             z-index: 10;
+            position: relative;
         }
 
         .nav-item {
@@ -96,131 +98,155 @@
         }
         .nav-item.active i {
             color: #FF385C;
-            filter: drop-shadow(0 0 6px rgba(255,56,92,0.4));
+            filter: drop-shadow(0 0 10px #FF385C);
         }
 
-        /* Premium Badge */
-        .premium-badge {
-            background: linear-gradient(135deg, #FF385C, #FF1F4B);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            letter-spacing: 0.3px;
-            box-shadow: 0 4px 12px rgba(255,56,92,0.3);
-        }
-        .premium-badge i {
-            font-size: 0.8rem;
-        }
-
-        /* Filter Chips */
-        .filter-chips {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 16px 20px;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-        }
-        .filter-chips::-webkit-scrollbar {
-            display: none;
-        }
-        .chip {
-            background: #161618;
-            border: 1px solid #242426;
-            padding: 10px 18px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #E4E4E7;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-        }
-        .chip.active {
-            background: #FF385C;
-            border-color: #FF385C;
-            color: white;
-        }
-        .chip i {
-            margin-right: 6px;
-            color: #FF385C;
-        }
-        .chip.active i {
-            color: white;
-        }
-
-        /* Talent Cards */
-        .talent-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding: 0 20px 20px 20px;
-        }
-
-        .talent-card {
-            background: #161618;
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid #242426;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .avatar-large {
+        /* FLOATING ACTION BUTTON (central hub) */
+        .fab-hub {
+            position: absolute;
+            bottom: 64px;
+            left: 50%;
+            transform: translateX(-50%);
             width: 64px;
             height: 64px;
-            background: linear-gradient(145deg, #28282C, #1E1E20);
+            background: #FF385C;
             border-radius: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 0 30px #FF385C, 0 10px 30px rgba(0,0,0,0.8);
+            border: 2px solid rgba(255,255,255,0.2);
+            z-index: 20;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .fab-hub i {
             font-size: 2rem;
-            border: 2px solid #FF385C30;
-            color: #FF385C;
+            color: white;
+        }
+        .fab-hub:active {
+            transform: translateX(-50%) scale(0.95);
         }
 
-        .card-info h4 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #FFFFFF;
-            margin-bottom: 4px;
+        /* stories row */
+        .stories-row {
+            display: flex;
+            gap: 16px;
+            padding: 20px 20px 16px 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
-        .card-info p {
-            color: #8E8E93;
-            font-size: 0.9rem;
+        .stories-row::-webkit-scrollbar {
+            display: none;
+        }
+        .story-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 36px;
+            background: linear-gradient(135deg, #FF385C, #FF1F4B, #FF385C);
+            padding: 3px;
+            box-shadow: 0 8px 20px rgba(255,56,92,0.3);
+        }
+        .story-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 36px;
+            background: #161618;
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 8px;
+            justify-content: center;
+            font-size: 2rem;
+            color: #FF385C;
+            border: 2px solid #0A0A0B;
+        }
+        .story-label {
+            font-size: 0.7rem;
+            color: #E4E4E7;
+            text-align: center;
+            margin-top: 6px;
         }
 
-        .availability-badge {
-            background: #FF385C15;
+        /* DISCOVERY FEED – large immersive cards */
+        .discovery-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 0 20px 30px 20px;
+        }
+        .immersive-card {
+            aspect-ratio: 4/5;
+            width: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            background: #161618;
+        }
+        .card-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+            pointer-events: none;
+        }
+        .card-content {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 2;
+        }
+        .card-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+        }
+        .card-category {
+            font-size: 1rem;
             color: #FF385C;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .premium-star {
+            background: rgba(255,56,92,0.2);
+            backdrop-filter: blur(4px);
             padding: 4px 10px;
             border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border: 1px solid #FF385C30;
-            display: inline-block;
+            font-size: 0.8rem;
+            color: #FF385C;
+            border: 1px solid #FF385C40;
+        }
+        .premium-star i {
+            margin-right: 4px;
         }
 
-        /* Profile Header with Cover */
+        /* Profile cover & grid */
         .profile-header {
             position: relative;
             width: 100%;
         }
         .cover-photo {
             width: 100%;
-            height: 140px;
+            height: 160px;
             background: linear-gradient(135deg, #1E1E20, #2A2A2E);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .cover-photo img {
             width: 100%;
@@ -229,38 +255,37 @@
         }
         .cover-upload-btn {
             position: absolute;
-            bottom: 12px;
-            right: 12px;
+            bottom: 16px;
+            right: 16px;
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
             border: 1px solid #FF385C40;
-            width: 36px;
-            height: 36px;
-            border-radius: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             cursor: pointer;
-            z-index: 2;
+            z-index: 3;
         }
-
         .profile-avatar-section {
             position: relative;
             padding: 0 20px;
-            margin-top: -32px;
+            margin-top: -40px;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-            z-index: 3;
+            z-index: 5;
         }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 40px;
+            width: 96px;
+            height: 96px;
+            border-radius: 48px;
             background: #1E1E20;
-            border: 3px solid #FF385C;
-            box-shadow: 0 0 0 3px #0A0A0B, 0 8px 20px rgba(255,56,92,0.3);
+            border: 4px solid #FF385C;
+            box-shadow: 0 0 0 4px #0A0A0B, 0 10px 30px rgba(255,56,92,0.5);
             overflow: hidden;
         }
         .profile-avatar img {
@@ -270,11 +295,11 @@
         }
         .avatar-upload-btn {
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
             border: 1px solid #FF385C40;
-            width: 32px;
-            height: 32px;
-            border-radius: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,39 +307,41 @@
             cursor: pointer;
             margin-bottom: 8px;
         }
-
         .profile-stats {
             display: flex;
             gap: 32px;
             padding: 16px 20px;
             border-bottom: 1px solid #242426;
+            background: rgba(22,22,24,0.5);
+            backdrop-filter: blur(8px);
+            margin-top: 8px;
         }
         .stat-item {
             text-align: center;
         }
         .stat-value {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: white;
         }
         .stat-label {
             font-size: 0.8rem;
             color: #8E8E93;
         }
 
-        /* 3-Column Portfolio Grid */
+        /* 3‑column tight grid (zero gap) */
         .portfolio-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 2px;
+            gap: 0;
             background: #0A0A0B;
-            padding: 2px 0;
+            padding: 0;
         }
         .grid-item {
             aspect-ratio: 1/1;
             background: #161618;
             overflow: hidden;
             position: relative;
+            cursor: pointer;
         }
         .grid-item img {
             width: 100%;
@@ -328,6 +355,7 @@
             right: 0;
             bottom: 0;
             background: rgba(255,56,92,0.1);
+            backdrop-filter: blur(2px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -338,7 +366,7 @@
             opacity: 1;
         }
 
-        /* Messages Inbox */
+        /* messages */
         .inbox-list {
             padding: 0 16px;
         }
@@ -353,13 +381,14 @@
             width: 56px;
             height: 56px;
             border-radius: 28px;
-            background: linear-gradient(145deg, #28282C, #1E1E20);
+            background: #161618;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             color: #FF385C;
             position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
         .notification-dot {
             position: absolute;
@@ -381,7 +410,6 @@
         }
         .message-name {
             font-weight: 600;
-            color: white;
         }
         .message-time {
             font-size: 0.75rem;
@@ -395,7 +423,7 @@
             gap: 4px;
         }
 
-        /* Edit Profile Form */
+        /* Edit profile form (blend) */
         .edit-profile-form {
             padding: 20px;
         }
@@ -412,76 +440,70 @@
         .edit-icon {
             color: #FF385C;
             font-size: 1.2rem;
-            cursor: pointer;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
         .form-group label {
-            display: block;
             color: #8E8E93;
             font-size: 0.85rem;
             margin-bottom: 8px;
-            font-weight: 500;
+            display: block;
         }
         .form-control {
             width: 100%;
             padding: 16px 18px;
             background: #161618;
             border: 1px solid #242426;
-            border-radius: 16px;
+            border-radius: 24px;
             color: white;
             font-size: 1rem;
             outline: none;
-            transition: all 0.2s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
         .form-control:focus {
             border-color: #FF385C;
-            box-shadow: 0 0 0 2px #FF385C20;
+            box-shadow: 0 0 0 3px #FF385C30;
         }
         select.form-control {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF385C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 1rem center;
-            background-size: 1.2em;
         }
-
-        /* Buttons */
         .btn {
             background: #FF385C;
             color: white;
             border: none;
-            border-radius: 16px;
+            border-radius: 30px;
             padding: 16px 20px;
             font-weight: 600;
             font-size: 1rem;
             width: 100%;
             margin: 8px 0;
             cursor: pointer;
-            transition: all 0.2s ease;
+            box-shadow: 0 10px 30px rgba(255,56,92,0.3);
+            transition: 0.2s;
         }
         .btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
+            transform: scale(0.97);
         }
         .btn-secondary {
             background: #161618;
             border: 1px solid #242426;
-            color: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
         .btn-secondary i {
-            margin-right: 8px;
             color: #FF385C;
+            margin-right: 8px;
         }
 
-        /* Auth Overlay */
+        /* auth overlay */
         .auth-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(20px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -489,7 +511,7 @@
             padding: 20px;
             visibility: hidden;
             opacity: 0;
-            transition: 0.2s ease;
+            transition: 0.2s;
         }
         .auth-overlay.show {
             visibility: visible;
@@ -499,19 +521,10 @@
             background: #161618;
             max-width: 420px;
             width: 100%;
-            border-radius: 32px;
+            border-radius: 40px;
             padding: 32px 24px;
             border: 1px solid #242426;
-            box-shadow: 0 30px 60px rgba(255,56,92,0.2);
-        }
-        .auth-card h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: white;
-        }
-        .auth-card h2 i {
-            color: #FF385C;
+            box-shadow: 0 30px 60px rgba(255,56,92,0.3);
         }
         .close-auth {
             background: none;
@@ -520,12 +533,11 @@
             font-size: 2rem;
             float: right;
             cursor: pointer;
-            line-height: 1;
         }
         .input-field {
             background: #0A0A0B;
             border: 1px solid #242426;
-            border-radius: 16px;
+            border-radius: 30px;
             padding: 16px 22px;
             width: 100%;
             color: white;
@@ -537,42 +549,50 @@
             border-color: #FF385C;
         }
 
-        /* Utility */
         .text-small { color: #8E8E93; font-size:0.85rem; }
-        .text-success { color: #00ff88; }
-        .mt-2 { margin-top:8px; }
-        .mb-2 { margin-bottom:8px; }
-        .p-4 { padding:20px; }
+        .premium-badge-top {
+            background: linear-gradient(135deg, #FF385C, #FF1F4B);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 8px 20px #FF385C;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="panel"></div>
 
-        <div class="bottom-nav" id="bottomNav">
-            <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
-            <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
-            <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
-            <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+        <!-- bottom nav with FAB integrated -->
+        <div style="position:relative;">
+            <div class="bottom-nav" id="bottomNav">
+                <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
+                <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
+                <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
+                <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+            </div>
+            <div class="fab-hub" id="fabHub"><i class="fas fa-compass"></i></div>
         </div>
     </div>
 
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
-            <h2><i class="fa-regular fa-gem"></i> GigsCourt</h2>
-            <p class="text-small mb-2">Sign in to book premium talent</p>
+            <h2 style="color:white;"><i class="fa-regular fa-gem" style="color:#FF385C;"></i> GigsCourt</h2>
+            <p class="text-small mb-2">sign in to the loop</p>
             <div class="input-group">
                 <input type="email" id="authEmail" class="input-field" placeholder="Email">
                 <input type="password" id="authPassword" class="input-field" placeholder="Password">
             </div>
             <button class="btn" id="authPrimaryBtn">Login</button>
             <button class="btn btn-secondary" id="googleSignInBtn"><i class="fab fa-google"></i> Continue with Google</button>
-            <div class="auth-toggle" style="text-align:center; margin-top:20px;">
-                <span id="authToggleText">Don't have an account?</span>
+            <div style="text-align:center; margin-top:20px;">
+                <span id="authToggleText" style="color:#8E8E93;">Don't have an account?</span>
                 <button id="authToggleBtn" style="background:none; border:none; color:#FF385C; font-weight:600; cursor:pointer;">Sign up</button>
             </div>
-            <p id="authMessage" style="color:#FF385C; font-size:0.8rem; margin-top:12px; text-align:center;"></p>
+            <p id="authMessage" style="color:#FF385C; font-size:0.8rem; margin-top:12px;"></p>
         </div>
     </div>
 
@@ -621,6 +641,7 @@
         const authToggleBtn = document.getElementById('authToggleBtn');
         const authToggleText = document.getElementById('authToggleText');
         const authMessage = document.getElementById('authMessage');
+        const fabHub = document.getElementById('fabHub');
 
         const tabHome = document.getElementById('tabHome');
         const tabSearch = document.getElementById('tabSearch');
@@ -668,63 +689,56 @@
         function renderPanel(tabId) {
             if (tabId === 'home') {
                 panel.innerHTML = `
-                    <div class="filter-chips">
-                        <span class="chip active"><i class="fas fa-fire"></i> All</span>
-                        <span class="chip"><i class="fas fa-music"></i> Music</span>
-                        <span class="chip"><i class="fas fa-code"></i> Tech</span>
-                        <span class="chip"><i class="fas fa-calendar"></i> Events</span>
-                        <span class="chip"><i class="fas fa-paint-brush"></i> Design</span>
+                    <div class="stories-row">
+                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-plus"></i></div></div><div class="story-label">your story</div></div>
+                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-user-tie"></i></div></div><div class="story-label">aisha</div></div>
+                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-laptop-code"></i></div></div><div class="story-label">marcus</div></div>
+                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-megaphone"></i></div></div><div class="story-label">elena</div></div>
+                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-paint-brush"></i></div></div><div class="story-label">clara</div></div>
                     </div>
-                    <div class="talent-grid">
-                        <div class="talent-card">
-                            <div class="avatar-large"><i class="fas fa-user-tie"></i></div>
-                            <div class="card-info">
-                                <h4>Aisha Karim</h4>
-                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> Full‑stack · AI</p>
-                                <span class="availability-badge">available now</span>
+                    <div class="discovery-feed">
+                        <div class="immersive-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format" alt="talent">
+                            <div class="card-gradient"></div>
+                            <div class="card-content">
+                                <div class="card-name">Aisha Karim</div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> Full‑stack · AI <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
                             </div>
                         </div>
-                        <div class="talent-card">
-                            <div class="avatar-large"><i class="fas fa-laptop-code"></i></div>
-                            <div class="card-info">
-                                <h4>Marcus V.</h4>
-                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> UX / product</p>
-                                <span class="availability-badge">top rated</span>
+                        <div class="immersive-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format" alt="talent">
+                            <div class="card-gradient"></div>
+                            <div class="card-content">
+                                <div class="card-name">Marcus V.</div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> UX / product <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
                             </div>
                         </div>
-                        <div class="talent-card">
-                            <div class="avatar-large"><i class="fas fa-megaphone"></i></div>
-                            <div class="card-info">
-                                <h4>Elena Rossi</h4>
-                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> growth marketing</p>
-                                <span class="availability-badge">book today</span>
+                        <div class="immersive-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=500&auto=format" alt="talent">
+                            <div class="card-gradient"></div>
+                            <div class="card-content">
+                                <div class="card-name">Elena Rossi</div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> growth marketing <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
                             </div>
                         </div>
                     </div>
                 `;
             } else if (tabId === 'search') {
                 panel.innerHTML = `
-                    <div class="filter-chips">
-                        <span class="chip"><i class="fas fa-map-pin"></i> Near me</span>
-                        <span class="chip active"><i class="fas fa-star"></i> Top rated</span>
-                        <span class="chip"><i class="fas fa-clock"></i> Available now</span>
-                        <span class="chip"><i class="fas fa-video"></i> Virtual</span>
-                    </div>
-                    <div class="talent-grid">
-                        <div class="talent-card">
-                            <div class="avatar-large"><i class="fas fa-code"></i></div>
-                            <div class="card-info">
-                                <h4>Reyansh I.</h4>
-                                <p>react · node · firebase</p>
-                                <span class="availability-badge">$120/hr</span>
-                            </div>
-                        </div>
-                        <div class="talent-card">
-                            <div class="avatar-large"><i class="fas fa-paint-brush"></i></div>
-                            <div class="card-info">
-                                <h4>Clara W.</h4>
-                                <p>UI/UX · design sys</p>
-                                <span class="availability-badge">$95/hr</span>
+                    <div style="padding:20px;">
+                        <div style="background:#161618; border-radius:40px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                            <p style="display:flex; gap:12px; flex-wrap:wrap;">
+                                <span class="premium-star"><i class="fas fa-fire"></i> trending</span>
+                                <span class="premium-star"><i class="fas fa-map-pin"></i> nearby</span>
+                                <span class="premium-star"><i class="fas fa-clock"></i> available</span>
+                            </p>
+                            <div class="immersive-card" style="margin-top:20px;">
+                                <img class="card-bg" src="https://images.unsplash.com/photo-1531482615715-2afd1c86630f?w=500&auto=format">
+                                <div class="card-gradient"></div>
+                                <div class="card-content">
+                                    <div class="card-name">Reyansh I.</div>
+                                    <div class="card-category">react · node · firebase</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -733,69 +747,35 @@
                 panel.innerHTML = `
                     <div class="inbox-list">
                         <div class="message-item">
-                            <div class="message-avatar">
-                                <i class="fas fa-user-circle"></i>
-                                <span class="notification-dot"></span>
-                            </div>
+                            <div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div>
                             <div class="message-content">
-                                <div class="message-header">
-                                    <span class="message-name">Alex Rivera</span>
-                                    <span class="message-time">2h ago</span>
-                                </div>
-                                <div class="message-preview">
-                                    <i class="fas fa-circle" style="color:#FF385C; font-size:6px;"></i>
-                                    RE: proposal · Looking forward to working...
-                                </div>
+                                <div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div>
+                                <div class="message-preview"><i class="fas fa-circle" style="color:#FF385C; font-size:6px;"></i> RE: proposal · Looking forward</div>
                             </div>
                         </div>
                         <div class="message-item">
-                            <div class="message-avatar">
-                                <i class="fas fa-user-circle"></i>
-                            </div>
+                            <div class="message-avatar"><i class="fas fa-user-circle"></i></div>
                             <div class="message-content">
-                                <div class="message-header">
-                                    <span class="message-name">Talent team</span>
-                                    <span class="message-time">5h ago</span>
-                                </div>
-                                <div class="message-preview">
-                                    welcome to gigscourt · Complete your profile to get...
-                                </div>
+                                <div class="message-header"><span class="message-name">Talent team</span><span class="message-time">5h ago</span></div>
+                                <div class="message-preview">welcome to gigscourt · Complete your profile</div>
                             </div>
                         </div>
                         <div class="message-item">
-                            <div class="message-avatar">
-                                <i class="fas fa-user-circle"></i>
-                                <span class="notification-dot"></span>
-                            </div>
+                            <div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div>
                             <div class="message-content">
-                                <div class="message-header">
-                                    <span class="message-name">Support</span>
-                                    <span class="message-time">1d ago</span>
-                                </div>
-                                <div class="message-preview">
-                                    your verification ✅ · Account verified successfully
-                                </div>
+                                <div class="message-header"><span class="message-name">Support</span><span class="message-time">1d ago</span></div>
+                                <div class="message-preview">your verification ✅ · Account verified</div>
                             </div>
                         </div>
                     </div>
                 `;
             } else if (tabId === 'profile') {
                 if (currentUser) {
-                    loadUserProfile(currentUser.uid).then(() => {
-                        renderProfileEditor();
-                    });
+                    loadUserProfile(currentUser.uid).then(() => renderProfileEditor());
                     renderProfileEditor();
                 } else {
-                    panel.innerHTML = `
-                        <div style="padding:40px 20px; text-align:center;">
-                            <i class="fas fa-user-circle" style="font-size:5rem; color:#FF385C40; margin-bottom:20px;"></i>
-                            <h3 style="margin-bottom:12px;">Sign in required</h3>
-                            <p class="text-small" style="margin-bottom:24px;">Login to manage your profile</p>
-                            <button class="btn" id="showAuthFromProfile">Login / Sign up</button>
-                        </div>
-                    `;
-                    const showAuthBtn = document.getElementById('showAuthFromProfile');
-                    if (showAuthBtn) showAuthBtn.addEventListener('click', () => overlay.classList.add('show'));
+                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#FF385C40;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
+                    document.getElementById('showAuthFromProfile')?.addEventListener('click',()=> overlay.classList.add('show'));
                 }
             }
         }
@@ -804,216 +784,97 @@
             const data = userProfileData || {};
             panel.innerHTML = `
                 <div class="profile-header">
-                    <div class="cover-photo" id="coverPreview">
-                        ${data.coverUrl ? `<img src="${data.coverUrl}" alt="Cover">` : '<div style="width:100%; height:100%; background:linear-gradient(135deg, #1E1E20, #2A2A2E);"></div>'}
-                        <input type="file" id="coverUpload" accept="image/*" style="display:none;">
-                        <div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div>
-                    </div>
-                    
+                    <div class="cover-photo" id="coverPreview">${data.coverUrl ? `<img src="${data.coverUrl}">` : ''}<input type="file" id="coverUpload" accept="image/*" style="display:none;"><div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div></div>
                     <div class="profile-avatar-section">
-                        <div class="profile-avatar" id="avatarPreview">
-                            ${data.avatarUrl ? `<img src="${data.avatarUrl}" alt="Avatar">` : '<i class="fas fa-user" style="font-size:2.5rem; color:#FF385C; line-height:80px; text-align:center; width:100%;"></i>'}
-                        </div>
-                        <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
-                        <div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
-                        <div class="premium-badge" style="margin-bottom:8px;"><i class="fas fa-crown"></i> PREMIUM</div>
+                        <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#FF385C;"></i>'}</div>
+                        <input type="file" id="avatarUpload" accept="image/*" style="display:none;"><div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
+                        <div class="premium-badge-top"><i class="fas fa-crown"></i> PREMIUM</div>
                     </div>
-
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <div class="stat-value">48</div>
-                            <div class="stat-label">gigs</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">12</div>
-                            <div class="stat-label">clients</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">4.9</div>
-                            <div class="stat-label">rating</div>
-                        </div>
-                    </div>
+                    <div class="profile-stats"><div class="stat-item"><div class="stat-value">48</div><div class="stat-label">gigs</div></div><div class="stat-item"><div class="stat-value">12</div><div class="stat-label">clients</div></div><div class="stat-item"><div class="stat-value">4.9</div><div class="stat-label">rating</div></div></div>
                 </div>
-
                 <div class="edit-profile-form">
-                    <div class="form-header">
-                        <h3>Edit Profile <i class="fas fa-pen edit-icon"></i></h3>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Display Name</label>
-                        <input type="text" id="displayName" class="form-control" value="${data.displayName || ''}" placeholder="Your name">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select id="category" class="form-control">
-                            <option value="Music" ${data.category === 'Music' ? 'selected' : ''}>Music</option>
-                            <option value="Tech" ${data.category === 'Tech' ? 'selected' : ''}>Tech</option>
-                            <option value="Events" ${data.category === 'Events' ? 'selected' : ''}>Events</option>
-                            <option value="Design" ${data.category === 'Design' ? 'selected' : ''}>Design</option>
-                            <option value="Consulting" ${data.category === 'Consulting' ? 'selected' : ''}>Consulting</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Bio</label>
-                        <textarea id="bio" class="form-control" placeholder="Tell us about yourself">${data.bio || ''}</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Hourly Rate ($)</label>
-                        <input type="number" id="hourlyRate" class="form-control" value="${data.hourlyRate || ''}" placeholder="e.g., 150">
-                    </div>
-
+                    <div class="form-header"><h3>Edit Profile <i class="fas fa-pen edit-icon"></i></h3></div>
+                    <div class="form-group"><label>Display Name</label><input type="text" id="displayName" class="form-control" value="${data.displayName || ''}"></div>
+                    <div class="form-group"><label>Category</label><select id="category" class="form-control"><option value="Music">Music</option><option value="Tech">Tech</option><option value="Events">Events</option><option value="Design">Design</option><option value="Consulting">Consulting</option></select></div>
+                    <div class="form-group"><label>Bio</label><textarea id="bio" class="form-control">${data.bio || ''}</textarea></div>
+                    <div class="form-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" class="form-control" value="${data.hourlyRate || ''}"></div>
                     <div class="portfolio-grid" id="portfolioGrid">
-                        ${[1,2,3,4,5,6].map(i => `
-                            <div class="grid-item" data-index="${i-1}">
-                                ${data[`portfolio_${i-1}`] ? `<img src="${data[`portfolio_${i-1}`]}" alt="Portfolio ${i}">` : `<div style="width:100%; height:100%; background:#161618; display:flex; align-items:center; justify-content:center;"><i class="fas fa-plus" style="color:#FF385C40;"></i></div>`}
-                                <input type="file" class="portfolio-upload" data-index="${i-1}" accept="image/*" style="display:none;">
-                                <div class="overlay"><i class="fas fa-camera" style="color:white; font-size:1.5rem;"></i></div>
-                            </div>
-                        `).join('')}
+                        ${[1,2,3,4,5,6].map(i => `<div class="grid-item" data-index="${i-1}">${data[`portfolio_${i-1}`] ? `<img src="${data[`portfolio_${i-1}`]}">` : ''}<input type="file" class="portfolio-upload" data-index="${i-1}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div></div>`).join('')}
                     </div>
-
                     <button class="btn" id="saveProfileBtn">Save Profile</button>
                     <button class="btn btn-secondary" id="signOutBtnProfile"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
                     <div id="profileMessage" style="text-align:center; margin-top:12px;"></div>
                 </div>
             `;
 
-            // Attach all event listeners
-            document.getElementById('uploadCoverBtn')?.addEventListener('click', () => document.getElementById('coverUpload')?.click());
-            document.getElementById('uploadAvatarBtn')?.addEventListener('click', () => document.getElementById('avatarUpload')?.click());
+            document.getElementById('uploadCoverBtn')?.addEventListener('click', ()=>document.getElementById('coverUpload')?.click());
+            document.getElementById('uploadAvatarBtn')?.addEventListener('click', ()=>document.getElementById('avatarUpload')?.click());
 
             document.getElementById('coverUpload')?.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !currentUser) return;
-                try {
-                    const url = await uploadToCloudinary(file);
-                    await saveUserProfile(currentUser.uid, { coverUrl: url });
-                    document.getElementById('coverPreview').innerHTML = `<img src="${url}" alt="Cover">`;
-                } catch (error) {
-                    document.getElementById('profileMessage').innerHTML = 'Upload failed';
-                }
+                const file = e.target.files?.[0]; if(!file||!currentUser) return;
+                const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{coverUrl:url});
+                document.getElementById('coverPreview').innerHTML = `<img src="${url}"><input type="file" id="coverUpload" accept="image/*" style="display:none;"><div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div>`;
             });
-
             document.getElementById('avatarUpload')?.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !currentUser) return;
-                try {
-                    const url = await uploadToCloudinary(file);
-                    await saveUserProfile(currentUser.uid, { avatarUrl: url });
-                    document.getElementById('avatarPreview').innerHTML = `<img src="${url}" alt="Avatar">`;
-                } catch (error) {
-                    document.getElementById('profileMessage').innerHTML = 'Upload failed';
-                }
+                const file = e.target.files?.[0]; if(!file||!currentUser) return;
+                const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{avatarUrl:url});
+                document.getElementById('avatarPreview').innerHTML = `<img src="${url}">`;
             });
-
-            document.querySelectorAll('.grid-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const input = item.querySelector('.portfolio-upload');
-                    if (input) input.click();
-                });
-            });
-
-            document.querySelectorAll('.portfolio-upload').forEach(input => {
-                input.addEventListener('change', async (e) => {
-                    const file = e.target.files?.[0];
-                    const index = input.dataset.index;
-                    if (!file || !currentUser) return;
-                    try {
-                        const url = await uploadToCloudinary(file);
-                        await saveUserProfile(currentUser.uid, { [`portfolio_${index}`]: url });
-                        const gridItem = input.closest('.grid-item');
-                        if (gridItem) {
-                            gridItem.innerHTML = `<img src="${url}" alt="Portfolio"><input type="file" class="portfolio-upload" data-index="${index}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-camera" style="color:white; font-size:1.5rem;"></i></div>`;
-                        }
-                    } catch (error) {
-                        document.getElementById('profileMessage').innerHTML = 'Upload failed';
-                    }
-                });
-            });
-
-            document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
-                if (!currentUser) return;
-                const updates = {
-                    displayName: document.getElementById('displayName')?.value,
-                    category: document.getElementById('category')?.value,
-                    bio: document.getElementById('bio')?.value,
-                    hourlyRate: parseFloat(document.getElementById('hourlyRate')?.value) || null,
-                    updatedAt: new Date().toISOString()
-                };
-                const success = await saveUserProfile(currentUser.uid, updates);
+            document.querySelectorAll('.grid-item').forEach(item => item.addEventListener('click', ()=> item.querySelector('.portfolio-upload')?.click()));
+            document.querySelectorAll('.portfolio-upload').forEach(input => input.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0]; const idx = input.dataset.index; if(!file||!currentUser) return;
+                const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{[`portfolio_${idx}`]:url});
+                const gridItem = input.closest('.grid-item');
+                if(gridItem) gridItem.innerHTML = `<img src="${url}"><input type="file" class="portfolio-upload" data-index="${idx}" accept="image/*" style="display:none;"><div class="overlay"><i class="fas fa-plus"></i></div>`;
+            }));
+            document.getElementById('saveProfileBtn')?.addEventListener('click', async ()=>{
+                if(!currentUser) return;
+                const updates = {displayName: document.getElementById('displayName')?.value, category: document.getElementById('category')?.value, bio: document.getElementById('bio')?.value, hourlyRate: parseFloat(document.getElementById('hourlyRate')?.value)||null, updatedAt: new Date().toISOString()};
+                const ok = await saveUserProfile(currentUser.uid, updates);
                 const msg = document.getElementById('profileMessage');
-                if (success) {
-                    msg.innerHTML = 'Profile saved!';
-                    msg.style.color = '#00ff88';
-                    setTimeout(() => msg.innerHTML = '', 2000);
-                }
+                if(ok) { msg.innerHTML='Saved!'; msg.style.color='#00ff88'; setTimeout(()=>msg.innerHTML='',2000); }
             });
-
-            document.getElementById('signOutBtnProfile')?.addEventListener('click', async () => {
-                try { await signOut(auth); } catch (error) { console.warn(error); }
-            });
+            document.getElementById('signOutBtnProfile')?.addEventListener('click', async ()=>{ try{ await signOut(auth); }catch(e){}});
         }
 
         function setActiveTab(activeId) {
-            navItems.forEach(item => {
-                if (item.dataset.tab === activeId) item.classList.add('active');
-                else item.classList.remove('active');
-            });
+            navItems.forEach(item => { if(item.dataset.tab===activeId) item.classList.add('active'); else item.classList.remove('active'); });
         }
 
-        tabHome.addEventListener('click', (e) => { e.preventDefault(); currentTab = 'home'; setActiveTab('home'); renderPanel('home'); });
-        tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab = 'search'; setActiveTab('search'); renderPanel('search'); });
-        tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab = 'messages'; setActiveTab('messages'); renderPanel('messages'); });
-        tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab = 'profile'; setActiveTab('profile'); renderPanel('profile'); });
+        tabHome.addEventListener('click', (e) => { e.preventDefault(); currentTab='home'; setActiveTab('home'); renderPanel('home'); });
+        tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab='search'; setActiveTab('search'); renderPanel('search'); });
+        tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab='messages'; setActiveTab('messages'); renderPanel('messages'); });
+        tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab='profile'; setActiveTab('profile'); renderPanel('profile'); });
+        fabHub.addEventListener('click', () => { currentTab='home'; setActiveTab('home'); renderPanel('home'); });
 
         function setAuthMode(mode) {
-            currentAuthMode = mode;
-            authPrimaryBtn.innerText = mode === 'login' ? 'Login' : 'Sign up';
-            authToggleText.innerText = mode === 'login' ? "Don't have an account?" : 'Already have an account?';
-            authToggleBtn.innerText = mode === 'login' ? 'Sign up' : 'Login';
+            currentAuthMode = mode; authPrimaryBtn.innerText = mode==='login'? 'Login' : 'Sign up';
+            authToggleText.innerText = mode==='login'? "Don't have an account?" : 'Already have an account?';
+            authToggleBtn.innerText = mode==='login'? 'Sign up' : 'Login';
         }
-
-        authToggleBtn.addEventListener('click', () => setAuthMode(currentAuthMode === 'login' ? 'signup' : 'login'));
-        authPrimaryBtn.addEventListener('click', async () => {
-            const email = authEmail.value.trim();
-            const pass = authPassword.value.trim();
-            if (!email || !pass) { authMessage.innerText = 'fill all fields'; return; }
+        authToggleBtn.addEventListener('click', ()=> setAuthMode(currentAuthMode==='login'? 'signup':'login'));
+        authPrimaryBtn.addEventListener('click', async ()=>{
+            const email = authEmail.value.trim(), pass = authPassword.value.trim();
+            if(!email||!pass) { authMessage.innerText='fill all fields'; return; }
             try {
-                if (currentAuthMode === 'login') await signInWithEmailAndPassword(auth, email, pass);
-                else await createUserWithEmailAndPassword(auth, email, pass);
-                overlay.classList.remove('show');
-                authEmail.value = ''; authPassword.value = '';
-            } catch (error) { authMessage.innerText = error.message; }
+                if(currentAuthMode==='login') await signInWithEmailAndPassword(auth,email,pass);
+                else await createUserWithEmailAndPassword(auth,email,pass);
+                overlay.classList.remove('show'); authEmail.value=''; authPassword.value='';
+            } catch(error) { authMessage.innerText=error.message; }
         });
-
-        googleBtn.addEventListener('click', async () => {
-            try { await signInWithPopup(auth, provider); overlay.classList.remove('show'); } 
-            catch (error) { authMessage.innerText = error.message; }
+        googleBtn.addEventListener('click', async ()=>{
+            try{ await signInWithPopup(auth,provider); overlay.classList.remove('show'); }catch(error){ authMessage.innerText=error.message; }
         });
-
-        closeAuthBtn.addEventListener('click', () => overlay.classList.remove('show'));
-        window.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+        closeAuthBtn.addEventListener('click', ()=> overlay.classList.remove('show'));
+        window.addEventListener('click', (e)=> { if(e.target===overlay) overlay.classList.remove('show'); });
 
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            if (user) {
-                overlay.classList.remove('show');
-                await loadUserProfile(user.uid);
-                if (currentTab === 'profile') renderPanel('profile');
-            } else {
-                userProfileData = {};
-                if (currentTab === 'profile') renderPanel('profile');
-            }
+            if(user) { overlay.classList.remove('show'); await loadUserProfile(user.uid); if(currentTab==='profile') renderPanel('profile'); }
+            else { userProfileData={}; if(currentTab==='profile') renderPanel('profile'); }
         });
 
-        setAuthMode('login');
-        setActiveTab('home');
-        renderPanel('home');
-        overlay.classList.remove('show');
+        setAuthMode('login'); setActiveTab('home'); renderPanel('home'); overlay.classList.remove('show');
     </script>
 </body>
 </html>
