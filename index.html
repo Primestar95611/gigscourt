@@ -17,6 +17,10 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- reCAPTCHA v2 widget (required by Firebase phone auth RecaptchaVerifier) -->
+
+  <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
+
   <!-- React + Babel + Tailwind -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -86,10 +90,16 @@
       background-size: 40px 40px; background-color: #f0f4f8;
     }
     .img-gradient { background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%); }
+
+    /* reCAPTCHA — kept invisible; only the badge shows */
+    #recaptcha-container { position: fixed; bottom: 80px; right: 16px; z-index: 9999; }
+    #recaptcha-container iframe { border-radius: 8px; }
   </style>
 
 </head>
 <body>
+<!-- reCAPTCHA widget anchor (Firebase renders into this) -->
+<div id="recaptcha-container"></div>
 <div id="root"></div>
 
 <script type="text/babel">
@@ -100,29 +110,73 @@
 const db   = window.__db;
 const auth = window.__auth;
 
+// ─── Vercel app URL — used in every ActionCodeSettings link ──
+const APP_URL = 'https://gigscourt.vercel.app';
+
+// ─── Resend owner-alert helper ────────────────────────────────
+// Sends a notification email to the GigsCourt owner for every
+// core event (signup, booking, MFA enrollment).
+async function sendOwnerAlert(subject, body) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer re_AXzzsHd5_NAvZHMZ',
+      },
+      body: JSON.stringify({
+        from:    'GigsCourt <onboarding@resend.dev>',
+        to:      ['agboghidiaugust@gmail.com'],
+        subject,
+        html:    `<div style="font-family:sans-serif;max-width:480px;margin:auto"><h2 style="color:#FF385C">GigsCourt Alert</h2><p>${body}</p><hr/><small style="color:#999">GigsCourt · gigscourt.vercel.app</small></div>`,
+      }),
+    });
+    console.log('[Resend] Owner alert sent:', subject);
+  } catch(err) {
+    console.warn('[Resend] Alert failed (non-blocking):', err.message);
+  }
+}
+
 // ════════════════════════════════════════════════════════════
 //  ① handleFirebaseSignup  — LIVE
-//    Creates a Firebase Auth user AND a matching Firestore doc.
+//    Creates Auth user + Firestore doc + sends email verification
+//    + triggers owner Resend alert.
 // ════════════════════════════════════════════════════════════
 async function handleFirebaseSignup(email, password, displayName) {
   const cred = await auth.createUserWithEmailAndPassword(email, password);
   await cred.user.updateProfile({ displayName });
 
-  // Write provider profile to Firestore so user appears in feed immediately
-  await db.collection('providers').doc(cred.user.uid).set({
-    name:      displayName,
-    service:   'New Provider',
-    rating:    5.0,
-    reviews:   0,
-    distance:  0.5,
-    available: true,
-    avatar:    `https://i.pravatar.cc/300?u=${cred.user.uid}`,
-    cover:     'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=80',
-    bio:       'Tell clients about your services…',
-    portfolio: [],
-    price:     'TBD',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  // Send Firebase email verification — link returns to Vercel app
+  await cred.user.sendEmailVerification({
+    url: APP_URL,
+    handleCodeInApp: false,
   });
+  console.log('[Firebase Auth] Verification email sent to:', email);
+
+  // Write provider profile to Firestore
+  await db.collection('providers').doc(cred.user.uid).set({
+    name:          displayName,
+    service:       'New Provider',
+    rating:        5.0,
+    reviews:       0,
+    distance:      0.5,
+    available:     true,
+    avatar:        `https://i.pravatar.cc/300?u=${cred.user.uid}`,
+    cover:         'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=80',
+    bio:           'Tell clients about your services…',
+    portfolio:     [],
+    price:         'TBD',
+    emailVerified: false,
+    mfaEnrolled:   false,
+    signupMethod:  'email',
+    createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  // Owner alert — New Email Signup
+  sendOwnerAlert(
+    `🎉 New Provider Signup: ${displayName}`,
+    `<b>${displayName}</b> (<a href="mailto:${email}">${email}</a>) just signed up via email.<br/>UID: <code>${cred.user.uid}</code>`
+  );
 
   console.log('[Firebase Auth] Signup OK:', cred.user.uid);
   return cred.user;
@@ -138,9 +192,163 @@ async function handleFirebaseLogin(email, password) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  ③ updateProviderAvailability  — LIVE
-//    Writes the new boolean to Firestore; triggers re-render
-//    via the onSnapshot listener in the root App component.
+//  ③ handlePasswordReset  — LIVE
+//    Sends Firebase Password Reset email with Vercel return URL.
+// ════════════════════════════════════════════════════════════
+async function handlePasswordReset(email) {
+  await auth.sendPasswordResetEmail(email, {
+    url: APP_URL,
+    handleCodeInApp: false,
+  });
+  console.log('[Firebase Auth] Password reset email sent to:', email);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ④ handleEmailChange  — LIVE
+//    Changes the authenticated user's email in Firebase Auth.
+//    Firebase automatically sends an "Email Address Change"
+//    notification to the OLD address (configured in console).
+// ════════════════════════════════════════════════════════════
+async function handleEmailChange(user, newEmail, currentPassword) {
+  // Re-authenticate first (required by Firebase before sensitive ops)
+  const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+  await user.reauthenticateWithCredential(credential);
+
+  // verifyBeforeUpdateEmail sends a verify link to the NEW address
+  // before swapping it — uses Vercel return URL
+  await user.verifyBeforeUpdateEmail(newEmail, {
+    url: APP_URL,
+    handleCodeInApp: false,
+  });
+  console.log('[Firebase Auth] Email change verification sent to:', newEmail);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ⑤ handlePhoneSignup  — LIVE
+//    Uses Firebase RecaptchaVerifier + signInWithPhoneNumber.
+//    RecaptchaVerifier renders into #recaptcha-container (invisible).
+// ════════════════════════════════════════════════════════════
+let _recaptchaVerifier = null;
+let _phoneConfirmation = null;
+
+async function initRecaptcha() {
+  if (_recaptchaVerifier) return _recaptchaVerifier;
+  _recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible',
+    callback: () => console.log('[reCAPTCHA] Solved'),
+    'expired-callback': () => {
+      _recaptchaVerifier = null;
+      console.warn('[reCAPTCHA] Expired — will re-init next call');
+    },
+  });
+  await _recaptchaVerifier.render();
+  return _recaptchaVerifier;
+}
+
+async function handlePhoneSendOTP(phoneNumber) {
+  const verifier = await initRecaptcha();
+  _phoneConfirmation = await auth.signInWithPhoneNumber(phoneNumber, verifier);
+  console.log('[Firebase Auth] OTP sent to:', phoneNumber);
+  return _phoneConfirmation;
+}
+
+async function handlePhoneVerifyOTP(otp, displayName) {
+  if (!_phoneConfirmation) throw new Error('No active OTP session. Send OTP first.');
+  const cred = await _phoneConfirmation.confirm(otp);
+  const user  = cred.user;
+
+  // Update display name if provided
+  if (displayName) await user.updateProfile({ displayName });
+
+  // Upsert provider doc
+  const ref  = db.collection('providers').doc(user.uid);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    await ref.set({
+      name:         displayName || user.phoneNumber,
+      service:      'New Provider',
+      rating:       5.0,
+      reviews:      0,
+      distance:     0.5,
+      available:    true,
+      avatar:       `https://i.pravatar.cc/300?u=${user.uid}`,
+      cover:        'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&q=80',
+      bio:          'Tell clients about your services…',
+      portfolio:    [],
+      price:        'TBD',
+      mfaEnrolled:  false,
+      signupMethod: 'phone',
+      phoneNumber:  user.phoneNumber,
+      createdAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Owner alert — New Phone Signup
+  sendOwnerAlert(
+    `📱 New Provider Signup: ${displayName || user.phoneNumber}`,
+    `<b>${displayName || 'Unknown'}</b> (${user.phoneNumber}) just signed up via <b>Phone SMS</b>.<br/>UID: <code>${user.uid}</code>`
+  );
+
+  console.log('[Firebase Auth] Phone signup OK:', user.uid);
+  return user;
+}
+
+// ════════════════════════════════════════════════════════════
+//  ⑥ handleMFAEnroll  — LIVE
+//    Enrolls a TOTP / phone second factor on the authenticated user.
+//    Uses phone verification (same flow as phone signup) as the
+//    second factor.  After success, updates Firestore and sends
+//    owner alert + triggers the MFA Enrollment Notification template
+//    (Firebase sends this automatically on enrollment).
+// ════════════════════════════════════════════════════════════
+async function handleMFAEnroll(user, phoneNumber) {
+  // Step 1: Get multi-factor session from Firebase
+  const session = await user.multiFactor.getSession();
+
+  // Step 2: Send OTP to the phone number, linked to the MFA session
+  const verifier = await initRecaptcha();
+  const phoneInfoOptions = { phoneNumber, session };
+  const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+  const verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, verifier);
+  console.log('[MFA] OTP sent for enrollment to:', phoneNumber);
+
+  return verificationId; // caller will collect OTP and call handleMFAEnrollVerify
+}
+
+async function handleMFAEnrollVerify(user, verificationId, otp, displayName) {
+  const phoneAuthCredential = firebase.auth.PhoneAuthProvider.credential(verificationId, otp);
+  const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(phoneAuthCredential);
+
+  // Enroll — Firebase sends the MFA Enrollment Notification email automatically
+  await user.multiFactor.enroll(multiFactorAssertion, displayName || 'Phone');
+
+  // Update Firestore
+  await db.collection('providers').doc(user.uid).update({
+    mfaEnrolled: true,
+    updatedAt:   firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  // Owner alert — MFA Enrollment
+  sendOwnerAlert(
+    `🔐 MFA Enrolled: ${user.displayName || user.email}`,
+    `User <b>${user.displayName || 'Unknown'}</b> (${user.email || user.phoneNumber}) enrolled <b>Multi-Factor Authentication</b>.<br/>UID: <code>${user.uid}</code>`
+  );
+
+  console.log('[MFA] Enrollment complete for:', user.uid);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ⑦ sendBookingAlert  — call this when a booking is confirmed
+// ════════════════════════════════════════════════════════════
+async function sendBookingAlert(providerName, clientName, service) {
+  sendOwnerAlert(
+    `📅 New Booking: ${service}`,
+    `<b>${clientName}</b> booked <b>${providerName}</b> for <b>${service}</b>.`
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  ⑧ updateProviderAvailability  — LIVE
 // ════════════════════════════════════════════════════════════
 async function updateProviderAvailability(providerId, isAvailable) {
   await db.collection('providers').doc(providerId).update({
@@ -152,7 +360,7 @@ async function updateProviderAvailability(providerId, isAvailable) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  SHELLS — wire up later
+//  SHELLS — remaining integrations
 // ════════════════════════════════════════════════════════════
 
 /**
@@ -997,72 +1205,563 @@ function MapTab({ providers, onViewProvider }) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  AUTH MODAL  (bottom sheet)
+//  EMAIL CHANGE MODAL
 // ════════════════════════════════════════════════════════════
-function AuthModal({ mode, onClose, onSuccess }) {
-  const [email,    setEmail]    = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [name,     setName]     = React.useState('');
-  const [loading,  setLoading]  = React.useState(false);
-  const [error,    setError]    = React.useState('');
-  const [done,     setDone]     = React.useState(false);
+function EmailChangeModal({ user, onClose }) {
+  const [newEmail,  setNewEmail]  = React.useState('');
+  const [password,  setPassword]  = React.useState('');
+  const [loading,   setLoading]   = React.useState(false);
+  const [error,     setError]     = React.useState('');
+  const [success,   setSuccess]   = React.useState('');
 
   async function submit() {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
-    if (mode==='signup' && !name) { setError('Please enter your name.'); return; }
+    if (!newEmail || !password) { setError('Fill in both fields.'); return; }
     setLoading(true); setError('');
     try {
-      const user = mode==='signup'
-        ? await handleFirebaseSignup(email, password, name)
-        : await handleFirebaseLogin(email, password);
-      setDone(true);
-      setTimeout(() => { onSuccess(user); onClose(); }, 1200);
+      await handleEmailChange(user, newEmail, password);
+      setSuccess('✓ Verification sent to ' + newEmail + '. Click the link to confirm — it returns you to gigscourt.vercel.app');
     } catch(err) {
       setError(err.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim());
     } finally { setLoading(false); }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.5)' }}
-      onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-6 pb-10 fade-up">
-        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
-        <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>
-          {mode==='signup'?'Join GigsCourt':'Welcome Back'}
-        </h2>
-        <p className="text-sm text-gray-400 mb-5">{mode==='signup'?'Create your provider account':'Sign in to continue'}</p>
-        {done ? (
-          <div className="flex flex-col items-center py-8 gap-3">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background:'rgba(0,196,140,0.12)' }}>
-              <Icon.Check size={28} color="var(--green)" />
-            </div>
-            <p className="font-bold text-gray-800" style={{ fontFamily:'Syne' }}>{mode==='signup'?'Account Created!':'Signed In!'}</p>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.55)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-5 pb-10 fade-up">
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
+        <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>Change Email</h2>
+        <p className="text-sm text-gray-400 mb-5">We'll send a verification link to your new address before swapping.</p>
+        {success ? (
+          <div className="rounded-xl px-4 py-4 text-sm" style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>{success}</div>
         ) : (
           <>
-            {mode==='signup' && (
-              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full Name"
-                className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
-                style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
-            )}
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address"
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="New email address"
               className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
               style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password (min 6 chars)"
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Current password (to confirm)"
               className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
               style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
-            {error && (
-              <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)',color:'var(--red)' }}>
-                {error}
-              </div>
-            )}
+            {error && <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)', color:'var(--red)' }}>{error}</div>}
             <button onClick={submit} disabled={loading}
               className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
               style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
-              {loading
-                ? <><span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" /> Processing…</>
-                : (mode==='signup'?'Create Account':'Sign In')}
+              {loading ? <><span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" /> Sending…</> : 'Send Verification Link'}
             </button>
+          </>
+        )}
+        <button onClick={onClose} className="w-full mt-2 py-3 text-sm font-semibold" style={{ color:'#9CA3AF' }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  MFA ENROLL MODAL  — phone second factor enrollment
+// ════════════════════════════════════════════════════════════
+function MFAEnrollModal({ user, onClose, onSuccess }) {
+  const [phone,    setPhone]    = React.useState('');
+  const [otp,      setOtp]      = React.useState('');
+  const [verId,    setVerId]    = React.useState('');
+  const [step,     setStep]     = React.useState(1); // 1=enter phone, 2=enter OTP, 3=done
+  const [loading,  setLoading]  = React.useState(false);
+  const [error,    setError]    = React.useState('');
+  const cleanErr = e => e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+
+  async function sendOTP() {
+    if (!phone) { setError('Enter a phone number with country code.'); return; }
+    setLoading(true); setError('');
+    try {
+      const verificationId = await handleMFAEnroll(user, phone);
+      setVerId(verificationId);
+      setStep(2);
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  async function verifyOTP() {
+    if (!otp) { setError('Enter the 6-digit code.'); return; }
+    setLoading(true); setError('');
+    try {
+      await handleMFAEnrollVerify(user, verId, otp, 'Phone');
+      setStep(3);
+      setTimeout(() => { onSuccess(); onClose(); }, 2000);
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  const Spinner = () => <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" />;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.55)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-5 pb-10 fade-up">
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
+        <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>Enable 2-Factor Auth</h2>
+        <p className="text-sm text-gray-400 mb-5">Add your phone as a second sign-in factor for extra security.</p>
+
+        {step === 3 ? (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background:'rgba(0,196,140,0.12)' }}>
+              <Icon.Check size={32} color="var(--green)" />
+            </div>
+            <p className="font-bold text-gray-800" style={{ fontFamily:'Syne' }}>MFA Enabled!</p>
+            <p className="text-sm text-gray-500 text-center">Your account is now protected. You'll receive a confirmation email.</p>
+          </div>
+        ) : step === 1 ? (
+          <>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7700 900000"
+              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+            {error && <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)', color:'var(--red)' }}>{error}</div>}
+            <button onClick={sendOTP} disabled={loading}
+              className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+              style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+              {loading ? <><Spinner /> Sending code…</> : 'Send Verification Code'}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
+              Code sent to {phone}
+            </div>
+            <input type="text" inputMode="numeric" maxLength="6" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
+              placeholder="6-digit code" className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold"
+              style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', fontSize:22, letterSpacing:8 }} />
+            {error && <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.06)', color:'var(--red)' }}>{error}</div>}
+            <button onClick={verifyOTP} disabled={loading}
+              className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+              style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+              {loading ? <><Spinner /> Verifying…</> : 'Confirm & Enable MFA'}
+            </button>
+            <button onClick={() => { setStep(1); setError(''); }} className="w-full mt-2 py-3 text-sm font-semibold" style={{ color:'#9CA3AF' }}>
+              ← Change number
+            </button>
+          </>
+        )}
+        {step !== 3 && <button onClick={onClose} className="w-full mt-1 py-2.5 text-sm font-semibold" style={{ color:'#9CA3AF' }}>Cancel</button>}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  SECURITY DASHBOARD  — shows in ProfileTab for signed-in users
+//  Displays: email verified status, MFA status, action buttons
+// ════════════════════════════════════════════════════════════
+function SecurityDashboard({ user, providerData, onOpenAuth }) {
+  const [showEmailChange, setShowEmailChange] = React.useState(false);
+  const [showMFAEnroll,   setShowMFAEnroll]   = React.useState(false);
+  const [resendLoading,   setResendLoading]   = React.useState(false);
+  const [resendMsg,       setResendMsg]       = React.useState('');
+  const [mfaActive,       setMfaActive]       = React.useState(false);
+
+  // Reload user to get fresh emailVerified state
+  React.useEffect(() => {
+    if (!user) return;
+    user.reload().catch(() => {});
+    // MFA enrolled: check enrolledFactors array
+    setMfaActive(user.multiFactor?.enrolledFactors?.length > 0);
+  }, [user?.uid]);
+
+  async function resendVerification() {
+    if (!user || resendLoading) return;
+    setResendLoading(true); setResendMsg('');
+    try {
+      await user.sendEmailVerification({ url: APP_URL, handleCodeInApp: false });
+      setResendMsg('✓ Verification email resent! Check your inbox.');
+    } catch(err) {
+      setResendMsg('⚠ ' + err.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim());
+    } finally {
+      setResendLoading(false);
+      setTimeout(() => setResendMsg(''), 5000);
+    }
+  }
+
+  if (!user) {
+    return (
+      <div className="rounded-3xl p-5 mb-0" style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }}>
+        <h3 className="font-bold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>🔐 Security</h3>
+        <p className="text-sm text-gray-500 mb-4">Sign in to manage your account security.</p>
+        <div className="flex gap-2">
+          <button onClick={() => onOpenAuth('login')}
+            className="flex-1 py-3 rounded-2xl text-sm font-bold text-white"
+            style={{ background:'var(--red)', fontFamily:'Syne' }}>Sign In</button>
+          <button onClick={() => onOpenAuth('signup')}
+            className="flex-1 py-3 rounded-2xl text-sm font-bold"
+            style={{ background:'#F3F4F6', color:'#374151' }}>Create Account</button>
+        </div>
+      </div>
+    );
+  }
+
+  const isEmailUser = user.providerData?.some(p => p.providerId === 'password');
+  const emailVerified = user.emailVerified;
+  const phoneLinked   = user.providerData?.some(p => p.providerId === 'phone');
+
+  // Security score: 0-3 checks
+  const score = [emailVerified, mfaActive, (isEmailUser || phoneLinked)].filter(Boolean).length;
+  const scoreColor = score === 3 ? 'var(--green)' : score === 2 ? '#F59E0B' : 'var(--red)';
+  const scoreLabel = score === 3 ? 'Strong' : score === 2 ? 'Good' : 'Needs attention';
+
+  return (
+    <>
+      {showEmailChange && <EmailChangeModal user={user} onClose={() => setShowEmailChange(false)} />}
+      {showMFAEnroll   && <MFAEnrollModal   user={user} onClose={() => setShowMFAEnroll(false)}
+        onSuccess={() => { setMfaActive(true); }} />}
+
+      <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>🔐 Security</h3>
+
+      {/* Score bar */}
+      <div className="rounded-2xl p-4 mb-3 flex items-center gap-4" style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }}>
+        <div className="relative w-14 h-14 flex-shrink-0">
+          <svg width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="#E5E7EB" strokeWidth="5" />
+            <circle cx="28" cy="28" r="22" fill="none" stroke={scoreColor} strokeWidth="5"
+              strokeDasharray={`${(score/3)*138.2} 138.2`} strokeLinecap="round" transform="rotate(-90 28 28)" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-extrabold" style={{ color:scoreColor, fontFamily:'Syne' }}>{score}/3</span>
+          </div>
+        </div>
+        <div>
+          <p className="font-bold text-gray-900" style={{ fontFamily:'Syne' }}>Security: <span style={{ color:scoreColor }}>{scoreLabel}</span></p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {score === 3 ? 'All checks passed — your account is secured.' : 'Complete the checks below to strengthen your account.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Security checks */}
+      <div className="rounded-2xl overflow-hidden border mb-3" style={{ borderColor:'#E5E7EB' }}>
+
+        {/* Email verified */}
+        <div className="px-4 py-3.5 flex items-center justify-between" style={{ borderBottom:'1px solid #F3F4F6' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: emailVerified ? 'rgba(0,196,140,0.12)' : 'rgba(255,56,92,0.08)' }}>
+              <span>{emailVerified ? '✅' : '📧'}</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Email Verified</p>
+              <p className="text-xs text-gray-400">{emailVerified ? user.email : 'Check your inbox for the link'}</p>
+            </div>
+          </div>
+          {!emailVerified && isEmailUser && (
+            <button onClick={resendVerification} disabled={resendLoading}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl"
+              style={{ background:'var(--red)', color:'white', opacity:resendLoading?0.6:1 }}>
+              {resendLoading ? '…' : 'Resend'}
+            </button>
+          )}
+          {emailVerified && <span style={{ color:'var(--green)', fontSize:18 }}>✓</span>}
+        </div>
+
+        {/* MFA status */}
+        <div className="px-4 py-3.5 flex items-center justify-between" style={{ borderBottom:'1px solid #F3F4F6' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: mfaActive ? 'rgba(0,196,140,0.12)' : 'rgba(255,56,92,0.08)' }}>
+              <span>{mfaActive ? '🔐' : '🔓'}</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">2-Factor Authentication</p>
+              <p className="text-xs text-gray-400">{mfaActive ? 'Phone MFA active' : 'Add a phone number as a second factor'}</p>
+            </div>
+          </div>
+          {!mfaActive && isEmailUser && (
+            <button onClick={() => setShowMFAEnroll(true)}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl"
+              style={{ background:'var(--red)', color:'white' }}>
+              Enable
+            </button>
+          )}
+          {mfaActive && <span style={{ color:'var(--green)', fontSize:18 }}>✓</span>}
+        </div>
+
+        {/* Change email — only for email/password users */}
+        {isEmailUser && (
+          <div className="px-4 py-3.5 flex items-center justify-between" style={{ borderBottom:'1px solid #F3F4F6' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:'rgba(255,56,92,0.08)' }}>
+                <span>✏️</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Change Email</p>
+                <p className="text-xs text-gray-400">Sends verification to new & old address</p>
+              </div>
+            </div>
+            <button onClick={() => setShowEmailChange(true)}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl"
+              style={{ background:'#F3F4F6', color:'#374151' }}>
+              Update
+            </button>
+          </div>
+        )}
+
+        {/* Sign-in method */}
+        <div className="px-4 py-3.5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background:'rgba(0,196,140,0.12)' }}>
+            <Icon.Firebase size={16} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">Sign-in Method</p>
+            <p className="text-xs text-gray-400">
+              {isEmailUser && phoneLinked ? 'Email + Phone' : isEmailUser ? 'Email / Password' : 'Phone (SMS)'}
+            </p>
+          </div>
+          <span className="ml-auto" style={{ color:'var(--green)', fontSize:18 }}>✓</span>
+        </div>
+      </div>
+
+      {/* Resend feedback */}
+      {resendMsg && (
+        <div className="rounded-xl px-4 py-2.5 mb-3 text-xs font-medium fade-up"
+          style={{ background: resendMsg.startsWith('✓') ? 'rgba(0,196,140,0.08)' : 'rgba(255,56,92,0.08)',
+            color: resendMsg.startsWith('✓') ? 'var(--green)' : 'var(--red)' }}>
+          {resendMsg}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+//  AUTH MODAL  — Email/Password + Phone OTP + Forgot Password
+// ════════════════════════════════════════════════════════════
+function AuthModal({ mode, onClose, onSuccess }) {
+  // authTab: 'email' | 'phone' | 'forgot'
+  const [authTab,    setAuthTab]    = React.useState(mode === 'phone' ? 'phone' : 'email');
+  const [name,       setName]       = React.useState('');
+  const [email,      setEmail]      = React.useState('');
+  const [password,   setPassword]   = React.useState('');
+  const [phone,      setPhone]      = React.useState('');
+  const [otp,        setOtp]        = React.useState('');
+  const [otpSent,    setOtpSent]    = React.useState(false);
+  const [loading,    setLoading]    = React.useState(false);
+  const [error,      setError]      = React.useState('');
+  const [successMsg, setSuccessMsg] = React.useState('');
+  const [done,       setDone]       = React.useState(false);
+  const [doneLabel,  setDoneLabel]  = React.useState('');
+
+  const isSignup = (mode === 'signup');
+  const cleanErr = e => e.message.replace('Firebase: ','').replace(/\s*\(auth\/[^)]+\)/,'').trim();
+
+  // ── Email / Password flow ──────────────────────────────────
+  async function submitEmail() {
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    if (isSignup && !name) { setError('Please enter your name.'); return; }
+    setLoading(true); setError('');
+    try {
+      const user = isSignup
+        ? await handleFirebaseSignup(email, password, name)
+        : await handleFirebaseLogin(email, password);
+      if (isSignup) {
+        setDoneLabel('Account created! Check your email to verify.');
+      } else {
+        setDoneLabel('Signed in!');
+      }
+      setDone(true);
+      setTimeout(() => { onSuccess(user); onClose(); }, 2000);
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  // ── Forgot password flow ──────────────────────────────────
+  async function submitForgot() {
+    if (!email) { setError('Enter your email address first.'); return; }
+    setLoading(true); setError('');
+    try {
+      await handlePasswordReset(email);
+      setSuccessMsg('✓ Reset link sent! Check your inbox — it links back to gigscourt.vercel.app');
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  // ── Phone OTP flow — Step 1: Send OTP ─────────────────────
+  async function submitPhoneSend() {
+    if (!phone) { setError('Enter a phone number with country code, e.g. +447...'); return; }
+    setLoading(true); setError('');
+    try {
+      await handlePhoneSendOTP(phone);
+      setOtpSent(true);
+      setSuccessMsg('✓ OTP sent! Check your messages.');
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  // ── Phone OTP flow — Step 2: Verify OTP ───────────────────
+  async function submitPhoneVerify() {
+    if (!otp) { setError('Enter the 6-digit code.'); return; }
+    setLoading(true); setError('');
+    try {
+      const user = await handlePhoneVerifyOTP(otp, name || null);
+      setDoneLabel('Phone verified! Welcome to GigsCourt.');
+      setDone(true);
+      setTimeout(() => { onSuccess(user); onClose(); }, 2000);
+    } catch(err) { setError(cleanErr(err)); }
+    finally { setLoading(false); }
+  }
+
+  const Spinner = () => <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" />;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background:'rgba(0,0,0,0.55)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md rounded-t-3xl bg-white px-6 pt-5 pb-10 fade-up" style={{ maxHeight:'92vh', overflowY:'auto' }}>
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
+
+        {/* Done state */}
+        {done ? (
+          <div className="flex flex-col items-center py-10 gap-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background:'rgba(0,196,140,0.12)' }}>
+              <Icon.Check size={32} color="var(--green)" />
+            </div>
+            <p className="font-bold text-gray-800 text-center" style={{ fontFamily:'Syne' }}>{doneLabel}</p>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <h2 className="text-xl font-extrabold text-gray-900 mb-1" style={{ fontFamily:'Syne' }}>
+              {authTab === 'forgot' ? 'Reset Password' : isSignup ? 'Join GigsCourt' : 'Welcome Back'}
+            </h2>
+            <p className="text-sm text-gray-400 mb-4">
+              {authTab === 'forgot' ? 'We'll email a secure reset link'
+                : authTab === 'phone' ? (otpSent ? 'Enter the code we texted you' : 'Enter your number — we'll send a code')
+                : isSignup ? 'Create your provider account' : 'Sign in to continue'}
+            </p>
+
+            {/* Tab switcher — shown on non-forgot screens */}
+            {authTab !== 'forgot' && (
+              <div className="flex gap-2 mb-5">
+                {[{id:'email',label:'📧 Email'},{id:'phone',label:'📱 Phone'}].map(t => (
+                  <button key={t.id} onClick={() => { setAuthTab(t.id); setError(''); setSuccessMsg(''); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                    style={{
+                      background: authTab === t.id ? 'var(--red)' : '#F3F4F6',
+                      color:      authTab === t.id ? 'white' : '#6B7280',
+                    }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Error / success banners */}
+            {error && (
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(255,56,92,0.07)', color:'var(--red)' }}>
+                {error}
+              </div>
+            )}
+            {successMsg && (
+              <div className="rounded-xl px-4 py-3 mb-3 text-sm" style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
+                {successMsg}
+              </div>
+            )}
+
+            {/* ── EMAIL TAB ── */}
+            {authTab === 'email' && (
+              <>
+                {isSignup && (
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name"
+                    className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                    style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                )}
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address"
+                  className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                  style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (min 6 chars)"
+                  className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                  style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+
+                {/* Forgot password link — login only */}
+                {!isSignup && (
+                  <button onClick={() => { setAuthTab('forgot'); setError(''); setSuccessMsg(''); }}
+                    className="w-full text-right text-xs mb-4 font-semibold"
+                    style={{ color:'var(--red)' }}>
+                    Forgot password?
+                  </button>
+                )}
+
+                <button onClick={submitEmail} disabled={loading}
+                  className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+                  style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+                  {loading ? <><Spinner /> Processing…</> : (isSignup ? 'Create Account' : 'Sign In')}
+                </button>
+
+                {isSignup && (
+                  <p className="text-xs text-gray-400 text-center mt-3">
+                    A verification email will be sent to confirm your address.
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* ── PHONE TAB ── */}
+            {authTab === 'phone' && (
+              <>
+                {!otpSent ? (
+                  <>
+                    {isSignup && (
+                      <input value={name} onChange={e => setName(e.target.value)} placeholder="Your Name (optional)"
+                        className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                        style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                    )}
+                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7700 900000"
+                      className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                      style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                    <button onClick={submitPhoneSend} disabled={loading}
+                      className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+                      style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+                      {loading ? <><Spinner /> Sending OTP…</> : 'Send Verification Code'}
+                    </button>
+                    <p className="text-xs text-gray-400 text-center mt-3">
+                      Standard SMS rates may apply. reCAPTCHA protected.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-xl px-4 py-3 mb-3 text-sm flex items-center gap-2"
+                      style={{ background:'rgba(0,196,140,0.08)', color:'var(--green)' }}>
+                      <Icon.Check size={15} color="var(--green)" />
+                      OTP sent to {phone}
+                    </div>
+                    <input type="text" inputMode="numeric" maxLength="6" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,''))}
+                      placeholder="6-digit code"
+                      className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3 text-center font-bold tracking-widest"
+                      style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', fontSize:22, letterSpacing:8 }} />
+                    <button onClick={submitPhoneVerify} disabled={loading}
+                      className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+                      style={{ background:'var(--red)', fontFamily:'Syne', opacity:loading?0.7:1 }}>
+                      {loading ? <><Spinner /> Verifying…</> : 'Verify & Sign In'}
+                    </button>
+                    <button onClick={() => { setOtpSent(false); setOtp(''); setSuccessMsg(''); }}
+                      className="w-full mt-2 py-3 text-sm font-semibold" style={{ color:'#9CA3AF' }}>
+                      ← Change number
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ── FORGOT PASSWORD TAB ── */}
+            {authTab === 'forgot' && (
+              <>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
+                  className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none mb-3"
+                  style={{ background:'#F9FAFB', border:'1px solid #E5E7EB' }} />
+                <button onClick={submitForgot} disabled={loading || !!successMsg}
+                  className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2"
+                  style={{ background:'var(--red)', fontFamily:'Syne', opacity:(loading||!!successMsg)?0.7:1 }}>
+                  {loading ? <><Spinner /> Sending…</> : 'Send Reset Link'}
+                </button>
+                <button onClick={() => { setAuthTab('email'); setError(''); setSuccessMsg(''); }}
+                  className="w-full mt-2 py-3 text-sm font-semibold" style={{ color:'#9CA3AF' }}>
+                  ← Back to Sign In
+                </button>
+              </>
+            )}
           </>
         )}
       </div>
@@ -1426,15 +2125,22 @@ function ProfileTab({ currentUser }) {
           </div>
         )}
 
+        {/* ════ SECURITY DASHBOARD ════ */}
+        <SecurityDashboard user={user} providerData={dashProviderData} onOpenAuth={setAuthModal} />
+
         {/* Account section */}
-        <h3 className="font-bold text-gray-900 mb-3" style={{ fontFamily:'Syne' }}>Account</h3>
+        <h3 className="font-bold text-gray-900 mb-3 mt-5" style={{ fontFamily:'Syne' }}>Account</h3>
         <div className="rounded-2xl overflow-hidden border" style={{ borderColor:'#E5E7EB' }}>
-          {[
-            { label: user ? '✓ Signed in via Firebase' : 'Sign In', action:()=>!user&&setAuthModal('login'), active:!!user },
+          {(!user ? [
+            { label:'Sign In',        action:()=>setAuthModal('login'),  active:false },
             { label:'Create Account', action:()=>setAuthModal('signup'), active:false },
-            { label:'Notifications',  action:()=>{},                    active:false },
-            { label:'Help & Support', action:()=>{},                    active:false },
-          ].map((item,i,arr)=>(
+            { label:'Sign Up with Phone', action:()=>setAuthModal('phone'), active:false },
+          ] : [
+            { label:'✓ Signed in via Firebase', action:()=>{}, active:true },
+          ]).concat([
+            { label:'Notifications',  action:()=>{}, active:false },
+            { label:'Help & Support', action:()=>{}, active:false },
+          ]).map((item,i,arr)=>(
             <button key={item.label} onClick={item.action}
               className="w-full px-4 py-3.5 text-left text-sm font-medium flex items-center justify-between"
               style={{ color:item.active?'var(--green)':'#374151', borderBottom:i<arr.length-1?'1px solid #F3F4F6':'none' }}>
