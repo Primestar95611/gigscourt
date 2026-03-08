@@ -5,28 +5,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>GigsCourt — Book Elite Talent</title>
-
-  <!-- Tailwind CSS -->
-
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome -->
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
-  <!-- Firebase v10 compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <!-- Cloudinary Upload Widget -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-  <!-- Leaflet.js (free, no API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
     tailwind.config = {
       theme: { extend: {
@@ -35,7 +24,6 @@
       }}
     }
   </script>
-
   <style>
     :root {
       --brand:        #FF385C;
@@ -54,17 +42,11 @@
       font-family:'DM Sans',sans-serif; height:100%;
       overflow:hidden; -webkit-font-smoothing:antialiased;
     }
-
-    /* ── App ── */
     #app { display:flex; flex-direction:column; height:100dvh; max-width:480px; margin:0 auto; position:relative; overflow:hidden; }
-
-    /* ── Views ── */
     .view { display:none; flex:1; overflow-y:auto; overflow-x:hidden; padding-bottom:80px; scroll-behavior:smooth; }
     .view.active { display:block; animation:fadeUp 0.28s cubic-bezier(0.16,1,0.3,1) both; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
     .view::-webkit-scrollbar{width:3px} .view::-webkit-scrollbar-track{background:transparent} .view::-webkit-scrollbar-thumb{background:var(--brand);border-radius:99px}
-
-    /* ── Bottom Nav ── */
     #bottom-nav {
       position:fixed; bottom:0; left:50%; transform:translateX(-50%);
       width:100%; max-width:480px; background:var(--bg-nav);
@@ -80,16 +62,10 @@
     .nav-btn.active i { filter:drop-shadow(0 0 6px var(--brand-glow));transform:translateY(-2px); }
     .nav-btn::after { content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%) scaleX(0);width:24px;height:2px;background:var(--brand);border-radius:99px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
     .nav-btn.active::after { transform:translateX(-50%) scaleX(1); }
-
-    /* ── Brand btn ── */
     .brand-btn { background:var(--brand);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;border:none;cursor:pointer;transition:all 0.2s; }
     .brand-btn:hover{filter:brightness(1.1);transform:translateY(-1px)} .brand-btn:active{filter:brightness(0.95);transform:translateY(0)}
     .card { background:var(--bg-card);border:1px solid var(--border);border-radius:16px; }
     .pill { display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:12px;font-weight:500; }
-
-    /* ══════════════════════════════════════
-       TOAST
-    ══════════════════════════════════════ */
     #toast {
       position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-80px);
       z-index:9999; min-width:280px; max-width:400px; padding:13px 18px;
@@ -103,18 +79,12 @@
     #toast.success { background:#16A34A; color:#fff; }
     #toast.info    { background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border); }
     #toast i { font-size:15px; }
-
-    /* ══════════════════════════════════════
-       AUTH OVERLAY
-    ══════════════════════════════════════ */
     #auth-overlay {
       position:fixed; inset:0; z-index:999; background:var(--bg-base);
       display:flex; flex-direction:column; align-items:center;
       justify-content:flex-start; overflow-y:auto; padding-bottom:40px;
     }
     #auth-overlay.hidden { display:none; }
-
-    /* Hero strip */
     .auth-hero {
       width:100%; max-width:480px; height:210px; position:relative; flex-shrink:0;
       background:linear-gradient(160deg,#1a0810 0%,var(--bg-base) 100%);
@@ -128,16 +98,10 @@
     .auth-hero-logo { font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:0.06em;color:var(--text-primary);position:relative;z-index:1;line-height:1; }
     .auth-hero-logo span { color:var(--brand); }
     .auth-hero-tagline { font-size:13px;color:var(--text-muted);position:relative;z-index:1;letter-spacing:0.04em; }
-
-    /* Auth card */
     .auth-card { width:100%;max-width:420px;padding:0 24px;margin-top:-10px; }
-
-    /* Tabs */
     .auth-tabs { display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:22px; }
     .auth-tab { flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;border-radius:9px;cursor:pointer;transition:all 0.22s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif; }
     .auth-tab.active { background:var(--brand);color:#fff;box-shadow:0 4px 14px rgba(255,56,92,0.35); }
-
-    /* Fields */
     .field-group { margin-bottom:14px; }
     .field-label { font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;display:block; }
     .field-wrap { display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0 14px;gap:10px;transition:border-color 0.2s; }
@@ -145,8 +109,6 @@
     .field-wrap i { color:var(--text-muted);font-size:14px;flex-shrink:0; }
     .field-wrap input,.field-wrap select { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0; }
     .field-wrap input::placeholder { color:var(--text-muted); }
-
-    /* Phone row */
     .phone-row { display:flex; }
     .country-wrap { display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px 0 0 12px;padding:0 10px 0 14px;gap:6px;border-right:none;min-width:105px;transition:border-color 0.2s; }
     .country-wrap:focus-within { border-color:var(--brand); }
@@ -156,32 +118,22 @@
     .num-wrap:focus-within { border-color:var(--brand); }
     .num-wrap input { width:100%;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0; }
     .num-wrap input::placeholder { color:var(--text-muted); }
-
     .eye-btn { background:none;border:none;outline:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0;flex-shrink:0;transition:color 0.2s; }
     .eye-btn:hover { color:var(--text-primary); }
-
-    /* Submit */
     .auth-submit { width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.02em; }
     .auth-submit .spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none; }
     .auth-submit.loading .spinner { display:block; }
     .auth-submit.loading .btn-label { opacity:0.6; }
     @keyframes spin { to{transform:rotate(360deg)} }
-
     .auth-divider { display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text-muted);font-size:12px; }
     .auth-divider::before,.auth-divider::after { content:'';flex:1;height:1px;background:var(--border); }
     .social-btn { width:100%;padding:12px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s; }
     .social-btn:hover { border-color:rgba(255,255,255,0.2);background:var(--bg-surface); }
-
-    /* MFA step */
     #mfa-step { display:none; }
     #mfa-step.visible { display:block; }
     .otp-row { display:flex;gap:8px;justify-content:center;margin:20px 0; }
     .otp-input { width:46px;height:54px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;font-size:22px;font-weight:700;color:var(--text-primary);font-family:'Bebas Neue',sans-serif;outline:none;transition:border-color 0.2s; }
     .otp-input:focus { border-color:var(--brand); }
-
-    /* ══════════════════════════════════════
-       HOME
-    ══════════════════════════════════════ */
     .hero-banner { position:relative;width:100%;height:300px;background:linear-gradient(145deg,#1a0a10 0%,var(--bg-base) 60%);overflow:hidden;display:flex;align-items:flex-end; }
     .hero-banner::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 70% 40%,rgba(255,56,92,0.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 20% 80%,rgba(255,56,92,0.08) 0%,transparent 60%); }
     .hero-banner::after  { content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--bg-base) 0%,transparent 50%); }
@@ -189,12 +141,10 @@
     .hero-eyebrow { font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--brand);margin-bottom:8px; }
     .hero-title { font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.95;color:var(--text-primary); }
     .hero-title span { color:var(--brand); }
-
     .chip-row { display:flex;gap:8px;overflow-x:auto;padding:0 20px;scrollbar-width:none; }
     .chip-row::-webkit-scrollbar { display:none; }
     .chip { flex-shrink:0;padding:8px 16px;border-radius:99px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);transition:all 0.2s;white-space:nowrap; }
     .chip.active,.chip:hover { background:var(--brand);color:#fff;border-color:var(--brand); }
-
     .talent-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px; }
     .talent-card { position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4;cursor:pointer;background:var(--bg-surface); }
     .talent-card-img { width:100%;height:100%;background:linear-gradient(135deg,var(--bg-surface) 0%,#1a1a28 100%);display:flex;align-items:center;justify-content:center; }
@@ -207,77 +157,111 @@
     .status-dot.available { background:#22C55E;box-shadow:0 0 5px rgba(34,197,94,0.6); }
     .status-dot.busy      { background:#EF4444; }
     .talent-card-badge { position:absolute;top:10px;right:10px; }
-
     .section-header { display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:14px; }
     .section-title  { font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.04em;color:var(--text-primary); }
     .section-link   { font-size:12px;font-weight:500;color:var(--brand);cursor:pointer; }
-
-    /* ══════════════════════════════════════
-       SEARCH
-    ══════════════════════════════════════ */
-    .map-container { position:relative;height:calc(100dvh - 130px);background:var(--bg-surface);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-muted);overflow:hidden; }
-    .map-container::before { content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,var(--border) 39px,var(--border) 40px);opacity:0.5; }
-    .map-placeholder-icon { width:72px;height:72px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--brand);position:relative;z-index:1; }
-    .search-topbar { padding:16px 20px 12px;background:var(--bg-base);display:flex;gap:10px;align-items:center; }
-    .search-input-wrap { flex:1;display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px; }
-    .search-input-wrap i { color:var(--text-muted);font-size:14px; }
-    .search-input-wrap input { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px; }
-    .search-input-wrap input::placeholder { color:var(--text-muted); }
-    .distance-bar { padding:12px 20px 14px;background:var(--bg-base);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border); }
-    .distance-bar label { font-size:12px;font-weight:500;color:var(--text-muted);white-space:nowrap;min-width:60px; }
-    .distance-val { font-size:12px;font-weight:600;color:var(--brand);min-width:44px;text-align:right; }
-    input[type="range"] { -webkit-appearance:none;flex:1;height:4px;background:var(--bg-surface);border-radius:99px;outline:none; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 0 8px var(--brand-glow); }
-
-    /* ══════════════════════════════════════
-       MESSAGES
-    ══════════════════════════════════════ */
-    .msg-search { padding:14px 20px 10px;background:var(--bg-base); }
-    .msg-search-inner { display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px; }
-    .msg-search-inner i { color:var(--text-muted);font-size:14px; }
-    .msg-search-inner input { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px; }
-    .msg-search-inner input::placeholder { color:var(--text-muted); }
-    .chat-item { display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid var(--border); }
-    .chat-item:hover { background:var(--bg-card); }
-    .avatar { position:relative;flex-shrink:0; }
-    .avatar-img { width:50px;height:50px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-muted);border:2px solid var(--border); }
-    .avatar-status { position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg-base); }
-    .avatar-status.online{background:#22C55E} .avatar-status.offline{background:var(--text-muted)}
-    .chat-meta { flex:1;min-width:0; }
-    .chat-name { font-weight:600;font-size:14px;margin-bottom:3px; }
-    .chat-preview { font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-    .chat-time { font-size:11px;color:var(--text-muted);flex-shrink:0; }
-    .unread-badge { width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center; }
-
-    /* ══════════════════════════════════════
-       PROFILE
-    ══════════════════════════════════════ */
-    .cover-photo { position:relative;width:100%;height:200px;background:linear-gradient(135deg,#1a0a10 0%,#1C1C27 100%);overflow:hidden; }
+    #view-search { display:none; flex-direction:column; padding-bottom:0 !important; overflow:hidden !important; }
+    #view-search.active { display:flex; }
+    .map-controls { flex-shrink: 0; background: var(--bg-base); border-bottom: 1px solid var(--border); z-index: 10; }
+    .map-search-row { display: flex; gap: 8px; padding: 14px 14px 10px; align-items: center; }
+    .map-search-input-wrap { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; transition: border-color 0.2s; }
+    .map-search-input-wrap:focus-within { border-color: var(--brand); }
+    .map-search-input-wrap i { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+    .map-search-input-wrap input { flex: 1; background: none; border: none; outline: none; color: var(--text-primary); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 0; }
+    .map-search-input-wrap input::placeholder { color: var(--text-muted); }
+    .map-search-go-btn { flex-shrink: 0; padding: 0 16px; height: 44px; background: var(--brand); color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter 0.2s; }
+    .map-search-go-btn:hover { filter: brightness(1.1); }
+    .map-slider-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px 13px; }
+    .map-slider-label { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; min-width: 40px; }
+    .map-slider-val { font-size: 13px; font-weight: 700; color: var(--brand); min-width: 46px; text-align: right; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+    .map-count-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: rgba(255,56,92,0.12); color: var(--brand); border: 1px solid rgba(255,56,92,0.2); white-space: nowrap; flex-shrink: 0; }
+    #leaflet-map { flex: 1; min-height: 0; z-index: 1; }
+    .leaflet-popup-content-wrapper { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 16px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important; padding: 0 !important; overflow: hidden; }
+    .leaflet-popup-tip-container { display: none !important; }
+    .leaflet-popup-content { margin: 0 !important; }
+    .leaflet-popup-close-button { color: var(--text-muted) !important; font-size: 18px !important; top: 8px !important; right: 10px !important; z-index: 10; }
+    .leaflet-popup-close-button:hover { color: var(--brand) !important; }
+    .talent-popup { width: 220px; font-family: 'DM Sans', sans-serif; }
+    .talent-popup-cover { width: 100%; height: 90px; background: linear-gradient(135deg, #1a0810, #1C1C27); position: relative; overflow: hidden; }
+    .talent-popup-cover img { width:100%;height:100%;object-fit:cover; }
+    .talent-popup-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); }
+    .talent-popup-body { padding: 10px 14px 14px; }
+    .talent-popup-avatar-row { display: flex; align-items: flex-end; gap: 10px; margin-top: -26px; margin-bottom: 8px; }
+    .talent-popup-avatar { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--bg-card); background: var(--bg-surface); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--text-muted); overflow: hidden; flex-shrink: 0; }
+    .talent-popup-avatar img { width:100%;height:100%;object-fit:cover; }
+    .talent-popup-status { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 99px; margin-bottom: 2px; }
+    .talent-popup-status.available { background: rgba(34,197,94,0.15); color: #22C55E; }
+    .talent-popup-name { font-weight: 700; font-size: 15px; color: var(--text-primary); line-height: 1.2; }
+    .talent-popup-cat { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .talent-popup-dist { font-size: 11px; color: var(--brand); margin-top: 2px; font-weight: 500; }
+    .talent-popup-btn { display: block; width: 100%; margin-top: 10px; padding: 9px 0; background: var(--brand); color: #fff; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: filter 0.2s; text-align: center; }
+    .talent-popup-btn:hover { filter: brightness(1.1); }
+    .talent-pin { width: 36px; height: 36px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(0,0,0,0.4); overflow: hidden; cursor: pointer; }
+    .talent-pin img { width: 100%; height: 100%; object-fit: cover; transform: rotate(45deg); border-radius: 50%; }
+    .talent-pin-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); font-size: 16px; color: #fff; }
+    .user-location-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px rgba(255,56,92,0.25); animation: locationPulse 2s ease-in-out infinite; }
+    @keyframes locationPulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(255,56,92,0.25); } 50% { box-shadow: 0 0 0 10px rgba(255,56,92,0.08); } }
+    #geocoder-results { position: absolute; top: 100%; left: 14px; right: 76px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; z-index: 9999; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; }
+    .geocoder-item { padding: 11px 14px; font-size: 13px; color: var(--text-primary); cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; display: flex; gap: 8px; align-items: flex-start; }
+    .geocoder-item:last-child { border-bottom: none; }
+    .geocoder-item:hover { background: var(--bg-surface); }
+    .geocoder-item i { color: var(--brand); font-size: 12px; margin-top: 2px; flex-shrink: 0; }
+    #mapDistSlider { -webkit-appearance:none; flex:1; height:4px; background:var(--bg-surface); border-radius:99px; outline:none; cursor:pointer; }
+    #mapDistSlider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--brand); cursor:pointer; box-shadow:0 0 0 3px rgba(255,56,92,0.25), 0 2px 8px rgba(0,0,0,0.4); transition:box-shadow 0.2s; }
+    #mapDistSlider::-webkit-slider-thumb:hover { box-shadow:0 0 0 6px rgba(255,56,92,0.2), 0 2px 8px rgba(0,0,0,0.4); }
+    #mapDistSlider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:var(--brand); cursor:pointer; border:none; }
+    .cover-photo { position:relative;width:100%;height:210px;background:linear-gradient(135deg,#1a0a10 0%,#1C1C27 100%);overflow:hidden;cursor:default; }
     .cover-photo::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,56,92,0.12) 0%,transparent 70%); }
-    .cover-edit-btn { position:absolute;top:14px;right:14px;width:34px;height:34px;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);color:#fff;font-size:13px; }
-    .profile-photo-wrap { position:relative;margin-top:-46px;margin-left:20px;display:inline-block; }
-    .profile-photo { width:92px;height:92px;border-radius:50%;background:var(--bg-surface);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-muted);overflow:hidden; }
-    .profile-photo-edit { position:absolute;bottom:4px;right:0;width:26px;height:26px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;border:2px solid var(--bg-base); }
+    .cover-photo img { width:100%;height:100%;object-fit:cover;display:block; }
+    .cover-edit-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.45); display:none;align-items:center;justify-content:center; flex-direction:column;gap:6px;color:#fff;font-size:13px;font-weight:500; cursor:pointer; }
+    .cover-edit-overlay i { font-size:26px; }
+    .cover-photo.edit-mode { cursor:pointer; }
+    .cover-photo.edit-mode .cover-edit-overlay { display:flex; }
+    .profile-photo { width:92px;height:92px;border-radius:50%;background:var(--bg-surface);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-muted);overflow:hidden;cursor:default;transition:box-shadow 0.2s; }
+    .profile-photo img { width:100%;height:100%;object-fit:cover; }
+    .profile-photo.edit-mode { cursor:pointer;box-shadow:0 0 0 3px var(--brand); }
+    .profile-photo-edit { position:absolute;bottom:4px;right:0;width:26px;height:26px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;border:2px solid var(--bg-base);transition:transform 0.2s; }
+    .profile-photo-edit:hover { transform:scale(1.15); }
+    .profile-edit-bar { display:none; align-items:center;justify-content:space-between; padding:10px 20px; background:rgba(255,56,92,0.07); border-top:1px solid rgba(255,56,92,0.18); border-bottom:1px solid rgba(255,56,92,0.18); margin-bottom:2px; }
+    .profile-edit-bar.visible { display:flex; }
+    .edit-bar-label { font-size:12px;font-weight:600;color:var(--brand);letter-spacing:0.04em; }
+    .bio-textarea { width:100%;background:var(--bg-card);border:1px solid var(--border); border-radius:12px;padding:11px 14px;color:var(--text-primary); font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.55; resize:none;outline:none;transition:border-color 0.2s;min-height:72px; }
+    .bio-textarea:focus { border-color:var(--brand); }
+    .bio-view { font-size:13px;line-height:1.55;color:rgba(245,245,247,0.75);cursor:default; }
+    .category-select-wrap { display:flex;align-items:center;gap:10px; background:var(--bg-card);border:1px solid var(--border); border-radius:12px;padding:0 14px;transition:border-color 0.2s; }
+    .category-select-wrap:focus-within { border-color:var(--brand); }
+    .category-select-wrap i { color:var(--text-muted);font-size:14px; }
+    .category-select-wrap select { flex:1;background:none;border:none;outline:none; color:var(--text-primary);font-family:'DM Sans',sans-serif; font-size:14px;padding:13px 0;cursor:pointer; }
+    .category-badge { display:inline-flex;align-items:center;gap:5px; padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600; background:rgba(255,56,92,0.12);color:var(--brand);border:1px solid rgba(255,56,92,0.2); margin-bottom:10px; }
+    .image-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4px; }
+    .grid-cell { aspect-ratio:1;background:var(--bg-surface); display:flex;align-items:center;justify-content:center; cursor:pointer;overflow:hidden;position:relative; transition:opacity 0.2s; }
+    .grid-cell i { color:var(--border);font-size:24px; }
+    .grid-cell img { width:100%;height:100%;object-fit:cover;display:block; }
+    .grid-cell:first-child { grid-column:span 2;grid-row:span 2; }
+    .grid-cell .del-btn { position:absolute;top:5px;right:5px; width:22px;height:22px;border-radius:50%; background:rgba(0,0,0,0.75);border:none;color:#fff; font-size:11px;cursor:pointer;display:none; align-items:center;justify-content:center; z-index:5;transition:background 0.15s; }
+    .grid-cell .del-btn:hover { background:var(--brand); }
+    .image-grid.edit-mode .grid-cell .del-btn { display:flex; }
+    .image-grid.edit-mode .grid-cell.empty-cell { border:2px dashed rgba(255,56,92,0.3); }
+    .image-grid.edit-mode .grid-cell.empty-cell i { color:rgba(255,56,92,0.3); }
+    .grid-add-slot { aspect-ratio:1;background:var(--bg-surface); display:flex;align-items:center;justify-content:center; cursor:pointer;overflow:hidden;border:2px dashed var(--border); transition:border-color 0.2s,background 0.2s; }
+    .grid-add-slot:hover { border-color:var(--brand);background:rgba(255,56,92,0.05); }
+    .grid-add-slot i { color:var(--text-muted);font-size:22px; }
+    .cell-uploading::after { content:'';position:absolute;inset:0;background:rgba(10,10,14,0.6); display:flex;align-items:center;justify-content:center; }
+    .cell-spinner { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%); width:28px;height:28px;border:3px solid rgba(255,255,255,0.25); border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite; z-index:10;display:none; }
+    .cell-uploading .cell-spinner { display:block; }
     .profile-info { padding:12px 20px 0; }
-    .profile-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.03em;color:var(--text-primary); }
-    .profile-handle { font-size:13px;color:var(--text-muted);margin-bottom:10px; }
-    .profile-bio { font-size:13px;line-height:1.55;color:rgba(245,245,247,0.75);margin-bottom:14px; }
-    .profile-stats { display:flex;gap:24px;padding:14px 20px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 4px; }
+    .profile-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.03em;color:var(--text-primary);line-height:1; }
+    .profile-handle { font-size:13px;color:var(--text-muted);margin-bottom:8px; }
+    .profile-stats { display:flex;gap:24px;padding:14px 20px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:12px 0 4px; }
     .stat { text-align:center; }
     .stat-value { font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text-primary);letter-spacing:0.03em; }
     .stat-label { font-size:11px;color:var(--text-muted);margin-top:1px; }
     .status-toggle { display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card); }
-    .toggle-btn { flex:1;padding:9px 0;font-size:12px;font-weight:600;text-align:center;cursor:pointer;transition:all 0.2s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif; }
+    .toggle-btn { flex:1;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif;white-space:nowrap; }
     .toggle-btn.active-avail { background:rgba(34,197,94,0.15);color:#22C55E; }
     .toggle-btn.active-busy  { background:rgba(255,56,92,0.12);color:var(--brand); }
-    .image-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4px; }
-    .grid-cell { aspect-ratio:1;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden; }
-    .grid-cell i { color:var(--border);font-size:24px; }
-    .grid-cell:first-child { grid-column:span 2;grid-row:span 2; }
-
-    /* ══════════════════════════════════════
-       ADMIN
-    ══════════════════════════════════════ */
+    .save-indicator { display:none;align-items:center;gap:6px; font-size:11px;color:#22C55E;font-weight:500; }
+    .save-indicator.visible { display:flex; }
     .admin-header { padding:28px 20px 20px;background:linear-gradient(180deg,rgba(255,56,92,0.08) 0%,transparent 100%);border-bottom:1px solid var(--border); }
     .admin-eyebrow { font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--brand);margin-bottom:6px; }
     .admin-title { font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:0.04em;line-height:1; }
@@ -294,7 +278,6 @@
     .action-icon { width:36px;height:36px;border-radius:10px;background:rgba(255,56,92,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--brand); }
     .action-label { font-size:14px;font-weight:500; }
     .action-sub { font-size:11px;color:var(--text-muted);margin-top:1px; }
-
     .topbar { padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between; }
     .topbar-logo { font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.06em;color:var(--text-primary); }
     .topbar-logo span { color:var(--brand); }
@@ -302,374 +285,126 @@
     .topbar-icon-btn:hover { color:var(--brand);border-color:var(--brand); }
     .notif-dot { position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--brand);border-radius:50%;border:1.5px solid var(--bg-base); }
 
-    /* ══════════════════════════════════════
-       PROFILE — ENHANCED STEP 3
-    ══════════════════════════════════════ */
+```
+/* ── MESSAGES ── */
+.msg-search { padding:14px 20px 10px;background:var(--bg-base); }
+.msg-search-inner { display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px; }
+.msg-search-inner i { color:var(--text-muted);font-size:14px; }
+.msg-search-inner input { flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px; }
+.msg-search-inner input::placeholder { color:var(--text-muted); }
+.chat-item { display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid var(--border); }
+.chat-item:hover { background:var(--bg-card); }
+.avatar { position:relative;flex-shrink:0; }
+.avatar-img { width:50px;height:50px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-muted);border:2px solid var(--border); }
+.avatar-status { position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg-base); }
+.avatar-status.online{background:#22C55E} .avatar-status.offline{background:var(--text-muted)}
+.chat-meta { flex:1;min-width:0; }
+.chat-name { font-weight:600;font-size:14px;margin-bottom:3px; }
+.chat-preview { font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.chat-time { font-size:11px;color:var(--text-muted);flex-shrink:0; }
+.unread-badge { width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center; }
 
-    /* Cover — clickable in edit mode */
-    .cover-photo { position:relative;width:100%;height:210px;background:linear-gradient(135deg,#1a0a10 0%,#1C1C27 100%);overflow:hidden;cursor:default; }
-    .cover-photo::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 80% at 50% 50%,rgba(255,56,92,0.12) 0%,transparent 70%); }
-    .cover-photo img { width:100%;height:100%;object-fit:cover;display:block; }
-    .cover-edit-overlay {
-      position:absolute;inset:0;background:rgba(0,0,0,0.45);
-      display:none;align-items:center;justify-content:center;
-      flex-direction:column;gap:6px;color:#fff;font-size:13px;font-weight:500;
-      cursor:pointer;
-    }
-    .cover-edit-overlay i { font-size:26px; }
-    .cover-photo.edit-mode { cursor:pointer; }
-    .cover-photo.edit-mode .cover-edit-overlay { display:flex; }
+/* ── CHAT WINDOW (Step 5) ── */
+#chat-window {
+  position:fixed; inset:0; z-index:800; background:var(--bg-base);
+  display:flex; flex-direction:column; max-width:480px; margin:0 auto;
+  transform:translateX(100%); transition:transform 0.32s cubic-bezier(0.16,1,0.3,1);
+}
+#chat-window.open { transform:translateX(0); }
+.chat-win-header {
+  display:flex; align-items:center; gap:12px;
+  padding:16px 20px; background:var(--bg-nav); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px); flex-shrink:0;
+}
+.chat-win-back {
+  width:36px; height:36px; border-radius:50%; background:var(--bg-surface);
+  border:1px solid var(--border); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; color:var(--text-muted);
+  font-size:14px; transition:all 0.2s; flex-shrink:0;
+}
+.chat-win-back:hover { color:var(--brand); border-color:var(--brand); }
+.chat-win-avatar { width:38px; height:38px; border-radius:50%; background:var(--bg-surface); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--text-muted); overflow:hidden; flex-shrink:0; }
+.chat-win-avatar img { width:100%; height:100%; object-fit:cover; }
+.chat-win-info { flex:1; min-width:0; }
+.chat-win-name { font-weight:700; font-size:15px; color:var(--text-primary); }
+.chat-win-status { font-size:11px; color:#22C55E; font-weight:500; }
+.chat-messages {
+  flex:1; overflow-y:auto; padding:20px 16px; display:flex;
+  flex-direction:column; gap:10px;
+}
+.chat-messages::-webkit-scrollbar{width:3px} .chat-messages::-webkit-scrollbar-thumb{background:var(--brand);border-radius:99px}
+.msg-bubble { max-width:75%; padding:10px 14px; border-radius:18px; font-size:14px; line-height:1.45; word-break:break-word; }
+.msg-bubble.mine { align-self:flex-end; background:var(--brand); color:#fff; border-bottom-right-radius:4px; }
+.msg-bubble.theirs { align-self:flex-start; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.msg-bubble .msg-time { font-size:10px; opacity:0.6; margin-top:4px; text-align:right; }
+.chat-input-bar {
+  display:flex; align-items:center; gap:10px; padding:12px 16px;
+  background:var(--bg-nav); border-top:1px solid var(--border);
+  backdrop-filter:blur(20px); flex-shrink:0;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
+.chat-text-input {
+  flex:1; background:var(--bg-card); border:1px solid var(--border);
+  border-radius:22px; padding:11px 16px; color:var(--text-primary);
+  font-family:'DM Sans',sans-serif; font-size:14px; outline:none;
+  transition:border-color 0.2s; resize:none; max-height:100px; overflow-y:auto;
+}
+.chat-text-input:focus { border-color:var(--brand); }
+.chat-send-btn {
+  width:42px; height:42px; border-radius:50%; background:var(--brand);
+  border:none; color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; box-shadow:0 4px 12px rgba(255,56,92,0.35);
+}
+.chat-send-btn:hover { filter:brightness(1.1); transform:scale(1.05); }
+.chat-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:12px; color:var(--text-muted); padding:40px 20px; text-align:center; }
+.chat-empty-state i { font-size:48px; opacity:0.2; }
+.chat-empty-state p { font-size:14px; }
 
-    /* Profile photo ring pulse in edit mode */
-    .profile-photo { width:92px;height:92px;border-radius:50%;background:var(--bg-surface);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text-muted);overflow:hidden;cursor:default;transition:box-shadow 0.2s; }
-    .profile-photo img { width:100%;height:100%;object-fit:cover; }
-    .profile-photo.edit-mode { cursor:pointer;box-shadow:0 0 0 3px var(--brand); }
-    .profile-photo-edit { position:absolute;bottom:4px;right:0;width:26px;height:26px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;border:2px solid var(--bg-base);transition:transform 0.2s; }
-    .profile-photo-edit:hover { transform:scale(1.15); }
+/* ── ADMIN USER LIST ── */
+.user-list-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 20px; border-bottom:1px solid var(--border);
+  transition:background 0.15s;
+}
+.user-list-item:hover { background:var(--bg-surface); }
+.user-list-avatar { width:40px; height:40px; border-radius:50%; background:var(--bg-surface); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--text-muted); flex-shrink:0; overflow:hidden; }
+.user-list-avatar img { width:100%; height:100%; object-fit:cover; }
+.user-list-info { flex:1; min-width:0; }
+.user-list-name { font-weight:600; font-size:13px; color:var(--text-primary); }
+.user-list-email { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+.user-list-role { font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; background:rgba(255,56,92,0.1); color:var(--brand); display:inline-block; margin-top:3px; }
+.delete-user-btn {
+  padding:6px 12px; border-radius:8px; background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.25); color:#EF4444;
+  font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s; flex-shrink:0;
+}
+.delete-user-btn:hover { background:rgba(239,68,68,0.25); }
+.admin-loading { display:flex; align-items:center; justify-content:center; padding:30px; color:var(--text-muted); gap:10px; font-size:13px; }
+.admin-loading i { animation:spin 0.8s linear infinite; color:var(--brand); }
 
-    /* Edit mode action bar */
-    .profile-edit-bar {
-      display:none;
-      align-items:center;justify-content:space-between;
-      padding:10px 20px;
-      background:rgba(255,56,92,0.07);
-      border-top:1px solid rgba(255,56,92,0.18);
-      border-bottom:1px solid rgba(255,56,92,0.18);
-      margin-bottom:2px;
-    }
-    .profile-edit-bar.visible { display:flex; }
-    .edit-bar-label { font-size:12px;font-weight:600;color:var(--brand);letter-spacing:0.04em; }
+/* ── ALERT COMPOSE (Admin) ── */
+.alert-compose { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; margin:0 20px; padding:16px; }
+.alert-compose input, .alert-compose textarea {
+  width:100%; background:var(--bg-surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; color:var(--text-primary);
+  font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+  transition:border-color 0.2s; margin-bottom:10px;
+}
+.alert-compose input:focus, .alert-compose textarea:focus { border-color:var(--brand); }
+.alert-compose textarea { resize:none; min-height:80px; }
+.send-alert-btn {
+  width:100%; padding:12px; background:var(--brand); color:#fff; border:none;
+  border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px;
+  font-weight:700; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; gap:8px; transition:all 0.2s;
+}
+.send-alert-btn:hover { filter:brightness(1.1); }
+.send-alert-btn:disabled { opacity:0.6; cursor:not-allowed; }
+```
 
-    /* Bio textarea */
-    .bio-textarea {
-      width:100%;background:var(--bg-card);border:1px solid var(--border);
-      border-radius:12px;padding:11px 14px;color:var(--text-primary);
-      font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.55;
-      resize:none;outline:none;transition:border-color 0.2s;min-height:72px;
-    }
-    .bio-textarea:focus { border-color:var(--brand); }
-    .bio-view { font-size:13px;line-height:1.55;color:rgba(245,245,247,0.75);cursor:default; }
-
-    /* Category select */
-    .category-select-wrap {
-      display:flex;align-items:center;gap:10px;
-      background:var(--bg-card);border:1px solid var(--border);
-      border-radius:12px;padding:0 14px;transition:border-color 0.2s;
-    }
-    .category-select-wrap:focus-within { border-color:var(--brand); }
-    .category-select-wrap i { color:var(--text-muted);font-size:14px; }
-    .category-select-wrap select {
-      flex:1;background:none;border:none;outline:none;
-      color:var(--text-primary);font-family:'DM Sans',sans-serif;
-      font-size:14px;padding:13px 0;cursor:pointer;
-    }
-
-    /* Category badge (view mode) */
-    .category-badge {
-      display:inline-flex;align-items:center;gap:5px;
-      padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;
-      background:rgba(255,56,92,0.12);color:var(--brand);border:1px solid rgba(255,56,92,0.2);
-      margin-bottom:10px;
-    }
-
-    /* Grid — edit mode */
-    .image-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4px; }
-    .grid-cell {
-      aspect-ratio:1;background:var(--bg-surface);
-      display:flex;align-items:center;justify-content:center;
-      cursor:pointer;overflow:hidden;position:relative;
-      transition:opacity 0.2s;
-    }
-    .grid-cell i { color:var(--border);font-size:24px; }
-    .grid-cell img { width:100%;height:100%;object-fit:cover;display:block; }
-    .grid-cell:first-child { grid-column:span 2;grid-row:span 2; }
-    .grid-cell .del-btn {
-      position:absolute;top:5px;right:5px;
-      width:22px;height:22px;border-radius:50%;
-      background:rgba(0,0,0,0.75);border:none;color:#fff;
-      font-size:11px;cursor:pointer;display:none;
-      align-items:center;justify-content:center;
-      z-index:5;transition:background 0.15s;
-    }
-    .grid-cell .del-btn:hover { background:var(--brand); }
-    .image-grid.edit-mode .grid-cell .del-btn { display:flex; }
-    .image-grid.edit-mode .grid-cell.empty-cell { border:2px dashed rgba(255,56,92,0.3); }
-    .image-grid.edit-mode .grid-cell.empty-cell i { color:rgba(255,56,92,0.3); }
-
-    /* Add slot */
-    .grid-add-slot {
-      aspect-ratio:1;background:var(--bg-surface);
-      display:flex;align-items:center;justify-content:center;
-      cursor:pointer;overflow:hidden;border:2px dashed var(--border);
-      transition:border-color 0.2s,background 0.2s;
-    }
-    .grid-add-slot:hover { border-color:var(--brand);background:rgba(255,56,92,0.05); }
-    .grid-add-slot i { color:var(--text-muted);font-size:22px; }
-
-    /* Upload spinner overlay on cells */
-    .cell-uploading::after {
-      content:'';position:absolute;inset:0;background:rgba(10,10,14,0.6);
-      display:flex;align-items:center;justify-content:center;
-    }
-    .cell-spinner {
-      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:28px;height:28px;border:3px solid rgba(255,255,255,0.25);
-      border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;
-      z-index:10;display:none;
-    }
-    .cell-uploading .cell-spinner { display:block; }
-
-    /* Profile info layout refinements */
-    .profile-info { padding:12px 20px 0; }
-    .profile-name { font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.03em;color:var(--text-primary);line-height:1; }
-    .profile-handle { font-size:13px;color:var(--text-muted);margin-bottom:8px; }
-    .profile-stats { display:flex;gap:24px;padding:14px 20px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:12px 0 4px; }
-    .stat { text-align:center; }
-    .stat-value { font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text-primary);letter-spacing:0.03em; }
-    .stat-label { font-size:11px;color:var(--text-muted);margin-top:1px; }
-
-    /* Status toggle — Action Red styled */
-    .status-toggle { display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card); }
-    .toggle-btn { flex:1;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-muted);border:none;background:none;font-family:'DM Sans',sans-serif;white-space:nowrap; }
-    .toggle-btn.active-avail { background:rgba(34,197,94,0.15);color:#22C55E; }
-    .toggle-btn.active-busy  { background:rgba(255,56,92,0.12);color:var(--brand); }
-
-    /* Save indicator */
-    .save-indicator {
-      display:none;align-items:center;gap:6px;
-      font-size:11px;color:#22C55E;font-weight:500;
-    }
-    .save-indicator.visible { display:flex; }
-
-    /* ══════════════════════════════════════
-       SEARCH / MAP — STEP 4
-    ══════════════════════════════════════ */
-
-    /* The search view must be full-height with no bottom padding scroll */
-    #view-search { display:none; flex-direction:column; padding-bottom:0 !important; overflow:hidden !important; }
-    #view-search.active { display:flex; }
-
-    /* Search control panel (sits above map) */
-    .map-controls {
-      flex-shrink: 0;
-      background: var(--bg-base);
-      border-bottom: 1px solid var(--border);
-      z-index: 10;
-    }
-
-    /* Geocoder search row */
-    .map-search-row {
-      display: flex;
-      gap: 8px;
-      padding: 14px 14px 10px;
-      align-items: center;
-    }
-    .map-search-input-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0 14px;
-      transition: border-color 0.2s;
-    }
-    .map-search-input-wrap:focus-within { border-color: var(--brand); }
-    .map-search-input-wrap i { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
-    .map-search-input-wrap input {
-      flex: 1; background: none; border: none; outline: none;
-      color: var(--text-primary); font-family: 'DM Sans', sans-serif;
-      font-size: 14px; padding: 12px 0;
-    }
-    .map-search-input-wrap input::placeholder { color: var(--text-muted); }
-    .map-search-go-btn {
-      flex-shrink: 0; padding: 0 16px; height: 44px;
-      background: var(--brand); color: #fff; border: none;
-      border-radius: 12px; font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: filter 0.2s;
-    }
-    .map-search-go-btn:hover { filter: brightness(1.1); }
-
-    /* Distance slider row */
-    .map-slider-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 14px 13px;
-    }
-    .map-slider-label {
-      font-size: 11px; font-weight: 600;
-      color: var(--text-muted); letter-spacing: 0.05em;
-      text-transform: uppercase; white-space: nowrap;
-      min-width: 40px;
-    }
-    .map-slider-val {
-      font-size: 13px; font-weight: 700;
-      color: var(--brand); min-width: 46px; text-align: right;
-      font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em;
-    }
-    .map-count-badge {
-      font-size: 10px; font-weight: 600;
-      padding: 3px 8px; border-radius: 99px;
-      background: rgba(255,56,92,0.12);
-      color: var(--brand); border: 1px solid rgba(255,56,92,0.2);
-      white-space: nowrap; flex-shrink: 0;
-    }
-
-    /* The actual Leaflet map container */
-    #leaflet-map {
-      flex: 1;
-      min-height: 0;
-      z-index: 1;
-    }
-
-    /* Override Leaflet popup to match dark theme */
-    .leaflet-popup-content-wrapper {
-      background: var(--bg-card) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: 16px !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
-      padding: 0 !important;
-      overflow: hidden;
-    }
-    .leaflet-popup-tip-container { display: none !important; }
-    .leaflet-popup-content { margin: 0 !important; }
-    .leaflet-popup-close-button {
-      color: var(--text-muted) !important;
-      font-size: 18px !important;
-      top: 8px !important; right: 10px !important;
-      z-index: 10;
-    }
-    .leaflet-popup-close-button:hover { color: var(--brand) !important; }
-
-    /* Custom talent popup card */
-    .talent-popup {
-      width: 220px;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .talent-popup-cover {
-      width: 100%; height: 90px;
-      background: linear-gradient(135deg, #1a0810, #1C1C27);
-      position: relative; overflow: hidden;
-    }
-    .talent-popup-cover img { width:100%;height:100%;object-fit:cover; }
-    .talent-popup-cover::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-    }
-    .talent-popup-body { padding: 10px 14px 14px; }
-    .talent-popup-avatar-row {
-      display: flex; align-items: flex-end;
-      gap: 10px; margin-top: -26px; margin-bottom: 8px;
-    }
-    .talent-popup-avatar {
-      width: 48px; height: 48px; border-radius: 50%;
-      border: 3px solid var(--bg-card);
-      background: var(--bg-surface);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; color: var(--text-muted);
-      overflow: hidden; flex-shrink: 0;
-    }
-    .talent-popup-avatar img { width:100%;height:100%;object-fit:cover; }
-    .talent-popup-status {
-      font-size: 10px; font-weight: 600;
-      padding: 3px 8px; border-radius: 99px;
-      margin-bottom: 2px;
-    }
-    .talent-popup-status.available {
-      background: rgba(34,197,94,0.15); color: #22C55E;
-    }
-    .talent-popup-name {
-      font-weight: 700; font-size: 15px;
-      color: var(--text-primary); line-height: 1.2;
-    }
-    .talent-popup-cat {
-      font-size: 11px; color: var(--text-muted); margin-top: 1px;
-    }
-    .talent-popup-dist {
-      font-size: 11px; color: var(--brand);
-      margin-top: 2px; font-weight: 500;
-    }
-    .talent-popup-btn {
-      display: block; width: 100%;
-      margin-top: 10px; padding: 9px 0;
-      background: var(--brand); color: #fff; border: none;
-      border-radius: 10px; font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      transition: filter 0.2s; text-align: center;
-    }
-    .talent-popup-btn:hover { filter: brightness(1.1); }
-
-    /* Custom pin marker */
-    .talent-pin {
-      width: 36px; height: 36px;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      border: 3px solid #fff;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.4);
-      overflow: hidden; cursor: pointer;
-    }
-    .talent-pin img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transform: rotate(45deg); /* counter-rotate the image */
-      border-radius: 50%;
-    }
-    .talent-pin-fallback {
-      width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      transform: rotate(45deg);
-      font-size: 16px; color: #fff;
-    }
-
-    /* User location pulse */
-    .user-location-dot {
-      width: 16px; height: 16px; border-radius: 50%;
-      background: var(--brand);
-      box-shadow: 0 0 0 4px rgba(255,56,92,0.25);
-      animation: locationPulse 2s ease-in-out infinite;
-    }
-    @keyframes locationPulse {
-      0%, 100% { box-shadow: 0 0 0 4px rgba(255,56,92,0.25); }
-      50%       { box-shadow: 0 0 0 10px rgba(255,56,92,0.08); }
-    }
-
-    /* Geocoder suggestions dropdown */
-    #geocoder-results {
-      position: absolute;
-      top: 100%; left: 14px; right: 76px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      z-index: 9999;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    .geocoder-item {
-      padding: 11px 14px;
-      font-size: 13px;
-      color: var(--text-primary);
-      cursor: pointer;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s;
-      display: flex; gap: 8px; align-items: flex-start;
-    }
-    .geocoder-item:last-child { border-bottom: none; }
-    .geocoder-item:hover { background: var(--bg-surface); }
-    .geocoder-item i { color: var(--brand); font-size: 12px; margin-top: 2px; flex-shrink: 0; }
-
-    /* Range slider overrides for map slider */
-    #mapDistSlider { -webkit-appearance:none; flex:1; height:4px; background:var(--bg-surface); border-radius:99px; outline:none; cursor:pointer; }
-    #mapDistSlider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--brand); cursor:pointer; box-shadow:0 0 0 3px rgba(255,56,92,0.25), 0 2px 8px rgba(0,0,0,0.4); transition:box-shadow 0.2s; }
-    #mapDistSlider::-webkit-slider-thumb:hover { box-shadow:0 0 0 6px rgba(255,56,92,0.2), 0 2px 8px rgba(0,0,0,0.4); }
-    #mapDistSlider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:var(--brand); cursor:pointer; border:none; }
   </style>
-
 </head>
 <body>
 
@@ -680,159 +415,178 @@
   <span id="toast-msg"></span>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     AUTH OVERLAY
-════════════════════════════════════════════ -->
+<!-- CHAT WINDOW (slides in over everything) -->
+
+<div id="chat-window">
+  <div class="chat-win-header">
+    <div class="chat-win-back" onclick="closeChatWindow()">
+      <i class="fa-solid fa-arrow-left"></i>
+    </div>
+    <div class="chat-win-avatar" id="chat-win-avatar">
+      <i class="fa-regular fa-user"></i>
+    </div>
+    <div class="chat-win-info">
+      <div class="chat-win-name" id="chat-win-name">—</div>
+      <div class="chat-win-status"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available</div>
+    </div>
+    <div class="topbar-icon-btn"><i class="fa-solid fa-ellipsis-vertical"></i></div>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-empty-state" id="chat-empty">
+      <i class="fa-regular fa-comment-dots"></i>
+      <p>Send a message to start the conversation!</p>
+    </div>
+  </div>
+  <div class="chat-input-bar">
+    <textarea class="chat-text-input" id="chat-text-input" placeholder="Type a message…" rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="chat-send-btn" onclick="sendChatMessage()">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY -->
 
 <div id="auth-overlay">
   <div class="auth-hero">
     <div class="auth-hero-logo">GIGS<span>COURT</span></div>
     <div class="auth-hero-tagline">Book &amp; be booked. Elite talent, near you.</div>
   </div>
-
   <div class="auth-card">
-    <!-- Tab switcher -->
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login"  onclick="switchAuthTab('login')">Sign In</button>
       <button class="auth-tab"        id="tab-signup" onclick="switchAuthTab('signup')">Create Account</button>
     </div>
-
-```
-<!-- LOGIN FORM -->
-<div id="form-login">
-  <div class="field-group">
-    <label class="field-label">Email Address</label>
-    <div class="field-wrap">
-      <i class="fa-regular fa-envelope"></i>
-      <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" />
-    </div>
-  </div>
-  <div class="field-group">
-    <label class="field-label">Password</label>
-    <div class="field-wrap">
-      <i class="fa-solid fa-lock"></i>
-      <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" />
-      <button class="eye-btn" onclick="togglePwd('login-password',this)"><i class="fa-regular fa-eye"></i></button>
-    </div>
-  </div>
-  <div style="text-align:right;margin-bottom:16px">
-    <span onclick="handleForgotPassword()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500">Forgot password?</span>
-  </div>
-  <button class="brand-btn auth-submit" id="login-btn" onclick="handleLogin()">
-    <div class="spinner"></div>
-    <span class="btn-label">Sign In</span>
-  </button>
-</div>
-
-<!-- SIGNUP FORM -->
-<div id="form-signup" style="display:none">
-  <div class="field-group">
-    <label class="field-label">Full Name</label>
-    <div class="field-wrap">
-      <i class="fa-regular fa-user"></i>
-      <input type="text" id="signup-name" placeholder="Your display name" autocomplete="name" />
-    </div>
-  </div>
-  <div class="field-group">
-    <label class="field-label">Email Address</label>
-    <div class="field-wrap">
-      <i class="fa-regular fa-envelope"></i>
-      <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email" />
-    </div>
-  </div>
-  <div class="field-group">
-    <label class="field-label">Password</label>
-    <div class="field-wrap">
-      <i class="fa-solid fa-lock"></i>
-      <input type="password" id="signup-password" placeholder="Min 8 characters" autocomplete="new-password" />
-      <button class="eye-btn" onclick="togglePwd('signup-password',this)"><i class="fa-regular fa-eye"></i></button>
-    </div>
-  </div>
-  <div class="field-group">
-    <label class="field-label">Phone Number <span style="color:var(--brand);font-size:9px">MFA</span></label>
-    <div class="phone-row">
-      <div class="country-wrap">
-        <i class="fa-solid fa-flag"></i>
-        <select id="country-code">
-          <option value="+234" selected>&#127475;&#127468; +234</option>
-          <option value="+1">&#127482;&#127480; +1</option>
-          <option value="+44">&#127468;&#127463; +44</option>
-          <option value="+27">&#127487;&#127462; +27</option>
-          <option value="+233">&#127468;&#127469; +233</option>
-          <option value="+254">&#127472;&#127466; +254</option>
-          <option value="+255">&#127481;&#127487; +255</option>
-          <option value="+256">&#127482;&#127468; +256</option>
-          <option value="+225">&#127464;&#127470; +225</option>
-          <option value="+221">&#127480;&#127475; +221</option>
-          <option value="+212">&#127474;&#127462; +212</option>
-          <option value="+20">&#127466;&#127468; +20</option>
-          <option value="+91">&#127470;&#127475; +91</option>
-          <option value="+971">&#127462;&#127466; +971</option>
-          <option value="+49">&#127465;&#127466; +49</option>
-          <option value="+33">&#127467;&#127479; +33</option>
-        </select>
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <div class="field-group">
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <i class="fa-regular fa-envelope"></i>
+          <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
       </div>
-      <div class="num-wrap">
-        <input type="tel" id="signup-phone" placeholder="0801 234 5678" autocomplete="tel" />
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" />
+          <button class="eye-btn" onclick="togglePwd('login-password',this)"><i class="fa-regular fa-eye"></i></button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:16px">
+        <span onclick="handleForgotPassword()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500">Forgot password?</span>
+      </div>
+      <button class="brand-btn auth-submit" id="login-btn" onclick="handleLogin()">
+        <div class="spinner"></div>
+        <span class="btn-label">Sign In</span>
+      </button>
+    </div>
+    <!-- SIGNUP FORM -->
+    <div id="form-signup" style="display:none">
+      <div class="field-group">
+        <label class="field-label">Full Name</label>
+        <div class="field-wrap">
+          <i class="fa-regular fa-user"></i>
+          <input type="text" id="signup-name" placeholder="Your display name" autocomplete="name" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <i class="fa-regular fa-envelope"></i>
+          <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="signup-password" placeholder="Min 8 characters" autocomplete="new-password" />
+          <button class="eye-btn" onclick="togglePwd('signup-password',this)"><i class="fa-regular fa-eye"></i></button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Phone Number <span style="color:var(--brand);font-size:9px">MFA</span></label>
+        <div class="phone-row">
+          <div class="country-wrap">
+            <i class="fa-solid fa-flag"></i>
+            <select id="country-code">
+              <option value="+234" selected>🇳🇬 +234</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+27">🇿🇦 +27</option>
+              <option value="+233">🇬🇭 +233</option>
+              <option value="+254">🇰🇪 +254</option>
+              <option value="+255">🇹🇿 +255</option>
+              <option value="+256">🇺🇬 +256</option>
+              <option value="+225">🇨🇮 +225</option>
+              <option value="+221">🇸🇳 +221</option>
+              <option value="+212">🇲🇦 +212</option>
+              <option value="+20">🇪🇬 +20</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+33">🇫🇷 +33</option>
+            </select>
+          </div>
+          <div class="num-wrap">
+            <input type="tel" id="signup-phone" placeholder="0801 234 5678" autocomplete="tel" />
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding-left:2px">
+          <i class="fa-solid fa-shield-halved" style="color:var(--brand);margin-right:4px"></i>
+          Used only for SMS verification. Never shared.
+        </div>
+      </div>
+      <div id="recaptcha-container"></div>
+      <button class="brand-btn auth-submit" id="signup-btn" onclick="handleSignup()">
+        <div class="spinner"></div>
+        <span class="btn-label">Create Account &amp; Secure</span>
+      </button>
+    </div>
+    <!-- MFA STEP -->
+    <div id="mfa-step">
+      <div style="text-align:center;margin-bottom:6px">
+        <div style="width:60px;height:60px;background:rgba(255,56,92,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--brand)">
+          <i class="fa-solid fa-mobile-screen"></i>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:6px">Verify Your Phone</div>
+        <div id="mfa-phone-display" style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Enter the 6-digit code sent to your number</div>
+      </div>
+      <div class="otp-row">
+        <input class="otp-input" type="tel" maxlength="1" id="otp0" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)"/>
+        <input class="otp-input" type="tel" maxlength="1" id="otp1" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)"/>
+        <input class="otp-input" type="tel" maxlength="1" id="otp2" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)"/>
+        <input class="otp-input" type="tel" maxlength="1" id="otp3" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)"/>
+        <input class="otp-input" type="tel" maxlength="1" id="otp4" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)"/>
+        <input class="otp-input" type="tel" maxlength="1" id="otp5" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)"/>
+      </div>
+      <button class="brand-btn auth-submit" id="verify-btn" onclick="handleVerifyOTP()">
+        <div class="spinner"></div>
+        <span class="btn-label"><i class="fa-solid fa-check"></i>&nbsp; Verify &amp; Enter App</span>
+      </button>
+      <div style="text-align:center;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:14px">
+        <span onclick="resendOTP()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500"><i class="fa-solid fa-rotate-right"></i> Resend Code</span>
+        <span style="color:var(--text-muted)">·</span>
+        <span onclick="cancelMFA()" style="font-size:12px;color:var(--text-muted);cursor:pointer">Cancel</span>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding-left:2px">
-      <i class="fa-solid fa-shield-halved" style="color:var(--brand);margin-right:4px"></i>
-      Used only for SMS verification. Never shared.
+    <!-- Social -->
+    <div id="social-section">
+      <div class="auth-divider">or continue with</div>
+      <button class="social-btn" onclick="handleGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
     </div>
-  </div>
-  <div id="recaptcha-container"></div>
-  <button class="brand-btn auth-submit" id="signup-btn" onclick="handleSignup()">
-    <div class="spinner"></div>
-    <span class="btn-label">Create Account &amp; Secure</span>
-  </button>
-</div>
-
-<!-- MFA STEP -->
-<div id="mfa-step">
-  <div style="text-align:center;margin-bottom:6px">
-    <div style="width:60px;height:60px;background:rgba(255,56,92,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--brand)">
-      <i class="fa-solid fa-mobile-screen"></i>
-    </div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:6px">Verify Your Phone</div>
-    <div id="mfa-phone-display" style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Enter the 6-digit code sent to your number</div>
-  </div>
-  <div class="otp-row">
-    <input class="otp-input" type="tel" maxlength="1" id="otp0" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)"/>
-    <input class="otp-input" type="tel" maxlength="1" id="otp1" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)"/>
-    <input class="otp-input" type="tel" maxlength="1" id="otp2" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)"/>
-    <input class="otp-input" type="tel" maxlength="1" id="otp3" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)"/>
-    <input class="otp-input" type="tel" maxlength="1" id="otp4" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)"/>
-    <input class="otp-input" type="tel" maxlength="1" id="otp5" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)"/>
-  </div>
-  <button class="brand-btn auth-submit" id="verify-btn" onclick="handleVerifyOTP()">
-    <div class="spinner"></div>
-    <span class="btn-label"><i class="fa-solid fa-check"></i>&nbsp; Verify &amp; Enter App</span>
-  </button>
-  <div style="text-align:center;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:14px">
-    <span onclick="resendOTP()" style="font-size:12px;color:var(--brand);cursor:pointer;font-weight:500"><i class="fa-solid fa-rotate-right"></i> Resend Code</span>
-    <span style="color:var(--text-muted)">·</span>
-    <span onclick="cancelMFA()" style="font-size:12px;color:var(--text-muted);cursor:pointer">Cancel</span>
+    <div style="height:12px"></div>
   </div>
 </div>
 
-<!-- Social section (shown on login/signup, hidden on MFA) -->
-<div id="social-section">
-  <div class="auth-divider">or continue with</div>
-  <button class="social-btn" onclick="handleGoogleLogin()">
-    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-    Continue with Google
-  </button>
-</div>
-<div style="height:12px"></div>
-```
-
-  </div>
-</div><!-- /auth-overlay -->
-
-<!-- ═══════════════════════════════════════════
-     MAIN APP
-════════════════════════════════════════════ -->
+<!-- MAIN APP -->
 
 <div id="app">
 
@@ -863,22 +617,22 @@
       <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
     </div>
     <div class="talent-grid" style="margin-bottom:24px">
-      <div class="talent-card">
+      <div class="talent-card" onclick="openChatWith({uid:'demo1',name:'Amara Obi',category:'Model',avatarUrl:''})">
         <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
         <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
         <div class="talent-card-info"><div class="name">Amara Obi</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 1.2km · Model</div></div>
       </div>
-      <div class="talent-card">
+      <div class="talent-card" onclick="openChatWith({uid:'demo2',name:'Kemi Adara',category:'Creator',avatarUrl:''})">
         <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
         <div class="talent-card-badge"><span class="pill" style="background:rgba(255,56,92,0.15);color:#FF385C;font-size:10px;padding:3px 8px"><span class="status-dot busy"></span>Busy</span></div>
         <div class="talent-card-info"><div class="name">Kemi Adara</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 3.4km · Creator</div></div>
       </div>
-      <div class="talent-card">
+      <div class="talent-card" onclick="openChatWith({uid:'demo3',name:'Tunde Eko',category:'Artist',avatarUrl:''})">
         <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
         <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
         <div class="talent-card-info"><div class="name">Tunde Eko</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 5.1km · Artist</div></div>
       </div>
-      <div class="talent-card">
+      <div class="talent-card" onclick="openChatWith({uid:'demo4',name:'Ngozi Uche',category:'Photographer',avatarUrl:''})">
         <div class="talent-card-img"><i class="fa-regular fa-user"></i></div><div class="talent-card-overlay"></div>
         <div class="talent-card-badge"><span class="pill" style="background:rgba(34,197,94,0.2);color:#22C55E;font-size:10px;padding:3px 8px"><span class="status-dot available"></span>Available</span></div>
         <div class="talent-card-info"><div class="name">Ngozi Uche</div><div class="meta"><i class="fa-solid fa-location-dot" style="font-size:9px;color:var(--brand)"></i> 7.8km · Photographer</div></div>
@@ -889,17 +643,17 @@
       <div class="section-link">See all <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
     </div>
     <div style="display:flex;gap:12px;overflow-x:auto;padding:0 20px 24px;scrollbar-width:none">
-      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+      <div class="card" onclick="openChatWith({uid:'demo5',name:'Chioma N.',category:'MUA',avatarUrl:''})" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;cursor:pointer">
         <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
         <div><div style="font-weight:600;font-size:13px">Chioma N.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">MUA · 2.3km</div></div>
         <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.9</div>
       </div>
-      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+      <div class="card" onclick="openChatWith({uid:'demo6',name:'Dami Ola',category:'Stylist',avatarUrl:''})" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;cursor:pointer">
         <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
         <div><div style="font-weight:600;font-size:13px">Dami Ola.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Stylist · 4.1km</div></div>
         <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.7</div>
       </div>
-      <div class="card" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center">
+      <div class="card" onclick="openChatWith({uid:'demo7',name:'Femi A.',category:'Creator',avatarUrl:''})" style="flex-shrink:0;width:140px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;cursor:pointer">
         <div style="width:56px;height:56px;border-radius:50%;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-muted);border:2px solid var(--border)"><i class="fa-regular fa-user"></i></div>
         <div><div style="font-weight:600;font-size:13px">Femi A.</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Creator · 6.5km</div></div>
         <div style="display:flex;align-items:center;gap:3px;font-size:11px;color:#FBBF24"><i class="fa-solid fa-star"></i> 4.8</div>
@@ -910,57 +664,42 @@
   <!-- SEARCH / MAP -->
 
   <div id="view-search" class="view">
-
-```
-<!-- ── Controls panel ── -->
-<div class="map-controls" style="position:relative">
-
-  <!-- Geocoder search -->
-  <div class="map-search-row">
-    <div class="map-search-input-wrap">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="geocoder-input" placeholder="Search city or area…"
-        oninput="onGeocoderInput(this.value)"
-        onkeydown="if(event.key==='Enter') geocodeSearch()" autocomplete="off" />
-      <button onclick="clearGeocoderInput()" id="geocoder-clear-btn"
-        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:0;display:none">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+    <div class="map-controls" style="position:relative">
+      <div class="map-search-row">
+        <div class="map-search-input-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="geocoder-input" placeholder="Search city or area…"
+            oninput="onGeocoderInput(this.value)"
+            onkeydown="if(event.key==='Enter') geocodeSearch()" autocomplete="off" />
+          <button onclick="clearGeocoderInput()" id="geocoder-clear-btn"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:0;display:none">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <button class="map-search-go-btn" onclick="geocodeSearch()">
+          <i class="fa-solid fa-location-dot"></i>
+        </button>
+      </div>
+      <div id="geocoder-results" style="display:none"></div>
+      <div class="map-slider-row">
+        <span class="map-slider-label"><i class="fa-solid fa-circle-nodes" style="color:var(--brand);margin-right:4px"></i>Within</span>
+        <input type="range" id="mapDistSlider" min="1" max="50" value="10"
+          oninput="onSliderChange(this.value)" />
+        <span class="map-slider-val" id="mapDistVal">10 KM</span>
+        <div class="map-count-badge" id="map-count-badge">0 Talent</div>
+      </div>
     </div>
-    <button class="map-search-go-btn" onclick="geocodeSearch()">
-      <i class="fa-solid fa-location-dot"></i>
+    <div id="leaflet-map"></div>
+    <button id="locate-me-btn" onclick="locateUser()"
+      style="position:absolute;bottom:88px;right:16px;z-index:500;
+             width:46px;height:46px;border-radius:50%;
+             background:var(--bg-card);border:1px solid var(--border);
+             color:var(--brand);font-size:18px;cursor:pointer;
+             box-shadow:0 4px 16px rgba(0,0,0,0.5);
+             display:flex;align-items:center;justify-content:center;
+             transition:all 0.2s">
+      <i class="fa-solid fa-location-crosshairs"></i>
     </button>
-  </div>
-  <!-- Geocoder dropdown -->
-  <div id="geocoder-results" style="display:none"></div>
-
-  <!-- Distance slider -->
-  <div class="map-slider-row">
-    <span class="map-slider-label"><i class="fa-solid fa-circle-nodes" style="color:var(--brand);margin-right:4px"></i>Within</span>
-    <input type="range" id="mapDistSlider" min="1" max="50" value="10"
-      oninput="onSliderChange(this.value)" />
-    <span class="map-slider-val" id="mapDistVal">10 KM</span>
-    <div class="map-count-badge" id="map-count-badge">0 Talent</div>
-  </div>
-
-</div>
-
-<!-- ── Leaflet Map ── -->
-<div id="leaflet-map"></div>
-
-<!-- ── Use My Location FAB ── -->
-<button id="locate-me-btn" onclick="locateUser()"
-  style="position:absolute;bottom:88px;right:16px;z-index:500;
-         width:46px;height:46px;border-radius:50%;
-         background:var(--bg-card);border:1px solid var(--border);
-         color:var(--brand);font-size:18px;cursor:pointer;
-         box-shadow:0 4px 16px rgba(0,0,0,0.5);
-         display:flex;align-items:center;justify-content:center;
-         transition:all 0.2s">
-  <i class="fa-solid fa-location-crosshairs"></i>
-</button>
-```
-
   </div><!-- /search -->
 
   <!-- MESSAGES -->
@@ -968,196 +707,210 @@
   <div id="view-messages" class="view">
     <div class="topbar" style="padding-bottom:0">
       <div class="topbar-logo" style="font-size:22px">Messages</div>
-      <div class="topbar-icon-btn"><i class="fa-solid fa-pen-to-square"></i></div>
+      <div class="topbar-icon-btn" onclick="showToast('Start a conversation by tapping a talent card!','info')">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </div>
     </div>
-    <div class="msg-search"><div class="msg-search-inner"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Search conversations…"/></div></div>
-    <div style="padding:10px 20px 6px"><div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Recent</div></div>
-    <div class="chat-item">
-      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status online"></div></div>
-      <div class="chat-meta"><div class="chat-name">Amara Obi</div><div class="chat-preview">Sure! I'm free this Saturday from noon onwards &#128248;</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">2m</div><div class="unread-badge">3</div></div>
+    <div class="msg-search">
+      <div class="msg-search-inner">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="msg-search-input" placeholder="Search conversations…" oninput="filterChats(this.value)"/>
+      </div>
     </div>
-    <div class="chat-item">
-      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status offline"></div></div>
-      <div class="chat-meta"><div class="chat-name">Kemi Adara</div><div class="chat-preview">Thanks for the booking! I'll send the contract shortly.</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">1h</div></div>
+    <div style="padding:10px 20px 6px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Active Conversations</div>
     </div>
-    <div class="chat-item">
-      <div class="avatar"><div class="avatar-img"><i class="fa-regular fa-user"></i></div><div class="avatar-status online"></div></div>
-      <div class="chat-meta"><div class="chat-name">Tunde Eko</div><div class="chat-preview">My rate is &#8358;50k per half day. Let me know &#128588;</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="chat-time">3h</div><div class="unread-badge">1</div></div>
-    </div>
-    <div style="text-align:center;padding:32px 20px;color:var(--text-muted)">
-      <i class="fa-regular fa-comment-dots" style="font-size:36px;margin-bottom:10px;display:block;opacity:0.3"></i>
-      <div style="font-size:13px">Your other conversations will appear here</div>
+    <!-- Dynamic chat list rendered by JS -->
+    <div id="chat-list-container"></div>
+    <!-- Empty state -->
+    <div id="msgs-empty-state" style="display:none;text-align:center;padding:48px 20px;color:var(--text-muted)">
+      <i class="fa-regular fa-comment-dots" style="font-size:48px;margin-bottom:14px;display:block;opacity:0.2"></i>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px;color:var(--text-primary)">No conversations yet</div>
+      <div style="font-size:13px;margin-bottom:20px">Browse talent and tap <strong>Chat Now</strong> to start a conversation.</div>
+      <button class="brand-btn" onclick="showView('home',document.querySelector('.nav-btn'))" style="padding:12px 24px;border-radius:12px;font-size:14px">
+        <i class="fa-solid fa-users" style="margin-right:8px"></i>Browse Talent
+      </button>
     </div>
   </div><!-- /messages -->
 
   <!-- PROFILE -->
 
   <div id="view-profile" class="view">
-
-```
-<!-- ── Cover Photo ── -->
-<div class="cover-photo" id="cover-photo-wrap" onclick="profileEditAction('cover')">
-  <div class="cover-edit-overlay">
-    <i class="fa-solid fa-camera"></i>
-    <span>Change Cover</span>
-  </div>
-  <!-- Actual cover img injected here by JS -->
-</div>
-
-<!-- ── Avatar row + Status ── -->
-<div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
-  <div class="profile-photo-wrap" style="position:relative;margin-top:-46px;margin-left:20px;display:inline-block">
-    <div class="profile-photo" id="profile-avatar-display" onclick="profileEditAction('avatar')">
-      <i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>
+    <div class="cover-photo" id="cover-photo-wrap" onclick="profileEditAction('cover')">
+      <div class="cover-edit-overlay">
+        <i class="fa-solid fa-camera"></i>
+        <span>Change Cover</span>
+      </div>
     </div>
-    <div class="profile-photo-edit" onclick="profileEditAction('avatar')">
-      <i class="fa-solid fa-camera"></i>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-right:20px">
+      <div class="profile-photo-wrap" style="position:relative;margin-top:-46px;margin-left:20px;display:inline-block">
+        <div class="profile-photo" id="profile-avatar-display" onclick="profileEditAction('avatar')">
+          <i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>
+        </div>
+        <div class="profile-photo-edit" onclick="profileEditAction('avatar')">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div class="status-toggle" id="statusToggle">
+          <button class="toggle-btn active-avail" onclick="setStatus('available')">
+            <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available
+          </button>
+          <button class="toggle-btn" onclick="setStatus('busy')">
+            <i class="fa-solid fa-moon" style="font-size:10px;margin-right:4px"></i>Busy
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-  <div style="margin-bottom:8px">
-    <div class="status-toggle" id="statusToggle">
-      <button class="toggle-btn active-avail" onclick="setStatus('available')">
-        <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Available
+    <div class="profile-edit-bar" id="profile-edit-bar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <i class="fa-solid fa-pen-to-square" style="color:var(--brand);font-size:13px"></i>
+        <span class="edit-bar-label">EDITING PROFILE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="save-indicator" id="save-indicator">
+          <i class="fa-solid fa-circle-check"></i> Saved
+        </div>
+        <button onclick="saveProfileEdits()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+        <button onclick="toggleEditMode(false)" style="background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+      </div>
+    </div>
+    <div class="profile-info">
+      <div class="profile-name" id="profile-display-name">Your Name</div>
+      <div class="profile-handle" id="profile-handle">@yourhandle</div>
+      <div id="category-view">
+        <span class="category-badge" id="category-badge-text">
+          <i class="fa-solid fa-star" style="font-size:9px"></i> Model
+        </span>
+      </div>
+      <div id="category-edit" style="display:none;margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Service Category</label>
+        <div class="category-select-wrap">
+          <i class="fa-solid fa-tag"></i>
+          <select id="category-select">
+            <option value="Model">Model</option>
+            <option value="Content Creator">Content Creator</option>
+            <option value="Artist">Artist</option>
+            <option value="Photographer">Photographer</option>
+            <option value="Videographer">Videographer</option>
+            <option value="MUA">MUA (Makeup Artist)</option>
+            <option value="Stylist">Stylist</option>
+            <option value="Hair Stylist">Hair Stylist</option>
+            <option value="Dancer">Dancer</option>
+            <option value="Actor">Actor / Actress</option>
+            <option value="DJ">DJ</option>
+            <option value="Musician">Musician</option>
+          </select>
+        </div>
+      </div>
+      <div id="bio-view" class="bio-view" style="margin-bottom:14px">Tap <strong>Edit Profile</strong> to add your bio.</div>
+      <div id="bio-edit" style="display:none;margin-bottom:14px">
+        <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Bio</label>
+        <textarea class="bio-textarea" id="bio-input" placeholder="Tell clients about yourself…" maxlength="200" rows="3"></textarea>
+        <div style="text-align:right;font-size:10px;color:var(--text-muted);margin-top:3px"><span id="bio-char-count">0</span>/200</div>
+      </div>
+      <div id="name-edit" style="display:none;margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Display Name</label>
+        <div style="display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0 14px;gap:10px;transition:border-color 0.2s" onfocusin="this.style.borderColor='var(--brand)'" onfocusout="this.style.borderColor='rgba(255,255,255,0.07)'">
+          <i class="fa-regular fa-user" style="color:var(--text-muted);font-size:14px"></i>
+          <input type="text" id="name-input" placeholder="Your display name" style="flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <button id="edit-profile-btn" class="brand-btn" onclick="toggleEditMode(true)" style="flex:1;border-radius:10px;padding:10px;font-size:13px">
+          <i class="fa-solid fa-pen"></i> &nbsp;Edit Profile
+        </button>
+        <button onclick="handleLogout()" style="padding:0 14px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat"><div class="stat-value" id="stat-posts">0</div><div class="stat-label">Posts</div></div>
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Bookings</div></div>
+      <div class="stat"><div class="stat-value">&#8212;</div><div class="stat-label">Rating</div></div>
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Reviews</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.04em;color:var(--text-primary)">Portfolio</div>
+      <div id="grid-edit-hint" style="font-size:11px;color:var(--text-muted);display:none">
+        <i class="fa-solid fa-circle-info" style="color:var(--brand);margin-right:3px"></i>Tap ✕ to remove · Tap + to add
+      </div>
+    </div>
+    <div class="image-grid" id="portfolio-grid"></div>
+    <!-- LOGOUT SECTION at bottom of profile -->
+    <div style="padding:24px 20px 12px;border-top:1px solid var(--border);margin-top:20px">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;text-align:center">You are signed in as <span id="profile-email-display" style="color:var(--text-primary);font-weight:500"></span></div>
+      <button onclick="handleLogout()" class="brand-btn" style="width:100%;padding:13px;border-radius:12px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,56,92,0.1);color:var(--brand);border:1px solid rgba(255,56,92,0.25)">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out of GigsCourt
       </button>
-      <button class="toggle-btn" onclick="setStatus('busy')">
-        <i class="fa-solid fa-moon" style="font-size:10px;margin-right:4px"></i>Busy
-      </button>
     </div>
-  </div>
-</div>
-
-<!-- ── Edit Mode Banner ── -->
-<div class="profile-edit-bar" id="profile-edit-bar">
-  <div style="display:flex;align-items:center;gap:8px">
-    <i class="fa-solid fa-pen-to-square" style="color:var(--brand);font-size:13px"></i>
-    <span class="edit-bar-label">EDITING PROFILE</span>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <div class="save-indicator" id="save-indicator">
-      <i class="fa-solid fa-circle-check"></i> Saved
-    </div>
-    <button onclick="saveProfileEdits()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-      Save
-    </button>
-    <button onclick="toggleEditMode(false)" style="background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
-      Cancel
-    </button>
-  </div>
-</div>
-
-<!-- ── Profile Info ── -->
-<div class="profile-info">
-  <!-- Name -->
-  <div class="profile-name" id="profile-display-name">Your Name</div>
-  <div class="profile-handle" id="profile-handle">@yourhandle</div>
-
-  <!-- Category badge (view) / select (edit) -->
-  <div id="category-view">
-    <span class="category-badge" id="category-badge-text">
-      <i class="fa-solid fa-star" style="font-size:9px"></i> Model
-    </span>
-  </div>
-  <div id="category-edit" style="display:none;margin-bottom:10px">
-    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Service Category</label>
-    <div class="category-select-wrap">
-      <i class="fa-solid fa-tag"></i>
-      <select id="category-select">
-        <option value="Model">Model</option>
-        <option value="Content Creator">Content Creator</option>
-        <option value="Artist">Artist</option>
-        <option value="Photographer">Photographer</option>
-        <option value="Videographer">Videographer</option>
-        <option value="MUA">MUA (Makeup Artist)</option>
-        <option value="Stylist">Stylist</option>
-        <option value="Hair Stylist">Hair Stylist</option>
-        <option value="Dancer">Dancer</option>
-        <option value="Actor">Actor / Actress</option>
-        <option value="DJ">DJ</option>
-        <option value="Musician">Musician</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Bio -->
-  <div id="bio-view" class="bio-view" style="margin-bottom:14px">
-    Tap <strong>Edit Profile</strong> to add your bio.
-  </div>
-  <div id="bio-edit" style="display:none;margin-bottom:14px">
-    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Bio</label>
-    <textarea class="bio-textarea" id="bio-input" placeholder="Tell clients about yourself — your skills, style, and what makes you unique..." maxlength="200" rows="3"></textarea>
-    <div style="text-align:right;font-size:10px;color:var(--text-muted);margin-top:3px"><span id="bio-char-count">0</span>/200</div>
-  </div>
-
-  <!-- Name edit (shown in edit mode) -->
-  <div id="name-edit" style="display:none;margin-bottom:10px">
-    <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px">Display Name</label>
-    <div style="display:flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0 14px;gap:10px;transition:border-color 0.2s" onfocusin="this.style.borderColor='var(--brand)'" onfocusout="this.style.borderColor='rgba(255,255,255,0.07)'">
-      <i class="fa-regular fa-user" style="color:var(--text-muted);font-size:14px"></i>
-      <input type="text" id="name-input" placeholder="Your display name" style="flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 0" />
-    </div>
-  </div>
-
-  <!-- Action buttons row -->
-  <div style="display:flex;gap:8px;margin-bottom:4px">
-    <button id="edit-profile-btn" class="brand-btn" onclick="toggleEditMode(true)" style="flex:1;border-radius:10px;padding:10px;font-size:13px">
-      <i class="fa-solid fa-pen"></i> &nbsp;Edit Profile
-    </button>
-    <button onclick="handleLogout()" style="padding:0 14px;height:42px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </button>
-  </div>
-</div>
-
-<!-- ── Stats ── -->
-<div class="profile-stats">
-  <div class="stat"><div class="stat-value" id="stat-posts">0</div><div class="stat-label">Posts</div></div>
-  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Bookings</div></div>
-  <div class="stat"><div class="stat-value">&#8212;</div><div class="stat-label">Rating</div></div>
-  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Reviews</div></div>
-</div>
-
-<!-- ── Portfolio Grid Header ── -->
-<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.04em;color:var(--text-primary)">Portfolio</div>
-  <div id="grid-edit-hint" style="font-size:11px;color:var(--text-muted);display:none">
-    <i class="fa-solid fa-circle-info" style="color:var(--brand);margin-right:3px"></i>Tap ✕ to remove · Tap + to add
-  </div>
-</div>
-
-<!-- ── 3-Column Portfolio Grid (max 9) ── -->
-<div class="image-grid" id="portfolio-grid">
-  <!-- Cells injected dynamically by renderGrid() -->
-</div>
-
-<div style="height:30px"></div>
-```
-
+    <div style="height:20px"></div>
   </div><!-- /profile -->
 
   <!-- ADMIN -->
 
   <div id="view-admin" class="view">
     <div class="admin-header">
-      <div class="admin-eyebrow">&#9889; Restricted Access</div>
+      <div class="admin-eyebrow">⚡ Restricted Access</div>
       <div class="admin-title">GigsCourt Command Center</div>
       <div class="admin-subtitle" id="admin-email-display">Logged in as admin</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 20px 0">
-      <div class="stat-card"><div class="stat-card-label">Total Users</div><div class="stat-card-value">0</div><div class="stat-card-sub">&#8593; Platform launching</div></div>
-      <div class="stat-card"><div class="stat-card-label">Bookings</div><div class="stat-card-value">0</div><div class="stat-card-sub" style="color:var(--text-muted)">Awaiting launch</div></div>
-      <div class="stat-card"><div class="stat-card-label">Active Talent</div><div class="stat-card-value">0</div><div class="stat-card-sub" style="color:var(--text-muted)">Awaiting signups</div></div>
-      <div class="stat-card"><div class="stat-card-label">Revenue (&#8358;)</div><div class="stat-card-value">&#8212;</div><div class="stat-card-sub" style="color:var(--text-muted)">Not yet tracked</div></div>
-    </div>
-    <div class="admin-section-title">Quick Actions</div>
-    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-users"></i></div><div><div class="action-label">Manage Users</div><div class="action-sub">View, ban, or verify accounts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
-    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-calendar-check"></i></div><div><div class="action-label">All Bookings</div><div class="action-sub">Monitor &amp; resolve disputes</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
-    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-bell"></i></div><div><div class="action-label">Send Notification</div><div class="action-sub">Broadcast to all users via Resend</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
-    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-flag"></i></div><div><div class="action-label">Reported Content</div><div class="action-sub">Review &amp; moderate flagged posts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
-    <div class="action-row"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-gear"></i></div><div><div class="action-label">Platform Settings</div><div class="action-sub">Configure fees, categories &amp; more</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
-    <div style="height:24px"></div>
+
+```
+<!-- Stats Row -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 20px 0">
+  <div class="stat-card">
+    <div class="stat-card-label">Total Users</div>
+    <div class="stat-card-value" id="admin-total-users">—</div>
+    <div class="stat-card-sub" id="admin-users-sub">Loading…</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-label">Total Providers</div>
+    <div class="stat-card-value" id="admin-total-providers">—</div>
+    <div class="stat-card-sub" id="admin-providers-sub" style="color:var(--text-muted)">Loading…</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-label">Active Talent</div>
+    <div class="stat-card-value" id="admin-active-talent">—</div>
+    <div class="stat-card-sub" style="color:var(--text-muted)" id="admin-active-sub">Status: available</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-label">Revenue (₦)</div>
+    <div class="stat-card-value">—</div>
+    <div class="stat-card-sub" style="color:var(--text-muted)">Not yet tracked</div>
+  </div>
+</div>
+
+<!-- Send Alert -->
+<div class="admin-section-title">Send Admin Alert</div>
+<div class="alert-compose">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">
+    <i class="fa-solid fa-envelope" style="color:var(--brand);margin-right:6px"></i>Email to agboghidiaugust@gmail.com
+  </div>
+  <input type="text" id="alert-subject" placeholder="Subject…" />
+  <textarea id="alert-body" placeholder="Message body…"></textarea>
+  <button class="send-alert-btn" id="send-alert-btn" onclick="sendAlertFromUI()">
+    <i class="fa-solid fa-paper-plane"></i> Send Alert Email
+  </button>
+</div>
+
+<!-- User Management -->
+<div class="admin-section-title">User Management</div>
+<div id="admin-user-list">
+  <div class="admin-loading"><i class="fa-solid fa-circle-notch"></i> Loading users…</div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-section-title">Quick Actions</div>
+<div class="action-row" onclick="showToast('User management is above ↑','info')"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-users"></i></div><div><div class="action-label">Manage Users</div><div class="action-sub">View, ban, or verify accounts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+<div class="action-row" onclick="showToast('Bookings module coming soon!','info')"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-calendar-check"></i></div><div><div class="action-label">All Bookings</div><div class="action-sub">Monitor &amp; resolve disputes</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+<div class="action-row" onclick="showToast('Use the Send Alert panel above','info')"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-bell"></i></div><div><div class="action-label">Send Notification</div><div class="action-sub">Broadcast via Resend email</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+<div class="action-row" onclick="showToast('Moderation module coming soon!','info')"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-flag"></i></div><div><div class="action-label">Reported Content</div><div class="action-sub">Review &amp; moderate flagged posts</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+<div class="action-row" onclick="showToast('Settings module coming soon!','info')"><div class="action-row-left"><div class="action-icon"><i class="fa-solid fa-gear"></i></div><div><div class="action-label">Platform Settings</div><div class="action-sub">Configure fees, categories &amp; more</div></div></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:12px"></i></div>
+<div style="height:24px"></div>
+```
+
   </div><!-- /admin -->
 
   <!-- BOTTOM NAV -->
@@ -1169,13 +922,12 @@
     <button class="nav-btn" onclick="showView('profile',this)"><i class="fa-regular fa-user"></i><span>Profile</span></button>
     <button class="nav-btn" id="admin-tab" onclick="showView('admin',this)" style="display:none"><i class="fa-solid fa-shield-halved"></i><span>Admin</span></button>
   </nav>
-
-</div><!-- /app -->
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    FIREBASE INIT
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 const firebaseConfig = {
   apiKey:            "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
   authDomain:        "gigscourt.firebaseapp.com",
@@ -1188,15 +940,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
-
-// Persist login across page refreshes
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-const ADMIN_EMAIL = 'agboghidiaugust@gmail.com';
+const ADMIN_EMAIL  = 'agboghidiaugust@gmail.com';
+const RESEND_KEY   = 're_AXzzsHd5_NAvZHMZ';
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    TOAST
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 let _toastTimer = null;
 function showToast(msg, type = 'error', duration = 4200) {
   const el   = document.getElementById('toast');
@@ -1210,32 +961,83 @@ function showToast(msg, type = 'error', duration = 4200) {
   _toastTimer = setTimeout(() => { el.className = type; }, duration);
 }
 
-/* ═══════════════════════════════════════════════
-   FIREBASE ERROR → READABLE MESSAGE
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   RESEND EMAIL  — sendAdminAlert
+   Sends to ADMIN_EMAIL always.
+═══════════════════════════════════════ */
+async function sendAdminAlert(subject, message) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_KEY}`
+      },
+      body: JSON.stringify({
+        from:    'GigsCourt <onboarding@resend.dev>',
+        to:      [ADMIN_EMAIL],
+        subject: subject,
+        html:    `
+          <div style="font-family:'DM Sans',sans-serif;background:#0A0A0E;color:#F5F5F7;padding:32px;border-radius:16px;max-width:560px;margin:0 auto">
+            <div style="font-family:'Georgia',serif;font-size:28px;color:#FF385C;margin-bottom:4px;letter-spacing:0.04em">GIGSCOURT</div>
+            <div style="font-size:12px;color:#7A7A8C;margin-bottom:24px;letter-spacing:0.1em;text-transform:uppercase">Admin Alert</div>
+            <div style="background:#13131A;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px">
+              <div style="font-size:18px;font-weight:700;color:#F5F5F7;margin-bottom:12px">${subject}</div>
+              <div style="font-size:14px;color:#a0a0b0;line-height:1.6">${message.replace(/\n/g,'<br/>')}</div>
+            </div>
+            <div style="font-size:11px;color:#7A7A8C;margin-top:20px;text-align:center">GigsCourt · Automated Admin Notification · ${new Date().toLocaleString()}</div>
+          </div>
+        `
+      })
+    });
+    console.log('[GigsCourt] Admin alert sent:', subject);
+  } catch(e) {
+    console.warn('[GigsCourt] sendAdminAlert failed:', e);
+  }
+}
+
+/* UI handler for admin compose form */
+async function sendAlertFromUI() {
+  const subject = document.getElementById('alert-subject').value.trim();
+  const body    = document.getElementById('alert-body').value.trim();
+  if (!subject || !body) { showToast('Please fill in subject and message.','error'); return; }
+  const btn = document.getElementById('send-alert-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch" style="animation:spin 0.7s linear infinite"></i> Sending…';
+  await sendAdminAlert(subject, body);
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Alert Email';
+  document.getElementById('alert-subject').value = '';
+  document.getElementById('alert-body').value    = '';
+  showToast('Alert sent to ' + ADMIN_EMAIL, 'success');
+}
+
+/* ═══════════════════════════════════════
+   FIREBASE ERROR → HUMAN MESSAGE
+═══════════════════════════════════════ */
 function fbErr(code) {
   const map = {
     'auth/invalid-email':             'Please enter a valid email address.',
     'auth/user-not-found':            'No account found with this email.',
     'auth/wrong-password':            'Incorrect password. Please try again.',
     'auth/invalid-credential':        'Email or password is incorrect.',
-    'auth/email-already-in-use':      'An account with this email already exists. Sign in instead.',
+    'auth/email-already-in-use':      'An account with this email already exists.',
     'auth/weak-password':             'Password must be at least 6 characters.',
-    'auth/too-many-requests':         'Too many attempts. Please wait a moment and try again.',
-    'auth/network-request-failed':    'Network error — check your internet connection.',
+    'auth/too-many-requests':         'Too many attempts. Please wait and try again.',
+    'auth/network-request-failed':    'Network error — check your connection.',
     'auth/popup-closed-by-user':      'Google sign-in was cancelled.',
-    'auth/invalid-verification-code': 'Invalid code. Please check and try again.',
+    'auth/invalid-verification-code': 'Invalid code. Please try again.',
     'auth/code-expired':              'Code expired. Please request a new one.',
     'auth/missing-phone-number':      'Please enter a valid phone number.',
     'auth/invalid-phone-number':      'Phone number format is invalid.',
     'auth/quota-exceeded':            'SMS quota exceeded. Try again later.',
   };
-  return map[code] || 'Something went wrong (' + (code || 'unknown') + '). Please try again.';
+  return map[code] || 'Something went wrong (' + (code || 'unknown') + '). Try again.';
 }
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    AUTH TAB SWITCHER
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function switchAuthTab(tab) {
   document.getElementById('tab-login').classList.toggle('active',  tab === 'login');
   document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
@@ -1245,9 +1047,6 @@ function switchAuthTab(tab) {
   document.getElementById('social-section').style.display = 'block';
 }
 
-/* ═══════════════════════════════════════════════
-   PASSWORD TOGGLE
-═══════════════════════════════════════════════ */
 function togglePwd(id, btn) {
   const inp = document.getElementById(id);
   const show = inp.type === 'password';
@@ -1255,9 +1054,6 @@ function togglePwd(id, btn) {
   btn.querySelector('i').className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
 }
 
-/* ═══════════════════════════════════════════════
-   LOADING STATE
-═══════════════════════════════════════════════ */
 function setLoading(btnId, on) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
@@ -1265,27 +1061,21 @@ function setLoading(btnId, on) {
   btn.disabled = on;
 }
 
-/* ═══════════════════════════════════════════════
-   RECAPTCHA (needed for phone MFA)
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   RECAPTCHA
+═══════════════════════════════════════ */
 let _recaptcha = null;
 function initRecaptcha() {
   if (_recaptcha) { try { _recaptcha.clear(); } catch(e){} _recaptcha = null; }
-  _recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-    size: 'invisible',
-    callback: () => {}
-  });
+  _recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size:'invisible', callback:()=>{} });
 }
 
-/* ═══════════════════════════════════════════════
-   STATE: MFA
-═══════════════════════════════════════════════ */
 let _confirmResult = null;
 let _pendingUser   = null;
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    LOGIN
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 async function handleLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-password').value;
@@ -1293,16 +1083,15 @@ async function handleLogin() {
   setLoading('login-btn', true);
   try {
     await auth.signInWithEmailAndPassword(email, pass);
-    // onAuthStateChanged fires → hides overlay
   } catch(err) {
     showToast(fbErr(err.code));
     setLoading('login-btn', false);
   }
 }
 
-/* ═══════════════════════════════════════════════
-   SIGNUP + MFA ENROLL
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   SIGNUP  +  Resend alert on new user
+═══════════════════════════════════════ */
 async function handleSignup() {
   const name    = document.getElementById('signup-name').value.trim();
   const email   = document.getElementById('signup-email').value.trim();
@@ -1315,35 +1104,33 @@ async function handleSignup() {
   if (pass.length < 6){ showToast('Password must be at least 6 characters.'); return; }
   if (!rawNum)        { showToast('Please enter your phone number for MFA.'); return; }
 
-  // Normalise Nigerian number (strip leading 0)
   let num = rawNum.replace(/\D/g, '');
   if (code === '+234' && num.startsWith('0')) num = num.slice(1);
   const fullPhone = code + num;
 
   setLoading('signup-btn', true);
   try {
-    // 1. Create Firebase Auth user
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     _pendingUser = cred.user;
-
-    // 2. Set display name
     await _pendingUser.updateProfile({ displayName: name });
-
-    // 3. Save profile to Firestore
     await db.collection('users').doc(_pendingUser.uid).set({
       uid: _pendingUser.uid, name, email,
       phone: fullPhone, role: 'talent', status: 'available',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
 
-    // 4. Initiate phone MFA enrolment
+    // 🔔 Automated admin alert: new signup
+    sendAdminAlert(
+      '🎉 New User Signup',
+      `A new user just joined GigsCourt!\n\nName: ${name}\nEmail: ${email}\nPhone: ${fullPhone}\nTime: ${new Date().toLocaleString()}`
+    );
+
     initRecaptcha();
     const mfaSession = await _pendingUser.multiFactor.getSession();
     const phoneOpts  = { phoneNumber: fullPhone, session: mfaSession };
     const verifier   = new firebase.auth.PhoneAuthProvider();
     _confirmResult   = await verifier.verifyPhoneNumber(phoneOpts, _recaptcha);
 
-    // 5. Show OTP step
     document.getElementById('form-signup').style.display    = 'none';
     document.getElementById('social-section').style.display = 'none';
     document.getElementById('mfa-phone-display').textContent = 'Code sent to ' + fullPhone;
@@ -1353,21 +1140,20 @@ async function handleSignup() {
 
   } catch(err) {
     console.error('[GigsCourt signup]', err);
-    // Graceful fallback if MFA / phone-auth not yet enabled in Firebase console
     if (['auth/operation-not-allowed','auth/unsupported-first-factor',
          'auth/missing-multi-factor-info'].includes(err.code)) {
-      showToast('Account created! Enable Phone Auth in Firebase Console to activate MFA.', 'info', 7000);
+      showToast('Account created! Enable Phone Auth in Firebase Console for MFA.', 'info', 7000);
       setLoading('signup-btn', false);
-      return; // onAuthStateChanged will open the app
+      return;
     }
     showToast(fbErr(err.code));
     setLoading('signup-btn', false);
   }
 }
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    OTP HELPERS
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function otpNext(inp, idx) {
   inp.value = inp.value.replace(/\D/, '');
   if (inp.value && idx < 5) document.getElementById('otp' + (idx+1)).focus();
@@ -1382,28 +1168,21 @@ function getOTP() {
   return Array.from({length:6}, (_,i) => document.getElementById('otp'+i).value).join('');
 }
 
-/* ═══════════════════════════════════════════════
-   VERIFY OTP  →  enroll MFA factor
-═══════════════════════════════════════════════ */
 async function handleVerifyOTP() {
   const code = getOTP();
   if (code.length < 6) { showToast('Please enter all 6 digits.'); return; }
   setLoading('verify-btn', true);
   try {
-    const phoneCred   = firebase.auth.PhoneAuthProvider.credential(_confirmResult, code);
+    const phoneCred    = firebase.auth.PhoneAuthProvider.credential(_confirmResult, code);
     const mfaAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(phoneCred);
     await _pendingUser.multiFactor.enroll(mfaAssertion, 'Phone Number');
     showToast('Phone verified! Welcome to GigsCourt 🎉', 'success');
-    // onAuthStateChanged fires now
   } catch(err) {
     showToast(fbErr(err.code));
     setLoading('verify-btn', false);
   }
 }
 
-/* ═══════════════════════════════════════════════
-   RESEND OTP
-═══════════════════════════════════════════════ */
 async function resendOTP() {
   if (!_pendingUser) return;
   try {
@@ -1415,15 +1194,11 @@ async function resendOTP() {
     const prov    = new firebase.auth.PhoneAuthProvider();
     _confirmResult = await prov.verifyPhoneNumber({ phoneNumber: phone, session }, _recaptcha);
     showToast('New code sent!', 'success');
-    // Clear OTP inputs
     for (let i=0;i<6;i++) document.getElementById('otp'+i).value='';
     document.getElementById('otp0').focus();
   } catch(err) { showToast(fbErr(err.code)); }
 }
 
-/* ═══════════════════════════════════════════════
-   CANCEL MFA
-═══════════════════════════════════════════════ */
 function cancelMFA() {
   document.getElementById('mfa-step').classList.remove('visible');
   document.getElementById('form-signup').style.display    = 'block';
@@ -1432,18 +1207,12 @@ function cancelMFA() {
   if (_pendingUser) { _pendingUser.delete().catch(()=>{}); _pendingUser = null; }
 }
 
-/* ═══════════════════════════════════════════════
-   GOOGLE LOGIN
-═══════════════════════════════════════════════ */
 async function handleGoogleLogin() {
   try {
     await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
   } catch(err) { showToast(fbErr(err.code)); }
 }
 
-/* ═══════════════════════════════════════════════
-   FORGOT PASSWORD
-═══════════════════════════════════════════════ */
 async function handleForgotPassword() {
   const email = document.getElementById('login-email').value.trim();
   if (!email) { showToast('Enter your email above first.', 'info'); return; }
@@ -1453,36 +1222,35 @@ async function handleForgotPassword() {
   } catch(err) { showToast(fbErr(err.code)); }
 }
 
-/* ═══════════════════════════════════════════════
-   LOGOUT
-═══════════════════════════════════════════════ */
 async function handleLogout() {
   await auth.signOut();
   showToast('You have been signed out.', 'info');
 }
 
-/* ═══════════════════════════════════════════════
-   AUTH STATE OBSERVER  ←  the nerve centre
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   AUTH STATE OBSERVER
+═══════════════════════════════════════ */
 auth.onAuthStateChanged(async user => {
   const overlay = document.getElementById('auth-overlay');
-
   if (user) {
     overlay.classList.add('hidden');
     setLoading('login-btn', false);
     setLoading('signup-btn', false);
 
-    // Admin tab visibility
     const adminTab = document.getElementById('admin-tab');
     if (user.email === ADMIN_EMAIL) {
       adminTab.style.display = 'flex';
       document.getElementById('admin-email-display').textContent = 'Logged in as ' + user.email;
+      loadAdminData();
     } else {
       adminTab.style.display = 'none';
     }
 
-    // Load Firestore profile
+    const emailEl = document.getElementById('profile-email-display');
+    if (emailEl) emailEl.textContent = user.email;
+
     await loadUserProfile(user);
+    renderChatList();
 
   } else {
     overlay.classList.remove('hidden');
@@ -1495,9 +1263,9 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    SPA NAVIGATION
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function showView(name, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1506,9 +1274,9 @@ function showView(name, btn) {
   if (btn) btn.classList.add('active');
 }
 
-/* ═══════════════════════════════════════════════
-   STATUS TOGGLE  — writes to Firestore
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   STATUS TOGGLE  +  Resend alert on Available
+═══════════════════════════════════════ */
 async function setStatus(status) {
   const btns = document.querySelectorAll('#statusToggle .toggle-btn');
   btns.forEach(b => b.classList.remove('active-avail','active-busy'));
@@ -1518,14 +1286,22 @@ async function setStatus(status) {
   _profileData.status = status;
   const user = auth.currentUser;
   if (user) {
-    try { await db.collection('users').doc(user.uid).update({ status }); }
-    catch(e) { console.warn('Status update failed:', e); }
+    try {
+      await db.collection('users').doc(user.uid).update({ status });
+      // 🔔 Automated admin alert when talent goes Available
+      if (status === 'available') {
+        sendAdminAlert(
+          '🟢 Talent is Now Available',
+          `A talent just set their status to Available!\n\nName: ${_profileData.name || user.displayName || 'Unknown'}\nEmail: ${user.email}\nTime: ${new Date().toLocaleString()}`
+        );
+      }
+    } catch(e) { console.warn('Status update failed:', e); }
   }
 }
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    CHIP FILTER
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 document.querySelectorAll('.chip').forEach(c => {
   c.addEventListener('click', () => {
     document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
@@ -1533,55 +1309,317 @@ document.querySelectorAll('.chip').forEach(c => {
   });
 });
 
-/* ═══════════════════════════════════════════════
-   ENTER KEY SHORTCUT
-═══════════════════════════════════════════════ */
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   if (document.getElementById('form-login').style.display  !== 'none') handleLogin();
   if (document.getElementById('form-signup').style.display !== 'none') handleSignup();
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   ███████╗████████╗███████╗██████╗      ██████╗
-   ██╔════╝╚══██╔══╝██╔════╝██╔══██╗    ╚════██╗
-   ███████╗   ██║   █████╗  ██████╔╝        ██╔╝
-   ╚════██║   ██║   ██╔══╝  ██╔═══╝        ██╔╝
-   ███████║   ██║   ███████╗██║            ██║
-   ╚══════╝   ╚═╝   ╚══════╝╚═╝           ╚═╝
-   PROFILE & MEDIA HUB — STEP 3
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   ADMIN DASHBOARD  — Step 5
+═══════════════════════════════════════════════════════════ */
 
-/* ── Constants ── */
+let _adminUnsubscribe = null;
+
+async function loadAdminData() {
+  try {
+    /* Real-time listener on users collection */
+    if (_adminUnsubscribe) _adminUnsubscribe();
+    _adminUnsubscribe = db.collection('users').onSnapshot(snap => {
+      const users   = [];
+      let providers = 0;
+      let active    = 0;
+      snap.forEach(doc => {
+        const d = doc.data();
+        users.push(d);
+        if (d.role === 'talent' || d.role === 'provider') providers++;
+        if (d.status === 'available') active++;
+      });
+
+      document.getElementById('admin-total-users').textContent     = users.length;
+      document.getElementById('admin-total-providers').textContent  = providers;
+      document.getElementById('admin-active-talent').textContent    = active;
+      document.getElementById('admin-users-sub').textContent        = `↑ ${users.length} registered`;
+      document.getElementById('admin-providers-sub').textContent    = `${providers} on platform`;
+      document.getElementById('admin-active-sub').textContent       = `${active} currently available`;
+
+      renderAdminUserList(users);
+    });
+  } catch(e) {
+    console.error('[GigsCourt] loadAdminData:', e);
+    showToast('Could not load admin data.', 'error');
+  }
+}
+
+function renderAdminUserList(users) {
+  const container = document.getElementById('admin-user-list');
+  if (!users.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">No users yet.</div>';
+    return;
+  }
+  container.innerHTML = users.map(u => `
+    <div class="user-list-item" id="urow-${u.uid}">
+      <div class="user-list-avatar">
+        ${u.avatarUrl ? `<img src="${escHtml(u.avatarUrl)}" alt="avatar"/>` : '<i class="fa-regular fa-user"></i>'}
+      </div>
+      <div class="user-list-info">
+        <div class="user-list-name">${escHtml(u.name || 'Unknown')}</div>
+        <div class="user-list-email">${escHtml(u.email || '—')}</div>
+        <span class="user-list-role">${escHtml(u.role || 'talent')}</span>
+      </div>
+      <button class="delete-user-btn" onclick="deleteUser('${escHtml(u.uid)}','${escHtml(u.name||'')}')">
+        <i class="fa-solid fa-trash" style="margin-right:4px"></i>Delete
+      </button>
+    </div>
+  `).join('');
+}
+
+async function deleteUser(uid, name) {
+  if (!confirm(`Delete user "${name}"? This removes their Firestore record.`)) return;
+  try {
+    await db.collection('users').doc(uid).delete();
+    /* Remove all their chats too */
+    const chatSnap = await db.collection('chats')
+      .where('participants', 'array-contains', uid).get();
+    const batch = db.batch();
+    chatSnap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    showToast(`User "${name}" deleted.`, 'success');
+    sendAdminAlert('🗑️ User Deleted', `Admin deleted user:\nName: ${name}\nUID: ${uid}\nTime: ${new Date().toLocaleString()}`);
+  } catch(e) {
+    console.error('[GigsCourt] deleteUser:', e);
+    showToast('Could not delete user. Check permissions.', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MESSAGING SYSTEM  — Step 5
+   Chat rooms stored at Firestore: chats/{chatId}/messages/{msgId}
+   chatId = sorted join of both UIDs
+═══════════════════════════════════════════════════════════ */
+
+let _activeChatId        = null;
+let _activeChatPartner   = null;   // { uid, name, avatarUrl, category }
+let _chatUnsubscribe     = null;
+let _knownChats          = {};     // map chatId → { partner, lastMsg, unread }
+
+/* Build a stable chatId from two UIDs */
+function buildChatId(uid1, uid2) {
+  return [uid1, uid2].sort().join('__');
+}
+
+/* Open chat window with a talent object */
+function openChatWith(talent) {
+  const me = auth.currentUser;
+  if (!me) { showToast('Please sign in to chat.', 'error'); return; }
+  if (talent.uid === me.uid) { showToast("You can't chat with yourself!", 'info'); return; }
+
+  _activeChatPartner = talent;
+  _activeChatId      = buildChatId(me.uid, talent.uid);
+
+  /* Update header */
+  document.getElementById('chat-win-name').textContent = talent.name || 'Unknown';
+  const avatarEl = document.getElementById('chat-win-avatar');
+  avatarEl.innerHTML = talent.avatarUrl
+    ? `<img src="${escHtml(talent.avatarUrl)}" alt="avatar"/>`
+    : '<i class="fa-regular fa-user"></i>';
+
+  /* Clear messages */
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="chat-empty-state" id="chat-empty"><i class="fa-regular fa-comment-dots"></i><p>Send a message to start the conversation!</p></div>';
+
+  /* Open window */
+  document.getElementById('chat-window').classList.add('open');
+  document.getElementById('chat-text-input').focus();
+
+  /* Subscribe to messages */
+  if (_chatUnsubscribe) _chatUnsubscribe();
+  _chatUnsubscribe = db.collection('chats').doc(_activeChatId)
+    .collection('messages')
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      if (snap.empty) return;
+      document.getElementById('chat-empty')?.remove();
+      const container = document.getElementById('chat-messages');
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const msg = change.doc.data();
+          const mine = msg.senderUid === me.uid;
+          const el = document.createElement('div');
+          el.className = `msg-bubble ${mine ? 'mine' : 'theirs'}`;
+          const ts = msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+          el.innerHTML = `${escHtml(msg.text)}<div class="msg-time">${ts}</div>`;
+          container.appendChild(el);
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    });
+
+  /* Update the chat in our local registry for the list */
+  _knownChats[_activeChatId] = {
+    id: _activeChatId,
+    partner: talent,
+    lastMsg: '',
+    time: 'Now',
+    unread: 0
+  };
+  renderChatList();
+}
+
+function closeChatWindow() {
+  document.getElementById('chat-window').classList.remove('open');
+  if (_chatUnsubscribe) { _chatUnsubscribe(); _chatUnsubscribe = null; }
+}
+
+async function sendChatMessage() {
+  const me = auth.currentUser;
+  if (!me || !_activeChatId) return;
+  const inp  = document.getElementById('chat-text-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  const partner = _activeChatPartner;
+  const chatRef = db.collection('chats').doc(_activeChatId);
+
+  try {
+    /* Ensure the chat doc exists with participants array */
+    await chatRef.set({
+      participants: [me.uid, partner.uid],
+      participantNames: {
+        [me.uid]: me.displayName || me.email,
+        [partner.uid]: partner.name || 'Unknown'
+      },
+      lastMessage: text,
+      lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    /* Add message */
+    await chatRef.collection('messages').add({
+      text,
+      senderUid:   me.uid,
+      senderName:  me.displayName || me.email,
+      createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    /* Update local known chats */
+    if (_knownChats[_activeChatId]) {
+      _knownChats[_activeChatId].lastMsg = text;
+      _knownChats[_activeChatId].time    = 'Now';
+      renderChatList();
+    }
+  } catch(e) {
+    console.error('[GigsCourt] sendMessage:', e);
+    showToast('Message failed. Try again.', 'error');
+  }
+}
+
+/* Render the Messages tab chat list */
+function renderChatList() {
+  const container   = document.getElementById('chat-list-container');
+  const emptyState  = document.getElementById('msgs-empty-state');
+  const me          = auth.currentUser;
+
+  /* Fetch real chats from Firestore too */
+  if (me) {
+    db.collection('chats')
+      .where('participants', 'array-contains', me.uid)
+      .orderBy('updatedAt', 'desc')
+      .get()
+      .then(snap => {
+        snap.forEach(doc => {
+          const d = doc.data();
+          const partnerId   = d.participants.find(p => p !== me.uid);
+          const partnerName = d.participantNames?.[partnerId] || 'Unknown';
+          if (!_knownChats[doc.id]) {
+            _knownChats[doc.id] = {
+              id: doc.id,
+              partner: { uid: partnerId, name: partnerName, avatarUrl: '' },
+              lastMsg: d.lastMessage || '',
+              time: d.lastMessageTime?.toDate ? formatTime(d.lastMessageTime.toDate()) : '',
+              unread: 0
+            };
+          } else {
+            _knownChats[doc.id].lastMsg = d.lastMessage || _knownChats[doc.id].lastMsg;
+          }
+        });
+        _flushChatList(container, emptyState);
+      })
+      .catch(() => _flushChatList(container, emptyState));
+  } else {
+    _flushChatList(container, emptyState);
+  }
+}
+
+function _flushChatList(container, emptyState) {
+  const chats = Object.values(_knownChats);
+  if (!chats.length) {
+    container.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+
+  container.innerHTML = chats.map(c => `
+    <div class="chat-item" onclick='openChatWith(${JSON.stringify(c.partner)})'>
+      <div class="avatar">
+        <div class="avatar-img">
+          ${c.partner.avatarUrl ? `<img src="${escHtml(c.partner.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : '<i class="fa-regular fa-user"></i>'}
+        </div>
+        <div class="avatar-status online"></div>
+      </div>
+      <div class="chat-meta">
+        <div class="chat-name">${escHtml(c.partner.name || 'Unknown')}</div>
+        <div class="chat-preview">${escHtml(c.lastMsg || 'Tap to open conversation')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="chat-time">${escHtml(c.time || '')}</div>
+        ${c.unread ? `<div class="unread-badge">${c.unread}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterChats(query) {
+  const items = document.querySelectorAll('#chat-list-container .chat-item');
+  items.forEach(item => {
+    const name = item.querySelector('.chat-name')?.textContent.toLowerCase() || '';
+    item.style.display = name.includes(query.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function formatTime(date) {
+  const now  = new Date();
+  const diff = now - date;
+  if (diff < 60000)        return 'Now';
+  if (diff < 3600000)      return Math.floor(diff/60000) + 'm';
+  if (diff < 86400000)     return Math.floor(diff/3600000) + 'h';
+  return date.toLocaleDateString([], {month:'short', day:'numeric'});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROFILE SYSTEM (unchanged from Step 3)
+═══════════════════════════════════════════════════════════ */
 const CLOUDINARY_CLOUD  = 'dszdwnuua';
 const CLOUDINARY_PRESET = 'Gigscourt';
 const MAX_GRID_IMAGES   = 9;
 
-/* ── In-memory profile state ── */
-let _profileData    = {};
-let _editMode       = false;
-let _gridImages     = []; // array of { url, publicId }
+let _profileData = {};
+let _editMode    = false;
+let _gridImages  = [];
 
-/* ─────────────────────────────────────────────
-   LOAD USER PROFILE FROM FIRESTORE
-───────────────────────────────────────────── */
 async function loadUserProfile(user) {
   try {
     const snap = await db.collection('users').doc(user.uid).get();
     if (snap.exists) {
       _profileData = snap.data();
     } else {
-      // Create skeleton doc for new Google/social sign-ins
       _profileData = {
-        uid: user.uid,
-        name: user.displayName || user.email.split('@')[0],
-        email: user.email,
-        bio: '',
-        category: 'Model',
-        status: 'available',
-        avatarUrl: '',
-        coverUrl: '',
-        gridImages: [],
+        uid: user.uid, name: user.displayName || user.email.split('@')[0],
+        email: user.email, bio: '', category: 'Model', status: 'available',
+        avatarUrl: '', coverUrl: '', gridImages: [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
       await db.collection('users').doc(user.uid).set(_profileData);
@@ -1594,48 +1632,24 @@ async function loadUserProfile(user) {
   }
 }
 
-/* ─────────────────────────────────────────────
-   RENDER PROFILE UI FROM _profileData
-───────────────────────────────────────────── */
 function renderProfile() {
   const p = _profileData;
-
-  // Name & handle
   const name   = p.name || 'Your Name';
   const handle = '@' + name.toLowerCase().replace(/\s+/g, '');
   document.getElementById('profile-display-name').textContent = name;
   document.getElementById('profile-handle').textContent = handle;
-
-  // Category badge
   const cat = p.category || 'Model';
-  document.getElementById('category-badge-text').innerHTML =
-    '<i class="fa-solid fa-star" style="font-size:9px"></i> ' + cat;
+  document.getElementById('category-badge-text').innerHTML = '<i class="fa-solid fa-star" style="font-size:9px"></i> ' + cat;
   const sel = document.getElementById('category-select');
   if (sel) { for (let o of sel.options) { if (o.value === cat) { o.selected = true; break; } } }
-
-  // Bio
   const bioView = document.getElementById('bio-view');
-  if (p.bio) {
-    bioView.textContent = p.bio;
-    bioView.style.fontStyle = 'normal';
-  } else {
-    bioView.innerHTML = 'Tap <strong>Edit Profile</strong> to add your bio.';
-  }
-
-  // Status toggle
+  if (p.bio) { bioView.textContent = p.bio; bioView.style.fontStyle = 'normal'; }
+  else { bioView.innerHTML = 'Tap <strong>Edit Profile</strong> to add your bio.'; }
   setStatusUI(p.status || 'available');
-
-  // Avatar
   const avatarWrap = document.getElementById('profile-avatar-display');
-  if (p.avatarUrl) {
-    avatarWrap.innerHTML = '<img src="' + p.avatarUrl + '" alt="avatar" />';
-  } else {
-    avatarWrap.innerHTML = '<i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>';
-  }
-
-  // Cover
+  if (p.avatarUrl) { avatarWrap.innerHTML = '<img src="' + p.avatarUrl + '" alt="avatar" />'; }
+  else             { avatarWrap.innerHTML = '<i class="fa-regular fa-user" id="avatar-placeholder-icon"></i>'; }
   const coverWrap = document.getElementById('cover-photo-wrap');
-  // Remove any existing img
   const existingCoverImg = coverWrap.querySelector('img.cover-img');
   if (existingCoverImg) existingCoverImg.remove();
   if (p.coverUrl) {
@@ -1644,62 +1658,34 @@ function renderProfile() {
     img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
     coverWrap.insertBefore(img, coverWrap.firstChild);
   }
-
-  // Grid
   renderGrid();
-
-  // Stats
   document.getElementById('stat-posts').textContent = _gridImages.length;
 }
 
-/* ─────────────────────────────────────────────
-   SET STATUS UI  (without Firestore write)
-───────────────────────────────────────────── */
 function setStatusUI(status) {
   const btns = document.querySelectorAll('#statusToggle .toggle-btn');
   btns.forEach(b => b.classList.remove('active-avail','active-busy'));
-  btns[status === 'available' ? 0 : 1].classList.add(
-    status === 'available' ? 'active-avail' : 'active-busy'
-  );
+  btns[status === 'available' ? 0 : 1].classList.add(status === 'available' ? 'active-avail' : 'active-busy');
 }
 
-/* ─────────────────────────────────────────────
-   RENDER PORTFOLIO GRID
-───────────────────────────────────────────── */
 function renderGrid() {
   const grid = document.getElementById('portfolio-grid');
   const hint = document.getElementById('grid-edit-hint');
   grid.innerHTML = '';
-
-  // Fill existing images
   _gridImages.forEach((item, idx) => {
     const cell = document.createElement('div');
     cell.className = 'grid-cell';
-    cell.innerHTML = `
-      <img src="${item.url}" alt="portfolio" loading="lazy" />
-      <div class="cell-spinner"></div>
-      <button class="del-btn" onclick="deleteGridImage(${idx})" title="Remove">
-        <i class="fa-solid fa-xmark"></i>
-      </button>`;
+    cell.innerHTML = `<img src="${item.url}" alt="portfolio" loading="lazy" /><div class="cell-spinner"></div><button class="del-btn" onclick="deleteGridImage(${idx})" title="Remove"><i class="fa-solid fa-xmark"></i></button>`;
     grid.appendChild(cell);
   });
-
-  // Add slot — only show if < max AND in edit mode
   if (_gridImages.length < MAX_GRID_IMAGES) {
     const addSlot = document.createElement('div');
-    addSlot.className = 'grid-add-slot';
-    addSlot.id = 'grid-add-slot';
+    addSlot.className = 'grid-add-slot'; addSlot.id = 'grid-add-slot';
     addSlot.onclick = () => openCloudinaryWidget('grid');
-    addSlot.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-muted)">
-        <i class="fa-solid fa-plus" style="font-size:22px"></i>
-        <span style="font-size:10px;font-weight:600;letter-spacing:0.05em">ADD PHOTO</span>
-      </div>`;
+    addSlot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-muted)"><i class="fa-solid fa-plus" style="font-size:22px"></i><span style="font-size:10px;font-weight:600;letter-spacing:0.05em">ADD PHOTO</span></div>`;
     if (!_editMode) addSlot.style.display = 'none';
     grid.appendChild(addSlot);
   }
-
-  // Empty placeholder cells (view mode only, up to 3 to fill a row)
   if (!_editMode && _gridImages.length === 0) {
     for (let i = 0; i < 6; i++) {
       const ph = document.createElement('div');
@@ -1708,62 +1694,38 @@ function renderGrid() {
       grid.appendChild(ph);
     }
   }
-
-  // Edit mode classes
   grid.classList.toggle('edit-mode', _editMode);
   if (hint) hint.style.display = _editMode ? 'block' : 'none';
 }
 
-/* ─────────────────────────────────────────────
-   TOGGLE EDIT MODE
-───────────────────────────────────────────── */
 function toggleEditMode(on) {
   _editMode = on;
-
-  const bar          = document.getElementById('profile-edit-bar');
-  const editBtn      = document.getElementById('edit-profile-btn');
-  const bioView      = document.getElementById('bio-view');
-  const bioEdit      = document.getElementById('bio-edit');
-  const bioInput     = document.getElementById('bio-input');
-  const nameEdit     = document.getElementById('name-edit');
-  const nameInput    = document.getElementById('name-input');
-  const catView      = document.getElementById('category-view');
-  const catEdit      = document.getElementById('category-edit');
-  const coverWrap    = document.getElementById('cover-photo-wrap');
-  const avatarEl     = document.getElementById('profile-avatar-display');
-  const saveInd      = document.getElementById('save-indicator');
-
+  const bar       = document.getElementById('profile-edit-bar');
+  const editBtn   = document.getElementById('edit-profile-btn');
+  const bioView   = document.getElementById('bio-view');
+  const bioEdit   = document.getElementById('bio-edit');
+  const bioInput  = document.getElementById('bio-input');
+  const nameEdit  = document.getElementById('name-edit');
+  const nameInput = document.getElementById('name-input');
+  const catView   = document.getElementById('category-view');
+  const catEdit   = document.getElementById('category-edit');
+  const coverWrap = document.getElementById('cover-photo-wrap');
+  const avatarEl  = document.getElementById('profile-avatar-display');
+  const saveInd   = document.getElementById('save-indicator');
   if (on) {
-    bar.classList.add('visible');
-    editBtn.style.display = 'none';
-    bioView.style.display  = 'none';
-    bioEdit.style.display  = 'block';
-    nameEdit.style.display = 'block';
-    catView.style.display  = 'none';
-    catEdit.style.display  = 'block';
-    coverWrap.classList.add('edit-mode');
-    avatarEl.classList.add('edit-mode');
+    bar.classList.add('visible'); editBtn.style.display = 'none';
+    bioView.style.display = 'none'; bioEdit.style.display = 'block';
+    nameEdit.style.display = 'block'; catView.style.display = 'none'; catEdit.style.display = 'block';
+    coverWrap.classList.add('edit-mode'); avatarEl.classList.add('edit-mode');
     if (saveInd) saveInd.classList.remove('visible');
-
-    // Populate edit fields
-    bioInput.value  = _profileData.bio  || '';
-    nameInput.value = _profileData.name || '';
-    updateBioCount();
-
-    // Char counter
-    bioInput.oninput = updateBioCount;
+    bioInput.value = _profileData.bio || ''; nameInput.value = _profileData.name || '';
+    updateBioCount(); bioInput.oninput = updateBioCount;
   } else {
-    bar.classList.remove('visible');
-    editBtn.style.display = '';
-    bioView.style.display  = '';
-    bioEdit.style.display  = 'none';
-    nameEdit.style.display = 'none';
-    catView.style.display  = '';
-    catEdit.style.display  = 'none';
-    coverWrap.classList.remove('edit-mode');
-    avatarEl.classList.remove('edit-mode');
+    bar.classList.remove('visible'); editBtn.style.display = '';
+    bioView.style.display = ''; bioEdit.style.display = 'none';
+    nameEdit.style.display = 'none'; catView.style.display = ''; catEdit.style.display = 'none';
+    coverWrap.classList.remove('edit-mode'); avatarEl.classList.remove('edit-mode');
   }
-
   renderGrid();
 }
 
@@ -1773,30 +1735,17 @@ function updateBioCount() {
   if (inp && cnt) cnt.textContent = inp.value.length;
 }
 
-/* ─────────────────────────────────────────────
-   SAVE PROFILE EDITS TO FIRESTORE
-───────────────────────────────────────────── */
 async function saveProfileEdits() {
   const user = auth.currentUser;
   if (!user) return;
-
   const newName = (document.getElementById('name-input').value.trim()) || _profileData.name;
   const newBio  = document.getElementById('bio-input').value.trim();
   const newCat  = document.getElementById('category-select').value;
-
-  _profileData.name     = newName;
-  _profileData.bio      = newBio;
-  _profileData.category = newCat;
-
+  _profileData.name = newName; _profileData.bio = newBio; _profileData.category = newCat;
   try {
-    await db.collection('users').doc(user.uid).update({
-      name: newName, bio: newBio, category: newCat,
-    });
-    // Update Firebase Auth display name
+    await db.collection('users').doc(user.uid).update({ name: newName, bio: newBio, category: newCat });
     await user.updateProfile({ displayName: newName });
-    showSaveIndicator();
-    renderProfile();
-    toggleEditMode(false);
+    showSaveIndicator(); renderProfile(); toggleEditMode(false);
     showToast('Profile updated!', 'success');
   } catch(e) {
     console.error('saveProfileEdits:', e);
@@ -1811,308 +1760,124 @@ function showSaveIndicator() {
   setTimeout(() => ind.classList.remove('visible'), 2500);
 }
 
-/* ─────────────────────────────────────────────
-   CLOUDINARY WIDGET LAUNCHER
-   type: 'avatar' | 'cover' | 'grid'
-───────────────────────────────────────────── */
 function openCloudinaryWidget(type) {
   const user = auth.currentUser;
   if (!user) { showToast('You must be logged in to upload.', 'error'); return; }
-  if (!_editMode && type !== 'grid') { return; } // guard: grid add slot always allowed in edit
-
   const widget = cloudinary.createUploadWidget({
-    cloudName:     CLOUDINARY_CLOUD,
-    uploadPreset:  CLOUDINARY_PRESET,
-    sources:       ['local', 'camera', 'url'],
-    multiple:      type === 'grid',
-    maxFiles:      type === 'grid' ? (MAX_GRID_IMAGES - _gridImages.length) : 1,
-    cropping:      type === 'avatar',
-    croppingAspectRatio: type === 'avatar' ? 1 : undefined,
-    maxFileSize:   8000000, // 8 MB
-    clientAllowedFormats: ['jpg','jpeg','png','webp'],
-    styles: {
-      palette: {
-        window:      '#13131A',
-        windowBorder:'#FF385C',
-        tabIcon:     '#FF385C',
-        menuIcons:   '#7A7A8C',
-        textDark:    '#F5F5F7',
-        textLight:   '#0A0A0E',
-        link:        '#FF385C',
-        action:      '#FF385C',
-        inactiveTabIcon: '#7A7A8C',
-        error:       '#FF385C',
-        inProgress:  '#FF385C',
-        complete:    '#22C55E',
-        sourceBg:    '#1C1C27',
-      },
-      fonts: { default: { active: true } }
-    },
+    cloudName: CLOUDINARY_CLOUD, uploadPreset: CLOUDINARY_PRESET,
+    sources: ['local','camera','url'], multiple: type === 'grid',
+    maxFiles: type === 'grid' ? (MAX_GRID_IMAGES - _gridImages.length) : 1,
+    cropping: type === 'avatar', croppingAspectRatio: type === 'avatar' ? 1 : undefined,
+    maxFileSize: 8000000, clientAllowedFormats: ['jpg','jpeg','png','webp'],
+    styles: { palette: { window:'#13131A', windowBorder:'#FF385C', tabIcon:'#FF385C', menuIcons:'#7A7A8C', textDark:'#F5F5F7', textLight:'#0A0A0E', link:'#FF385C', action:'#FF385C', inactiveTabIcon:'#7A7A8C', error:'#FF385C', inProgress:'#FF385C', complete:'#22C55E', sourceBg:'#1C1C27' } }
   }, async (err, result) => {
-    if (err) { console.error('Cloudinary error:', err); showToast('Upload failed. Please try again.', 'error'); return; }
+    if (err) { showToast('Upload failed. Please try again.', 'error'); return; }
     if (result && result.event === 'success') {
-      const url = result.info.secure_url;
-      await handleUploadSuccess(type, url, user);
+      await handleUploadSuccess(type, result.info.secure_url, user);
     }
   });
-
   widget.open();
 }
 
-/* ─────────────────────────────────────────────
-   HANDLE SUCCESSFUL UPLOAD
-───────────────────────────────────────────── */
 async function handleUploadSuccess(type, url, user) {
   const uid = user.uid;
-
   if (type === 'avatar') {
     _profileData.avatarUrl = url;
-    // Immediately update UI
-    const avatarEl = document.getElementById('profile-avatar-display');
-    avatarEl.innerHTML = '<img src="' + url + '" alt="avatar" />';
-    // Save to Firestore + Auth
-    await Promise.all([
-      db.collection('users').doc(uid).update({ avatarUrl: url }),
-      user.updateProfile({ photoURL: url }),
-    ]);
+    document.getElementById('profile-avatar-display').innerHTML = '<img src="' + url + '" alt="avatar" />';
+    await Promise.all([db.collection('users').doc(uid).update({ avatarUrl: url }), user.updateProfile({ photoURL: url })]);
     showToast('Profile photo updated!', 'success');
-  }
-
-  else if (type === 'cover') {
+  } else if (type === 'cover') {
     _profileData.coverUrl = url;
-    // Update UI
     const coverWrap = document.getElementById('cover-photo-wrap');
     let img = coverWrap.querySelector('img.cover-img');
-    if (!img) {
-      img = document.createElement('img');
-      img.className = 'cover-img';
-      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-      coverWrap.insertBefore(img, coverWrap.firstChild);
-    }
+    if (!img) { img = document.createElement('img'); img.className = 'cover-img'; img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;'; coverWrap.insertBefore(img, coverWrap.firstChild); }
     img.src = url;
     await db.collection('users').doc(uid).update({ coverUrl: url });
     showToast('Cover photo updated!', 'success');
-  }
-
-  else if (type === 'grid') {
-    if (_gridImages.length >= MAX_GRID_IMAGES) {
-      showToast('Portfolio is full (max 9 photos).', 'info'); return;
-    }
-    _gridImages.push({ url });
-    _profileData.gridImages = [..._gridImages];
-    renderGrid();
-    // Save grid to Firestore
-    await db.collection('users').doc(uid).update({
-      gridImages: _profileData.gridImages
-    });
+  } else if (type === 'grid') {
+    if (_gridImages.length >= MAX_GRID_IMAGES) { showToast('Portfolio is full (max 9 photos).', 'info'); return; }
+    _gridImages.push({ url }); _profileData.gridImages = [..._gridImages]; renderGrid();
+    await db.collection('users').doc(uid).update({ gridImages: _profileData.gridImages });
     document.getElementById('stat-posts').textContent = _gridImages.length;
     showToast('Photo added to portfolio!', 'success');
   }
 }
 
-/* ─────────────────────────────────────────────
-   PROFILE EDIT ACTION (called by cover/avatar clicks)
-───────────────────────────────────────────── */
 function profileEditAction(type) {
-  if (!_editMode) return; // clicks only active in edit mode
+  if (!_editMode) return;
   openCloudinaryWidget(type);
 }
 
-/* ─────────────────────────────────────────────
-   DELETE GRID IMAGE
-───────────────────────────────────────────── */
 async function deleteGridImage(idx) {
   if (!_editMode) return;
-  _gridImages.splice(idx, 1);
-  _profileData.gridImages = [..._gridImages];
-  renderGrid();
+  _gridImages.splice(idx, 1); _profileData.gridImages = [..._gridImages]; renderGrid();
   const user = auth.currentUser;
   if (user) {
-    try {
-      await db.collection('users').doc(user.uid).update({ gridImages: _profileData.gridImages });
-      document.getElementById('stat-posts').textContent = _gridImages.length;
-    } catch(e) { console.warn('deleteGridImage Firestore:', e); }
+    try { await db.collection('users').doc(user.uid).update({ gridImages: _profileData.gridImages }); document.getElementById('stat-posts').textContent = _gridImages.length; }
+    catch(e) { console.warn('deleteGridImage Firestore:', e); }
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DISCOVERY MAP — STEP 4  (Performance-Optimised Build)
-═══════════════════════════════════════════════════════════════ */
-
-/* ── Constants ── */
+/* ═══════════════════════════════════════════════════════════
+   DISCOVERY MAP (unchanged from Step 4 — performance build)
+═══════════════════════════════════════════════════════════ */
 const LAGOS_LATLNG  = [6.5244, 3.3792];
 const LAGOS_ZOOM    = 12;
 
-/* ── Map state ── */
 let _map            = null;
-let _markerGroup    = null;   // L.LayerGroup — single source of truth for all pins
-let _userMarker     = null;   // pulsing GPS dot
-let _radiusCircle   = null;   // distance circle overlay
+let _markerGroup    = null;
+let _userMarker     = null;
+let _radiusCircle   = null;
 let _mapCentre      = LAGOS_LATLNG;
 let _mapDistKm      = 10;
 let _mapInitialised = false;
 
-/* ── Data state ─────────────────────────────────────────────────
-   allAvailableUsers is loaded ONCE from Firestore then never
-   re-fetched. All subsequent filtering works purely on this
-   local array, so zooming / sliding never triggers a DB call.
-─────────────────────────────────────────────────────────────── */
-let allAvailableUsers = [];      // ← single in-memory copy
-let _dataLoaded       = false;   // guard: only fetch once per session
+let allAvailableUsers = [];
+let _dataLoaded       = false;
 
-/* ── Debounce / rAF handles ── */
-let _filterDebounce   = null;    // debounce timer for map events
-let _sliderRAF        = null;    // requestAnimationFrame handle for slider
-let _geocoderTimer    = null;    // debounce for geocoder input
-let _geocoderAbort    = null;    // AbortController for in-flight Nominatim requests
+let _filterDebounce   = null;
+let _sliderRAF        = null;
+let _geocoderTimer    = null;
+let _geocoderAbort    = null;
 
-/* ─────────────────────────────────────────────
-   UTILITY: debounce(fn, ms)
-   Returns a function that only fires fn after
-   ms milliseconds of silence.
-───────────────────────────────────────────── */
 function debounce(fn, ms) {
   let t;
-  return function(...args) {
-    clearTimeout(t);
-    t = setTimeout(() => fn.apply(this, args), ms);
-  };
+  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
 }
 
-/* ─────────────────────────────────────────────
-   HAVERSINE DISTANCE  (km)
-   Pure math — runs 100 k iterations in < 5 ms.
-───────────────────────────────────────────── */
 function haversine(lat1, lon1, lat2, lon2) {
-  const R  = 6371;
-  const dL = (lat2 - lat1) * Math.PI / 180;
-  const dG = (lon2 - lon1) * Math.PI / 180;
-  const a  = Math.sin(dL/2)**2 +
-             Math.cos(lat1 * Math.PI/180) *
-             Math.cos(lat2 * Math.PI/180) *
-             Math.sin(dG/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const R = 6371, dL = (lat2-lat1)*Math.PI/180, dG = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dL/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-/* ─────────────────────────────────────────────
-   INIT MAP
-   Called once the Search view becomes visible.
-───────────────────────────────────────────── */
 function initMap() {
-  if (_mapInitialised) {
-    /* Map already exists — just fix sizing after CSS reflow */
-    requestAnimationFrame(() => _map.invalidateSize({ pan: false }));
-    return;
-  }
+  if (_mapInitialised) { requestAnimationFrame(() => _map.invalidateSize({ pan: false })); return; }
   _mapInitialised = true;
-
-  /* ── Create map instance ── */
-  _map = L.map('leaflet-map', {
-    center:           LAGOS_LATLNG,
-    zoom:             LAGOS_ZOOM,
-    zoomControl:      false,
-    attributionControl: true,
-    /* Prefer canvas renderer — far faster than SVG for many markers */
-    renderer:         L.canvas({ padding: 0.5 }),
-    /* Throttle redraws during continuous zoom animations */
-    zoomAnimationThreshold: 4,
-  });
-
-  /* ── OSM tile layer with performance tuning ── */
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom:       19,
-    /* ↓ KEY FIXES: stop gray-square lag on fast zoom ↓ */
-    updateWhenIdle:    true,   // only load new tiles when panning stops
-    updateWhenZooming: false,  // never re-request tiles mid-zoom animation
-    keepBuffer:        2,      // pre-fetch 2 extra tile rows in every direction
-  }).addTo(_map);
-
-  /* Attribution bottom-left so bottom-nav doesn't cover it */
+  _map = L.map('leaflet-map', { center: LAGOS_LATLNG, zoom: LAGOS_ZOOM, zoomControl: false, attributionControl: true, renderer: L.canvas({ padding: 0.5 }), zoomAnimationThreshold: 4 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2 }).addTo(_map);
   _map.attributionControl.setPosition('bottomleft');
-
-  /* Zoom controls top-right */
   L.control.zoom({ position: 'topright' }).addTo(_map);
-
-  /* ── LayerGroup for all talent pins ──────────────────────────
-     Using a single LayerGroup means we can call
-     _markerGroup.clearLayers() instead of looping through an
-     array of markers and calling removeLayer() N times.
-     clearLayers() is O(1) — it detaches the group's internal
-     pane element in one DOM operation.
-  ─────────────────────────────────────────────────────────── */
   _markerGroup = L.layerGroup().addTo(_map);
-
-  /* ── Radius circle ── */
-  _radiusCircle = L.circle(_mapCentre, {
-    radius:      _mapDistKm * 1000,
-    color:       '#FF385C',
-    fillColor:   '#FF385C',
-    fillOpacity: 0.06,
-    weight:      2,
-    dashArray:   '6 4',
-    /* Use canvas renderer for the circle too */
-    renderer:    L.canvas(),
-  }).addTo(_map);
-
-  /* ── Map event listeners — all debounced at 500 ms ──────────
-     This prevents re-filtering on every pixel of a drag or
-     every frame of a pinch-zoom. The handler only fires once
-     the user has stopped interacting for half a second.
-  ─────────────────────────────────────────────────────────── */
-  const debouncedMoveHandler = debounce(() => {
-    const c = _map.getCenter();
-    _mapCentre = [c.lat, c.lng];
-    updateRadiusCircle();
-    applyDistanceFilter();
-  }, 500);
-
-  _map.on('moveend',    debouncedMoveHandler);
-  _map.on('zoomend',    debouncedMoveHandler);
-
-  /* ── Fetch talent data (once) then render ── */
+  _radiusCircle = L.circle(_mapCentre, { radius: _mapDistKm*1000, color:'#FF385C', fillColor:'#FF385C', fillOpacity:0.06, weight:2, dashArray:'6 4', renderer: L.canvas() }).addTo(_map);
+  const debouncedMove = debounce(() => { const c = _map.getCenter(); _mapCentre = [c.lat, c.lng]; updateRadiusCircle(); applyDistanceFilter(); }, 500);
+  _map.on('moveend', debouncedMove); _map.on('zoomend', debouncedMove);
   fetchAllTalents();
 }
 
-/* ─────────────────────────────────────────────
-   FETCH ALL AVAILABLE TALENT FROM FIRESTORE
-   ─ Called exactly ONCE per session ─
-   ─ allAvailableUsers is never cleared;         ─
-   ─ filtering always operates on this local copy ─
-───────────────────────────────────────────── */
 async function fetchAllTalents() {
   if (_dataLoaded) { applyDistanceFilter(); return; }
-
   try {
-    const snap = await db.collection('users')
-      .where('status', '==', 'available')
-      .get();
-
+    const snap = await db.collection('users').where('status', '==', 'available').get();
     const fromDB = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (typeof d.lat === 'number' && typeof d.lng === 'number') {
-        fromDB.push(d);
-      }
-    });
-
-    /* Merge DB records with seed data (deduped by uid) */
+    snap.forEach(doc => { const d = doc.data(); if (typeof d.lat === 'number' && typeof d.lng === 'number') fromDB.push(d); });
     const seedMap = new Map(_seedTalents().map(t => [t.uid, t]));
-    fromDB.forEach(t => seedMap.set(t.uid, t));   // DB wins on collision
+    fromDB.forEach(t => seedMap.set(t.uid, t));
     allAvailableUsers = Array.from(seedMap.values());
-
-  } catch(e) {
-    console.warn('[GigsCourt] fetchAllTalents Firestore error:', e);
-    allAvailableUsers = _seedTalents();
-  }
-
-  _dataLoaded = true;
-  applyDistanceFilter();
+  } catch(e) { allAvailableUsers = _seedTalents(); }
+  _dataLoaded = true; applyDistanceFilter();
 }
 
-/* ─────────────────────────────────────────────
-   DEMO / SEED DATA  (non-empty map during dev)
-───────────────────────────────────────────── */
 function _seedTalents() {
   return [
     { uid:'demo1', name:'Amara Obi',  category:'Model',           status:'available', lat:6.5320, lng:3.3750, avatarUrl:'' },
@@ -2126,197 +1891,90 @@ function _seedTalents() {
   ];
 }
 
-/* ─────────────────────────────────────────────
-   APPLY DISTANCE FILTER & RENDER PINS
-   ─ Reads from allAvailableUsers (local array) ─
-   ─ NO Firestore call here                      ─
-───────────────────────────────────────────── */
 function applyDistanceFilter() {
   if (!_map || !_markerGroup) return;
-
-  /* ── Step 1: atomically clear ALL existing pins in one operation ── */
   _markerGroup.clearLayers();
-
-  /* ── Step 2: filter local array (pure CPU, no I/O) ── */
   const visible = [];
-  const cLat = _mapCentre[0];
-  const cLng = _mapCentre[1];
-
+  const cLat = _mapCentre[0], cLng = _mapCentre[1];
   for (let i = 0; i < allAvailableUsers.length; i++) {
     const t = allAvailableUsers[i];
     const dist = haversine(cLat, cLng, t.lat, t.lng);
-    if (dist <= _mapDistKm) {
-      visible.push({ talent: t, dist });
-    }
+    if (dist <= _mapDistKm) visible.push({ talent: t, dist });
   }
-
-  /* ── Step 3: build and add markers via rAF so the
-        browser paints the cleared state first,
-        then adds pins in the next frame ── */
   requestAnimationFrame(() => {
-    visible.forEach(({ talent, dist }) => {
-      buildTalentMarker(talent, dist).addTo(_markerGroup);
-    });
-
-    /* Update count badge */
+    visible.forEach(({ talent, dist }) => buildTalentMarker(talent, dist).addTo(_markerGroup));
     const badge = document.getElementById('map-count-badge');
-    if (badge) {
-      badge.textContent = visible.length + (visible.length === 1 ? ' Talent' : ' Talent');
-    }
+    if (badge) badge.textContent = visible.length + (visible.length === 1 ? ' Talent' : ' Talent');
   });
 }
 
-/* ─────────────────────────────────────────────
-   BUILD A TALENT MARKER
-───────────────────────────────────────────── */
 function buildTalentMarker(talent, distKm) {
   const avatarHtml = talent.avatarUrl
     ? `<img src="${talent.avatarUrl}" />`
     : `<div class="talent-pin-fallback"><i class="fa-regular fa-user"></i></div>`;
-
-  const icon = L.divIcon({
-    html:        `<div class="talent-pin" style="background:var(--brand)">${avatarHtml}</div>`,
-    className:   '',
-    iconSize:    [36, 36],
-    iconAnchor:  [18, 36],
-    popupAnchor: [0, -38],
-  });
-
+  const icon = L.divIcon({ html: `<div class="talent-pin" style="background:var(--brand)">${avatarHtml}</div>`, className:'', iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-38] });
   const marker = L.marker([talent.lat, talent.lng], { icon });
-
-  /* ── Popup ── (built lazily on first open via bindPopup string) */
-  const distLabel = distKm < 1
-    ? Math.round(distKm * 1000) + 'm away'
-    : distKm.toFixed(1) + 'km away';
-
-  const coverHtml = talent.coverUrl
-    ? `<img src="${escHtml(talent.coverUrl)}" alt="cover" />`
-    : '';
-
+  const distLabel = distKm < 1 ? Math.round(distKm*1000)+'m away' : distKm.toFixed(1)+'km away';
+  const coverHtml = talent.coverUrl ? `<img src="${escHtml(talent.coverUrl)}" alt="cover" />` : '';
   const avatarPopupHtml = talent.avatarUrl
     ? `<div class="talent-popup-avatar"><img src="${escHtml(talent.avatarUrl)}" /></div>`
     : `<div class="talent-popup-avatar"><i class="fa-regular fa-user"></i></div>`;
-
   marker.bindPopup(`
     <div class="talent-popup">
       <div class="talent-popup-cover">${coverHtml}</div>
       <div class="talent-popup-body">
-        <div class="talent-popup-avatar-row">
-          ${avatarPopupHtml}
-          <span class="talent-popup-status available">
-            <i class="fa-solid fa-circle" style="font-size:7px;margin-right:3px"></i>Available
-          </span>
-        </div>
+        <div class="talent-popup-avatar-row">${avatarPopupHtml}<span class="talent-popup-status available"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:3px"></i>Available</span></div>
         <div class="talent-popup-name">${escHtml(talent.name)}</div>
         <div class="talent-popup-cat">${escHtml(talent.category || 'Talent')}</div>
-        <div class="talent-popup-dist">
-          <i class="fa-solid fa-location-dot" style="margin-right:3px"></i>${distLabel}
-        </div>
-        <button class="talent-popup-btn" onclick="viewTalentProfile('${escHtml(talent.uid)}')">
-          View Profile &nbsp;<i class="fa-solid fa-arrow-right"></i>
+        <div class="talent-popup-dist"><i class="fa-solid fa-location-dot" style="margin-right:3px"></i>${distLabel}</div>
+        <button class="talent-popup-btn" onclick="openChatWith(${JSON.stringify(talent).replace(/"/g,'&quot;')})">
+          <i class="fa-regular fa-comment-dots" style="margin-right:6px"></i>Chat Now
         </button>
       </div>
-    </div>`, { maxWidth: 240, minWidth: 220, className: 'gc-popup' });
-
+    </div>`, { maxWidth:240, minWidth:220, className:'gc-popup' });
   return marker;
 }
 
-/* ─────────────────────────────────────────────
-   UPDATE RADIUS CIRCLE POSITION + SIZE
-───────────────────────────────────────────── */
 function updateRadiusCircle() {
   if (!_radiusCircle) return;
-  _radiusCircle.setLatLng(_mapCentre);
-  _radiusCircle.setRadius(_mapDistKm * 1000);
+  _radiusCircle.setLatLng(_mapCentre); _radiusCircle.setRadius(_mapDistKm * 1000);
 }
 
-/* ─────────────────────────────────────────────
-   SLIDER CHANGE
-   Uses requestAnimationFrame so the label and
-   circle update at the display's native frame
-   rate (60/120 fps) without blocking the thread.
-   The heavy filter is debounced to 500 ms so
-   Firestore / DOM work only runs when dragging stops.
-───────────────────────────────────────────── */
 const _debouncedFilter = debounce(applyDistanceFilter, 500);
-
 function onSliderChange(val) {
   _mapDistKm = parseInt(val, 10);
-
-  /* Cancel any pending rAF first */
   if (_sliderRAF) cancelAnimationFrame(_sliderRAF);
-
-  /* Schedule lightweight UI updates for the next paint frame */
   _sliderRAF = requestAnimationFrame(() => {
     const label = document.getElementById('mapDistVal');
     if (label) label.textContent = _mapDistKm + ' KM';
-    updateRadiusCircle();   // moves the circle — pure canvas, very fast
+    updateRadiusCircle();
   });
-
-  /* Heavy work (filtering 100 k users) waits until dragging stops */
   _debouncedFilter();
 }
 
-/* ─────────────────────────────────────────────
-   LOCATE USER (GPS)
-───────────────────────────────────────────── */
 function locateUser() {
   const btn = document.getElementById('locate-me-btn');
   if (btn) { btn.style.color = '#22C55E'; btn.style.transform = 'scale(0.92)'; }
-
-  if (!navigator.geolocation) {
-    showToast('Geolocation is not supported by your browser.', 'info');
-    return;
-  }
-
+  if (!navigator.geolocation) { showToast('Geolocation not supported.', 'info'); return; }
   navigator.geolocation.getCurrentPosition(
     pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      _mapCentre = [lat, lng];
-
-      _map.flyTo([lat, lng], 14, { duration: 1.2 });
-
-      /* Place/update user dot */
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      _mapCentre = [lat, lng]; _map.flyTo([lat, lng], 14, { duration: 1.2 });
       if (_userMarker) _map.removeLayer(_userMarker);
-      _userMarker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          html:       '<div class="user-location-dot"></div>',
-          className:  '',
-          iconSize:   [16, 16],
-          iconAnchor: [8, 8],
-        }),
-        zIndexOffset: 1000,
-      }).addTo(_map);
-
-      updateRadiusCircle();
-      applyDistanceFilter();
-
+      _userMarker = L.marker([lat, lng], { icon: L.divIcon({ html:'<div class="user-location-dot"></div>', className:'', iconSize:[16,16], iconAnchor:[8,8] }), zIndexOffset:1000 }).addTo(_map);
+      updateRadiusCircle(); applyDistanceFilter();
       if (btn) { btn.style.color = 'var(--brand)'; btn.style.transform = ''; }
-
-      /* Persist lat/lng to the current user's Firestore doc */
       const user = auth.currentUser;
-      if (user) {
-        db.collection('users').doc(user.uid)
-          .update({ lat, lng })
-          .catch(e => console.warn('[GigsCourt] location save:', e));
-      }
+      if (user) db.collection('users').doc(user.uid).update({ lat, lng }).catch(()=>{});
     },
-    () => {
-      if (btn) { btn.style.color = 'var(--brand)'; btn.style.transform = ''; }
-      showToast('Could not get your location. Check browser permissions.', 'info');
-    },
+    () => { if (btn) { btn.style.color = 'var(--brand)'; btn.style.transform = ''; } showToast('Could not get your location.', 'info'); },
     { enableHighAccuracy: true, timeout: 8000 }
   );
 }
 
-/* ─────────────────────────────────────────────
-   NOMINATIM GEOCODER  (free, no API key)
-───────────────────────────────────────────── */
 function onGeocoderInput(val) {
   const clearBtn = document.getElementById('geocoder-clear-btn');
   if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
-
   if (_geocoderTimer) clearTimeout(_geocoderTimer);
   const results = document.getElementById('geocoder-results');
   if (!val || val.length < 3) { if (results) results.style.display = 'none'; return; }
@@ -2329,32 +1987,16 @@ async function nominatimSearch(query) {
   try {
     if (_geocoderAbort) _geocoderAbort.abort();
     _geocoderAbort = new AbortController();
-
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=0`;
-    const res  = await fetch(url, {
-      signal:  _geocoderAbort.signal,
-      headers: { 'Accept-Language': 'en' },
-    });
+    const res  = await fetch(url, { signal: _geocoderAbort.signal, headers: { 'Accept-Language':'en' } });
     const data = await res.json();
-
     if (!data.length) {
-      results.innerHTML = `<div class="geocoder-item" style="color:var(--text-muted)">
-        <i class="fa-solid fa-circle-info"></i><span>No results found</span></div>`;
-      results.style.display = 'block';
-      return;
+      results.innerHTML = `<div class="geocoder-item" style="color:var(--text-muted)"><i class="fa-solid fa-circle-info"></i><span>No results found</span></div>`;
+      results.style.display = 'block'; return;
     }
-
-    results.innerHTML = data.map(item => `
-      <div class="geocoder-item"
-        onclick="flyToResult(${item.lat},${item.lon},'${escHtml(item.display_name).replace(/'/g,'&#39;')}')">
-        <i class="fa-solid fa-location-dot"></i>
-        <span>${escHtml(item.display_name)}</span>
-      </div>`).join('');
+    results.innerHTML = data.map(item => `<div class="geocoder-item" onclick="flyToResult(${item.lat},${item.lon},'${escHtml(item.display_name).replace(/'/g,'&#39;')}')"><i class="fa-solid fa-location-dot"></i><span>${escHtml(item.display_name)}</span></div>`).join('');
     results.style.display = 'block';
-
-  } catch(e) {
-    if (e.name !== 'AbortError') console.warn('[GigsCourt] Nominatim:', e);
-  }
+  } catch(e) { if (e.name !== 'AbortError') console.warn('[GigsCourt] Nominatim:', e); }
 }
 
 function geocodeSearch() {
@@ -2367,69 +2009,34 @@ function flyToResult(lat, lng, label) {
   const input   = document.getElementById('geocoder-input');
   if (results) results.style.display = 'none';
   if (input)   input.value = String(label).split(',')[0].trim();
-
   _mapCentre = [parseFloat(lat), parseFloat(lng)];
   _map.flyTo(_mapCentre, 13, { duration: 1.4 });
   updateRadiusCircle();
-  /* filter fires via debounced moveend handler — no need to call manually */
 }
 
 function clearGeocoderInput() {
-  const input   = document.getElementById('geocoder-input');
-  const results = document.getElementById('geocoder-results');
-  const btn     = document.getElementById('geocoder-clear-btn');
-  if (input)   input.value = '';
-  if (results) results.style.display = 'none';
-  if (btn)     btn.style.display = 'none';
+  const input = document.getElementById('geocoder-input'), results = document.getElementById('geocoder-results'), btn = document.getElementById('geocoder-clear-btn');
+  if (input) input.value = ''; if (results) results.style.display = 'none'; if (btn) btn.style.display = 'none';
 }
 
-/* Dismiss dropdown on outside click */
 document.addEventListener('click', e => {
-  const results = document.getElementById('geocoder-results');
-  const input   = document.getElementById('geocoder-input');
-  if (results && !results.contains(e.target) && e.target !== input) {
-    results.style.display = 'none';
-  }
+  const results = document.getElementById('geocoder-results'), input = document.getElementById('geocoder-input');
+  if (results && !results.contains(e.target) && e.target !== input) results.style.display = 'none';
 });
 
-/* ─────────────────────────────────────────────
-   VIEW TALENT PROFILE FROM MAP POPUP
-───────────────────────────────────────────── */
-function viewTalentProfile(uid) {
-  if (_map) _map.closePopup();
-  const profileBtn = document.querySelector('.nav-btn[onclick*="profile"]');
-  showView('profile', profileBtn);
-  showToast('Full public profiles arrive in Step 5!', 'info', 3000);
-}
-
-/* ─────────────────────────────────────────────
-   HTML ESCAPE HELPER
-───────────────────────────────────────────── */
 function escHtml(str) {
   if (str == null) return '';
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* ─────────────────────────────────────────────
-   HOOK: initialise map when Search tab activates
-   Wraps the existing showView so nothing else changes.
-───────────────────────────────────────────── */
+/* Hook showView to init map */
 (function patchShowView() {
   const _orig = showView;
   window.showView = function(name, btn) {
     _orig(name, btn);
-    if (name === 'search') {
-      /*
-       * 80 ms lets the flexbox container finish painting
-       * before Leaflet measures it for tile requests.
-       * requestAnimationFrame alone isn't enough here because
-       * the view transition involves a CSS display change.
-       */
-      setTimeout(initMap, 80);
-    }
+    if (name === 'search') setTimeout(initMap, 80);
+    if (name === 'messages') renderChatList();
+    if (name === 'admin' && auth.currentUser?.email === ADMIN_EMAIL) loadAdminData();
   };
 })();
 </script>
