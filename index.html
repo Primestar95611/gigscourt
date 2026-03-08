@@ -1,13 +1,17 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>GigsCourt · loop</title>
+    <title>GigsCourt · soft premium</title>
     <!-- Firebase SDK (v9 modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -19,7 +23,7 @@
         }
 
         body {
-            background-color: #030303;
+            background-color: #0c0c10;
             color: #ffffff;
             min-height: 100vh;
             display: flex;
@@ -32,7 +36,7 @@
         #app {
             width: 100%;
             max-width: 430px;
-            background: #0A0A0B;
+            background: #121217;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -45,7 +49,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 0;
-            background: #0A0A0B;
+            background: #121217;
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -53,18 +57,18 @@
             display: none;
         }
 
-        /* bottom nav – blurred, deep */
+        /* bottom nav – frosted glass with central compass */
         .bottom-nav {
-            background: rgba(10, 10, 11, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,56,92,0.15);
+            background: rgba(18, 18, 23, 0.7);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 77, 109, 0.2);
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 12px 0 24px 0;
             margin: 0;
-            box-shadow: 0 -8px 30px rgba(0,0,0,0.7);
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.8);
             z-index: 10;
             position: relative;
         }
@@ -74,7 +78,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #6B6B70;
+            color: #6B6B78;
             font-size: 0.7rem;
             font-weight: 500;
             background: transparent;
@@ -89,98 +93,59 @@
         .nav-item i {
             font-size: 1.6rem;
             margin-bottom: 3px;
-            color: #6B6B70;
+            color: #6B6B78;
         }
 
         .nav-item.active {
-            color: #FF385C;
+            color: #FF4D6D;
         }
         .nav-item.active i {
-            color: #FF385C;
-            filter: drop-shadow(0 0 10px #FF385C);
+            color: #FF4D6D;
+            filter: drop-shadow(0 0 8px #FF4D6D);
         }
 
-        /* FLOATING ACTION BUTTON (central hub) */
-        .fab-hub {
+        /* Central compass button (glowing) */
+        .compass-btn {
             position: absolute;
-            bottom: 64px;
+            bottom: 54px;
             left: 50%;
             transform: translateX(-50%);
             width: 64px;
             height: 64px;
-            background: #FF385C;
+            background: #FF4D6D;
             border-radius: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 30px #FF385C, 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 0 30px #FF4D6D, 0 10px 30px rgba(0,0,0,0.8);
             border: 2px solid rgba(255,255,255,0.2);
             z-index: 20;
             cursor: pointer;
             transition: 0.2s;
         }
-        .fab-hub i {
-            font-size: 2rem;
+        .compass-btn i {
+            font-size: 2.2rem;
             color: white;
         }
-        .fab-hub:active {
+        .compass-btn:active {
             transform: translateX(-50%) scale(0.95);
         }
 
-        /* stories row */
-        .stories-row {
-            display: flex;
-            gap: 16px;
-            padding: 20px 20px 16px 20px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-        }
-        .stories-row::-webkit-scrollbar {
-            display: none;
-        }
-        .story-avatar {
-            width: 72px;
-            height: 72px;
-            border-radius: 36px;
-            background: linear-gradient(135deg, #FF385C, #FF1F4B, #FF385C);
-            padding: 3px;
-            box-shadow: 0 8px 20px rgba(255,56,92,0.3);
-        }
-        .story-inner {
-            width: 100%;
-            height: 100%;
-            border-radius: 36px;
-            background: #161618;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #FF385C;
-            border: 2px solid #0A0A0B;
-        }
-        .story-label {
-            font-size: 0.7rem;
-            color: #E4E4E7;
-            text-align: center;
-            margin-top: 6px;
-        }
-
-        /* DISCOVERY FEED – large immersive cards */
-        .discovery-feed {
+        /* LANDSCAPE FEED (16:9 cards) */
+        .landscape-feed {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            padding: 0 20px 30px 20px;
+            gap: 16px;
+            padding: 20px 16px 30px 16px;
         }
-        .immersive-card {
-            aspect-ratio: 4/5;
+        .landscape-card {
+            aspect-ratio: 16/9;
             width: 100%;
-            border-radius: 24px;
+            border-radius: 28px;
             overflow: hidden;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-            background: #161618;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            background: #1E1E26;
         }
         .card-bg {
             position: absolute;
@@ -196,12 +161,12 @@
             left: 0;
             right: 0;
             height: 60%;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
             pointer-events: none;
         }
         .card-content {
             position: absolute;
-            bottom: 20px;
+            bottom: 16px;
             left: 20px;
             right: 20px;
             z-index: 2;
@@ -214,27 +179,117 @@
         }
         .card-category {
             font-size: 1rem;
-            color: #FF385C;
+            color: #FF4D6D;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
-        .premium-star {
-            background: rgba(255,56,92,0.2);
-            backdrop-filter: blur(4px);
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            color: #FF385C;
-            border: 1px solid #FF385C40;
+        .premium-badge-card {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,77,109,0.2);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #FF4D6D;
+            border: 1px solid #FF4D6D40;
+            z-index: 3;
         }
-        .premium-star i {
+        .premium-badge-card i {
             margin-right: 4px;
         }
 
-        /* Profile cover & grid */
+        /* SEARCH MAP ENGINE */
+        .map-container {
+            height: 240px;
+            width: 100%;
+            background: #1E1E26;
+            border-radius: 0 0 28px 28px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #1a1a24;
+        }
+        .radius-slider-container {
+            padding: 24px 20px 16px 20px;
+            background: #121217;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: #9A9AA5;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        .slider-label span i {
+            color: #FF4D6D;
+            margin-right: 4px;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #2A2A33;
+            border-radius: 10px;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #FF4D6D;
+            border-radius: 12px;
+            box-shadow: 0 0 15px #FF4D6D;
+            border: 2px solid white;
+            cursor: pointer;
+            margin-top: -8px;
+        }
+        .nearby-list {
+            padding: 0 20px 30px 20px;
+        }
+        .nearby-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid #26262E;
+        }
+        .nearby-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: #1E1E26;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #FF4D6D;
+            border: 2px solid #FF4D6D40;
+        }
+        .nearby-info h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .nearby-info p {
+            color: #9A9AA5;
+            font-size: 0.85rem;
+        }
+        .nearby-distance {
+            margin-left: auto;
+            color: #FF4D6D;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* PROFILE – cinematic cover + 3‑col grid with 2px gap */
         .profile-header {
             position: relative;
             width: 100%;
@@ -242,10 +297,10 @@
         .cover-photo {
             width: 100%;
             height: 160px;
-            background: linear-gradient(135deg, #1E1E20, #2A2A2E);
+            background: linear-gradient(135deg, #1E1E26, #2A2A33);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
         }
         .cover-photo img {
             width: 100%;
@@ -257,8 +312,8 @@
             bottom: 16px;
             right: 16px;
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            border: 1px solid #FF385C40;
+            backdrop-filter: blur(10px);
+            border: 1px solid #FF4D6D40;
             width: 40px;
             height: 40px;
             border-radius: 20px;
@@ -282,9 +337,9 @@
             width: 96px;
             height: 96px;
             border-radius: 48px;
-            background: #1E1E20;
-            border: 4px solid #FF385C;
-            box-shadow: 0 0 0 4px #0A0A0B, 0 10px 30px rgba(255,56,92,0.5);
+            background: #1E1E26;
+            border: 3px solid #FF4D6D;
+            box-shadow: 0 0 0 4px #121217, 0 10px 30px rgba(255,77,109,0.6);
             overflow: hidden;
         }
         .profile-avatar img {
@@ -294,8 +349,8 @@
         }
         .avatar-upload-btn {
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            border: 1px solid #FF385C40;
+            backdrop-filter: blur(10px);
+            border: 1px solid #FF4D6D40;
             width: 36px;
             height: 36px;
             border-radius: 18px;
@@ -310,8 +365,8 @@
             display: flex;
             gap: 32px;
             padding: 16px 20px;
-            border-bottom: 1px solid #242426;
-            background: rgba(22,22,24,0.5);
+            border-bottom: 1px solid #26262E;
+            background: rgba(22,22,28,0.5);
             backdrop-filter: blur(8px);
             margin-top: 8px;
         }
@@ -324,20 +379,20 @@
         }
         .stat-label {
             font-size: 0.8rem;
-            color: #8E8E93;
+            color: #9A9AA5;
         }
 
-        /* 3‑column tight grid (zero gap) */
+        /* 3‑column grid with 2px gaps (rose accents) */
         .portfolio-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0;
-            background: #0A0A0B;
-            padding: 0;
+            gap: 2px;
+            background: #121217;
+            padding: 2px 0;
         }
         .grid-item {
             aspect-ratio: 1/1;
-            background: #161618;
+            background: #1E1E26;
             overflow: hidden;
             position: relative;
             cursor: pointer;
@@ -349,17 +404,13 @@
         }
         .grid-item .overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,56,92,0.1);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,77,109,0.1);
             backdrop-filter: blur(2px);
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.2s;
         }
         .grid-item:hover .overlay {
             opacity: 1;
@@ -374,20 +425,19 @@
             align-items: center;
             gap: 12px;
             padding: 16px 0;
-            border-bottom: 1px solid #242426;
+            border-bottom: 1px solid #26262E;
         }
         .message-avatar {
             width: 56px;
             height: 56px;
             border-radius: 28px;
-            background: #161618;
+            background: #1E1E26;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: #FF385C;
+            color: #FF4D6D;
             position: relative;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
         .notification-dot {
             position: absolute;
@@ -395,176 +445,79 @@
             right: 2px;
             width: 12px;
             height: 12px;
-            background: #FF385C;
+            background: #FF4D6D;
             border-radius: 6px;
-            border: 2px solid #0A0A0B;
+            border: 2px solid #121217;
         }
-        .message-content {
-            flex: 1;
-        }
+        .message-content { flex:1; }
         .message-header {
             display: flex;
             justify-content: space-between;
             margin-bottom: 4px;
         }
-        .message-name {
-            font-weight: 600;
-        }
-        .message-time {
-            font-size: 0.75rem;
-            color: #8E8E93;
-        }
+        .message-name { font-weight: 600; }
+        .message-time { font-size:0.75rem; color:#9A9AA5; }
         .message-preview {
-            color: #8E8E93;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            color:#9A9AA5; font-size:0.85rem;
+            display:flex; align-items:center; gap:4px;
         }
 
-        /* Edit profile form (blend) */
-        .edit-profile-form {
-            padding: 20px;
-        }
-        .form-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-        .form-header h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-        .edit-icon {
-            color: #FF385C;
-            font-size: 1.2rem;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            color: #8E8E93;
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-            display: block;
-        }
+        /* edit profile */
+        .edit-profile-form { padding:20px; }
+        .form-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+        .form-header h3 { font-size:1.3rem; font-weight:600; }
+        .edit-icon { color:#FF4D6D; font-size:1.2rem; }
+        .form-group { margin-bottom:20px; }
+        .form-group label { color:#9A9AA5; font-size:0.85rem; margin-bottom:8px; display:block; }
         .form-control {
-            width: 100%;
-            padding: 16px 18px;
-            background: #161618;
-            border: 1px solid #242426;
-            border-radius: 24px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            width:100%; padding:16px 18px; background:#1E1E26;
+            border:1px solid #2E2E38; border-radius:28px; color:white;
+            font-size:1rem; outline:none; box-shadow:0 8px 20px rgba(0,0,0,0.5);
         }
-        .form-control:focus {
-            border-color: #FF385C;
-            box-shadow: 0 0 0 3px #FF385C30;
-        }
+        .form-control:focus { border-color:#FF4D6D; box-shadow:0 0 0 3px #FF4D6D30; }
         select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF385C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF4D6D' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 1rem center;
         }
         .btn {
-            background: #FF385C;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 16px 20px;
-            font-weight: 600;
-            font-size: 1rem;
-            width: 100%;
-            margin: 8px 0;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255,56,92,0.3);
-            transition: 0.2s;
+            background:#FF4D6D; color:white; border:none; border-radius:40px;
+            padding:16px 20px; font-weight:600; font-size:1rem; width:100%;
+            margin:8px 0; cursor:pointer; box-shadow:0 10px 25px rgba(255,77,109,0.3);
         }
-        .btn:active {
-            transform: scale(0.97);
-        }
-        .btn-secondary {
-            background: #161618;
-            border: 1px solid #242426;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        }
-        .btn-secondary i {
-            color: #FF385C;
-            margin-right: 8px;
-        }
+        .btn:active { transform:scale(0.97); }
+        .btn-secondary { background:#1E1E26; border:1px solid #2E2E38; }
+        .btn-secondary i { color:#FF4D6D; margin-right:8px; }
 
         /* auth overlay */
         .auth-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-            visibility: hidden;
-            opacity: 0;
-            transition: 0.2s;
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.95); backdrop-filter:blur(25px);
+            display:flex; align-items:center; justify-content:center;
+            z-index:1000; padding:20px; visibility:hidden; opacity:0;
+            transition:0.2s;
         }
-        .auth-overlay.show {
-            visibility: visible;
-            opacity: 1;
-        }
+        .auth-overlay.show { visibility:visible; opacity:1; }
         .auth-card {
-            background: #161618;
-            max-width: 420px;
-            width: 100%;
-            border-radius: 40px;
-            padding: 32px 24px;
-            border: 1px solid #242426;
-            box-shadow: 0 30px 60px rgba(255,56,92,0.3);
+            background:#1E1E26; max-width:420px; width:100%;
+            border-radius:48px; padding:32px 24px; border:1px solid #2E2E38;
+            box-shadow:0 30px 60px rgba(255,77,109,0.3);
         }
-        .close-auth {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 2rem;
-            float: right;
-            cursor: pointer;
-        }
+        .close-auth { background:none; border:none; color:#fff; font-size:2rem; float:right; cursor:pointer; }
         .input-field {
-            background: #0A0A0B;
-            border: 1px solid #242426;
-            border-radius: 30px;
-            padding: 16px 22px;
-            width: 100%;
-            color: white;
-            font-size: 1rem;
-            margin: 8px 0;
-            outline: none;
+            background:#121217; border:1px solid #2E2E38; border-radius:40px;
+            padding:16px 22px; width:100%; color:white; font-size:1rem; margin:8px 0;
+            outline:none;
         }
-        .input-field:focus {
-            border-color: #FF385C;
-        }
-
-        .text-small { color: #8E8E93; font-size:0.85rem; }
-        .premium-badge-top {
-            background: linear-gradient(135deg, #FF385C, #FF1F4B);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            box-shadow: 0 8px 20px #FF385C;
-        }
+        .input-field:focus { border-color:#FF4D6D; }
+        .text-small { color:#9A9AA5; font-size:0.85rem; }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="panel"></div>
 
-        <!-- bottom nav with FAB integrated -->
+        <!-- bottom nav with central compass -->
         <div style="position:relative;">
             <div class="bottom-nav" id="bottomNav">
                 <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
@@ -572,26 +525,24 @@
                 <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
                 <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
             </div>
-            <div class="fab-hub" id="fabHub"><i class="fas fa-compass"></i></div>
+            <div class="compass-btn" id="compassBtn"><i class="fas fa-compass"></i></div>
         </div>
     </div>
 
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
             <button class="close-auth" id="closeAuthBtn">&times;</button>
-            <h2 style="color:white;"><i class="fa-regular fa-gem" style="color:#FF385C;"></i> GigsCourt</h2>
-            <p class="text-small mb-2">sign in to the loop</p>
-            <div class="input-group">
-                <input type="email" id="authEmail" class="input-field" placeholder="Email">
-                <input type="password" id="authPassword" class="input-field" placeholder="Password">
-            </div>
+            <h2 style="color:white;"><i class="fa-regular fa-gem" style="color:#FF4D6D;"></i> GigsCourt</h2>
+            <p class="text-small mb-2">soft premium loop</p>
+            <div><input type="email" id="authEmail" class="input-field" placeholder="Email"></div>
+            <div><input type="password" id="authPassword" class="input-field" placeholder="Password"></div>
             <button class="btn" id="authPrimaryBtn">Login</button>
             <button class="btn btn-secondary" id="googleSignInBtn"><i class="fab fa-google"></i> Continue with Google</button>
             <div style="text-align:center; margin-top:20px;">
-                <span id="authToggleText" style="color:#8E8E93;">Don't have an account?</span>
-                <button id="authToggleBtn" style="background:none; border:none; color:#FF385C; font-weight:600; cursor:pointer;">Sign up</button>
+                <span id="authToggleText" style="color:#9A9AA5;">Don't have an account?</span>
+                <button id="authToggleBtn" style="background:none; border:none; color:#FF4D6D; font-weight:600; cursor:pointer;">Sign up</button>
             </div>
-            <p id="authMessage" style="color:#FF385C; font-size:0.8rem; margin-top:12px;"></p>
+            <p id="authMessage" style="color:#FF4D6D; font-size:0.8rem; margin-top:12px;"></p>
         </div>
     </div>
 
@@ -640,7 +591,7 @@
         const authToggleBtn = document.getElementById('authToggleBtn');
         const authToggleText = document.getElementById('authToggleText');
         const authMessage = document.getElementById('authMessage');
-        const fabHub = document.getElementById('fabHub');
+        const compassBtn = document.getElementById('compassBtn');
 
         const tabHome = document.getElementById('tabHome');
         const tabSearch = document.getElementById('tabSearch');
@@ -652,6 +603,8 @@
         let currentUser = null;
         let currentTab = 'home';
         let userProfileData = {};
+        let mapInitialized = false;
+        let map, radiusSlider;
 
         async function loadUserProfile(uid) {
             try {
@@ -685,87 +638,81 @@
             return data.secure_url;
         }
 
+        function initMap() {
+            if (!mapInitialized && document.getElementById('map')) {
+                map = L.map('map').setView([40.7128, -74.0060], 12);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap, CartoDB',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(map);
+                mapInitialized = true;
+            }
+        }
+
         function renderPanel(tabId) {
             if (tabId === 'home') {
                 panel.innerHTML = `
-                    <div class="stories-row">
-                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-plus"></i></div></div><div class="story-label">your story</div></div>
-                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-user-tie"></i></div></div><div class="story-label">aisha</div></div>
-                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-laptop-code"></i></div></div><div class="story-label">marcus</div></div>
-                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-megaphone"></i></div></div><div class="story-label">elena</div></div>
-                        <div><div class="story-avatar"><div class="story-inner"><i class="fas fa-paint-brush"></i></div></div><div class="story-label">clara</div></div>
-                    </div>
-                    <div class="discovery-feed">
-                        <div class="immersive-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format" alt="talent">
+                    <div class="landscape-feed">
+                        <div class="landscape-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format" alt="talent">
                             <div class="card-gradient"></div>
+                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
                                 <div class="card-name">Aisha Karim</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> Full‑stack · AI <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> Full‑stack · AI</div>
                             </div>
                         </div>
-                        <div class="immersive-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format" alt="talent">
+                        <div class="landscape-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&auto=format" alt="talent">
                             <div class="card-gradient"></div>
+                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
                                 <div class="card-name">Marcus V.</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> UX / product <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> UX / product</div>
                             </div>
                         </div>
-                        <div class="immersive-card">
-                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=500&auto=format" alt="talent">
+                        <div class="landscape-card">
+                            <img class="card-bg" src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f9e?w=600&auto=format" alt="talent">
                             <div class="card-gradient"></div>
+                            <div class="premium-badge-card"><i class="fas fa-crown"></i> PREMIUM</div>
                             <div class="card-content">
                                 <div class="card-name">Elena Rossi</div>
-                                <div class="card-category"><i class="fas fa-bolt"></i> growth marketing <span class="premium-star"><i class="fas fa-crown"></i> PREMIUM</span></div>
+                                <div class="card-category"><i class="fas fa-bolt"></i> growth marketing</div>
                             </div>
                         </div>
                     </div>
                 `;
             } else if (tabId === 'search') {
                 panel.innerHTML = `
-                    <div style="padding:20px;">
-                        <div style="background:#161618; border-radius:40px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-                            <p style="display:flex; gap:12px; flex-wrap:wrap;">
-                                <span class="premium-star"><i class="fas fa-fire"></i> trending</span>
-                                <span class="premium-star"><i class="fas fa-map-pin"></i> nearby</span>
-                                <span class="premium-star"><i class="fas fa-clock"></i> available</span>
-                            </p>
-                            <div class="immersive-card" style="margin-top:20px;">
-                                <img class="card-bg" src="https://images.unsplash.com/photo-1531482615715-2afd1c86630f?w=500&auto=format">
-                                <div class="card-gradient"></div>
-                                <div class="card-content">
-                                    <div class="card-name">Reyansh I.</div>
-                                    <div class="card-category">react · node · firebase</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="map-container"><div id="map"></div></div>
+                    <div class="radius-slider-container">
+                        <div class="slider-label"><span><i class="fas fa-location-dot"></i> radius</span><span id="radiusValue">25 km</span></div>
+                        <input type="range" id="radiusSlider" min="0" max="50" value="25" step="1">
+                    </div>
+                    <div class="nearby-list" id="nearbyList">
+                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-user-tie"></i></div><div class="nearby-info"><h4>Aisha Karim</h4><p>Full‑stack · AI</p></div><div class="nearby-distance">2 km</div></div>
+                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-laptop-code"></i></div><div class="nearby-info"><h4>Marcus V.</h4><p>UX / product</p></div><div class="nearby-distance">5 km</div></div>
+                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-megaphone"></i></div><div class="nearby-info"><h4>Elena Rossi</h4><p>growth marketing</p></div><div class="nearby-distance">12 km</div></div>
+                        <div class="nearby-item"><div class="nearby-avatar"><i class="fas fa-code"></i></div><div class="nearby-info"><h4>Reyansh I.</h4><p>react · node</p></div><div class="nearby-distance">18 km</div></div>
                     </div>
                 `;
+                setTimeout(() => {
+                    initMap();
+                    const slider = document.getElementById('radiusSlider');
+                    const valSpan = document.getElementById('radiusValue');
+                    if (slider) {
+                        slider.addEventListener('input', (e) => {
+                            valSpan.innerText = e.target.value + ' km';
+                        });
+                    }
+                }, 50);
             } else if (tabId === 'messages') {
                 panel.innerHTML = `
                     <div class="inbox-list">
-                        <div class="message-item">
-                            <div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div>
-                            <div class="message-content">
-                                <div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div>
-                                <div class="message-preview"><i class="fas fa-circle" style="color:#FF385C; font-size:6px;"></i> RE: proposal · Looking forward</div>
-                            </div>
-                        </div>
-                        <div class="message-item">
-                            <div class="message-avatar"><i class="fas fa-user-circle"></i></div>
-                            <div class="message-content">
-                                <div class="message-header"><span class="message-name">Talent team</span><span class="message-time">5h ago</span></div>
-                                <div class="message-preview">welcome to gigscourt · Complete your profile</div>
-                            </div>
-                        </div>
-                        <div class="message-item">
-                            <div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div>
-                            <div class="message-content">
-                                <div class="message-header"><span class="message-name">Support</span><span class="message-time">1d ago</span></div>
-                                <div class="message-preview">your verification ✅ · Account verified</div>
-                            </div>
-                        </div>
+                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Alex Rivera</span><span class="message-time">2h ago</span></div><div class="message-preview"><i class="fas fa-circle" style="color:#FF4D6D; font-size:6px;"></i> RE: proposal · Looking forward</div></div></div>
+                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i></div><div class="message-content"><div class="message-header"><span class="message-name">Talent team</span><span class="message-time">5h ago</span></div><div class="message-preview">welcome to gigscourt · Complete your profile</div></div></div>
+                        <div class="message-item"><div class="message-avatar"><i class="fas fa-user-circle"></i><span class="notification-dot"></span></div><div class="message-content"><div class="message-header"><span class="message-name">Support</span><span class="message-time">1d ago</span></div><div class="message-preview">your verification ✅ · Account verified</div></div></div>
                     </div>
                 `;
             } else if (tabId === 'profile') {
@@ -773,7 +720,7 @@
                     loadUserProfile(currentUser.uid).then(() => renderProfileEditor());
                     renderProfileEditor();
                 } else {
-                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#FF385C40;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
+                    panel.innerHTML = `<div style="padding:40px; text-align:center;"><i class="fas fa-user-circle" style="font-size:5rem; color:#FF4D6D40;"></i><h3 style="margin:20px 0;">sign in</h3><button class="btn" id="showAuthFromProfile">Login / Sign up</button></div>`;
                     document.getElementById('showAuthFromProfile')?.addEventListener('click',()=> overlay.classList.add('show'));
                 }
             }
@@ -785,9 +732,9 @@
                 <div class="profile-header">
                     <div class="cover-photo" id="coverPreview">${data.coverUrl ? `<img src="${data.coverUrl}">` : ''}<input type="file" id="coverUpload" accept="image/*" style="display:none;"><div class="cover-upload-btn" id="uploadCoverBtn"><i class="fas fa-camera"></i></div></div>
                     <div class="profile-avatar-section">
-                        <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#FF385C;"></i>'}</div>
+                        <div class="profile-avatar" id="avatarPreview">${data.avatarUrl ? `<img src="${data.avatarUrl}">` : '<i class="fas fa-user" style="font-size:3rem; line-height:96px; width:100%; text-align:center; color:#FF4D6D;"></i>'}</div>
                         <input type="file" id="avatarUpload" accept="image/*" style="display:none;"><div class="avatar-upload-btn" id="uploadAvatarBtn"><i class="fas fa-camera"></i></div>
-                        <div class="premium-badge-top"><i class="fas fa-crown"></i> PREMIUM</div>
+                        <div class="premium-badge-card" style="position:static; margin-bottom:8px;"><i class="fas fa-crown"></i> PREMIUM</div>
                     </div>
                     <div class="profile-stats"><div class="stat-item"><div class="stat-value">48</div><div class="stat-label">gigs</div></div><div class="stat-item"><div class="stat-value">12</div><div class="stat-label">clients</div></div><div class="stat-item"><div class="stat-value">4.9</div><div class="stat-label">rating</div></div></div>
                 </div>
@@ -808,7 +755,6 @@
 
             document.getElementById('uploadCoverBtn')?.addEventListener('click', ()=>document.getElementById('coverUpload')?.click());
             document.getElementById('uploadAvatarBtn')?.addEventListener('click', ()=>document.getElementById('avatarUpload')?.click());
-
             document.getElementById('coverUpload')?.addEventListener('change', async (e) => {
                 const file = e.target.files?.[0]; if(!file||!currentUser) return;
                 const url = await uploadToCloudinary(file); await saveUserProfile(currentUser.uid,{coverUrl:url});
@@ -844,7 +790,7 @@
         tabSearch.addEventListener('click', (e) => { e.preventDefault(); currentTab='search'; setActiveTab('search'); renderPanel('search'); });
         tabMessages.addEventListener('click', (e) => { e.preventDefault(); currentTab='messages'; setActiveTab('messages'); renderPanel('messages'); });
         tabProfile.addEventListener('click', (e) => { e.preventDefault(); currentTab='profile'; setActiveTab('profile'); renderPanel('profile'); });
-        fabHub.addEventListener('click', () => { currentTab='home'; setActiveTab('home'); renderPanel('home'); });
+        compassBtn.addEventListener('click', () => { currentTab='home'; setActiveTab('home'); renderPanel('home'); });
 
         function setAuthMode(mode) {
             currentAuthMode = mode; authPrimaryBtn.innerText = mode==='login'? 'Login' : 'Sign up';
