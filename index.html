@@ -1,93 +1,682 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>GigsCourt — Book Elite Talent</title>
-  
-  <!-- External resources -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>GigsCourt · premium talent</title>
+    <!-- Firebase SDK (v9 modular) -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <!-- Font Awesome 6 (free icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* RESET + GLOBAL DARK THEME — Action Red #FF385C */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0b0b0b;
+            color: #e8e8e8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0 60px 0; /* space for bottom nav */
+            margin: 0;
+        }
+
+        /* main app container – hidden until UI is ready (no flash) */
+        #app {
+            width: 100%;
+            max-width: 480px;   /* mobile-first, premium card width */
+            background: #121212;
+            border-radius: 36px 36px 24px 24px;
+            box-shadow: 0 25px 50px -8px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,55,92,0.15);
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            margin: 16px auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 680px;
+            position: relative;
+        }
+
+        /* header area with brand */
+        .gc-header {
+            padding: 24px 24px 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #121212;
+            border-bottom: 1px solid #252525;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #ccc 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo span {
+            color: #FF385C;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            font-weight: 800;
+        }
+
+        .chip-badge {
+            background: #1e1e1e;
+            padding: 8px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid #2a2a2a;
+            color: #ccc;
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.02);
+        }
+        .chip-badge i {
+            color: #FF385C;
+            margin-right: 4px;
+        }
+
+        /* main dynamic panel (tabs content) */
+        #panel {
+            flex: 1;
+            padding: 18px 18px 12px 18px;
+            background: #0f0f0f;
+            transition: all 0.2s ease;
+            overflow-y: auto;
+        }
+
+        /* bottom tab bar — premium glass */
+        .bottom-nav {
+            background: rgba(18, 18, 18, 0.94);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0 18px 0;
+            margin: 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.8);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #8a8a8a;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.1s;
+            background: transparent;
+            border: none;
+            width: 22%;
+            padding: 6px 0 4px 0;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .nav-item i {
+            font-size: 1.6rem;
+            margin-bottom: 3px;
+            color: #a0a0a0;
+        }
+
+        .nav-item.active {
+            color: #FF385C;
+        }
+        .nav-item.active i {
+            color: #FF385C;
+            text-shadow: 0 0 8px rgba(255,56,92,0.4);
+        }
+
+        /* cards & typography */
+        .section-title {
+            font-weight: 600;
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .talent-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .talent-card {
+            background: #1a1a1a;
+            border-radius: 28px;
+            padding: 16px 18px;
+            border: 1px solid #272727;
+            box-shadow: 0 8px 0 #0a0a0a;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar-preview {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(145deg, #282828, #1c1c1c);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            border: 2px solid #FF385C30;
+            color: #FF385C;
+        }
+
+        .card-info h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .card-info p {
+            color: #aaa;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .badge-red {
+            background: #FF385C20;
+            color: #FF385C;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid #FF385C40;
+        }
+
+        /* auth overlay (modal style) */
+        .auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s ease;
+        }
+        .auth-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .auth-card {
+            background: #161616;
+            max-width: 420px;
+            width: 100%;
+            border-radius: 48px;
+            padding: 32px 24px;
+            border: 1px solid #2d2d2d;
+            box-shadow: 0 30px 60px rgba(255,56,92,0.2);
+        }
+        .auth-card h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .auth-card h2 i {
+            color: #FF385C;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .input-field {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 30px;
+            padding: 16px 22px;
+            width: 100%;
+            color: white;
+            font-size: 1rem;
+            margin: 8px 0;
+            outline: none;
+            transition: 0.15s;
+        }
+        .input-field:focus {
+            border-color: #FF385C;
+            box-shadow: 0 0 0 2px #FF385C30;
+        }
+        .btn {
+            background: #FF385C;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            margin: 12px 0 8px 0;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #a0203a;
+            transition: 0.1s ease;
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #a0203a;
+        }
+        .btn-google {
+            background: #2a2a2a;
+            box-shadow: 0 6px 0 #151515;
+            color: #eee;
+            border: 1px solid #3d3d3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .btn-google i {
+            color: #FF385C;
+            font-size: 1.3rem;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: #aaa;
+        }
+        .auth-toggle button {
+            background: none;
+            border: none;
+            color: #FF385C;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .close-auth {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            float: right;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        /* profile stub */
+        .profile-stub {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #181818;
+            border-radius: 36px;
+            padding: 28px;
+            border: 1px solid #FF385C20;
+        }
+        .profile-stub i {
+            font-size: 4rem;
+            color: #FF385C;
+            opacity: 0.8;
+            margin-bottom: 16px;
+        }
+
+        /* utility */
+        .text-small { color: #aaa; font-size:0.9rem; }
+        .mt-4 { margin-top:24px; }
+        .mb-2 { margin-bottom:8px; }
+        hr { border: 0.5px solid #262626; margin: 18px 0; }
+    </style>
 </head>
 <body>
-  <!-- Toast -->
-  <div id="toast">
-    <i id="toast-icon" class="fa-solid fa-circle-exclamation"></i>
-    <span id="toast-msg"></span>
-  </div>
+    <div id="app">
+        <!-- fixed header -->
+        <div class="gc-header">
+            <div class="logo">GIGS<span>COURT</span></div>
+            <div class="chip-badge"><i class="fa-regular fa-star"></i> PREMIUM</div>
+        </div>
 
-  <!-- Chat Window -->
-  <div id="chat-window">
-    <!-- Chat header content same as original -->
-  </div>
+        <!-- dynamic content panel (home / search / messages / profile) -->
+        <div id="panel">
+            <!-- JS will inject content based on active tab -->
+        </div>
 
-  <!-- Auth Overlay -->
-  <div id="auth-overlay">
-    <!-- Auth content same as original -->
-  </div>
-
-  <!-- Main App -->
-  <div id="app">
-    <!-- Home View -->
-    <div id="view-home" class="view active">
-      <!-- Home content same as original -->
+        <!-- bottom navigation with real click handlers (guardrail) -->
+        <div class="bottom-nav" id="bottomNav">
+            <button class="nav-item" data-tab="home" id="tabHome"><i class="fas fa-home"></i><span>Home</span></button>
+            <button class="nav-item" data-tab="search" id="tabSearch"><i class="fas fa-search"></i><span>Search</span></button>
+            <button class="nav-item" data-tab="messages" id="tabMessages"><i class="fas fa-envelope"></i><span>Messages</span></button>
+            <button class="nav-item" data-tab="profile" id="tabProfile"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+        </div>
     </div>
 
-    <!-- Search/Map View -->
-    <div id="view-search" class="view">
-      <!-- Search content same as original -->
+    <!-- AUTH OVERLAY (clean login/signup) -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <button class="close-auth" id="closeAuthBtn">&times;</button>
+            <h2><i class="fa-regular fa-gem"></i> GigsCourt</h2>
+            <p class="text-small mb-2">Sign in to book premium talent</p>
+            <div id="authEmailPassContainer">
+                <div class="input-group">
+                    <input type="email" id="authEmail" class="input-field" placeholder="Email" autocomplete="email">
+                    <input type="password" id="authPassword" class="input-field" placeholder="Password" autocomplete="current-password">
+                </div>
+                <button class="btn" id="authPrimaryBtn">Login</button>
+                <button class="btn btn-google" id="googleSignInBtn"><i class="fab fa-google"></i> Continue with Google</button>
+            </div>
+            <div class="auth-toggle">
+                <span id="authToggleText">Don't have an account?</span>
+                <button id="authToggleBtn">Sign up</button>
+            </div>
+            <p id="authMessage" style="color:#FF385C; font-size:0.8rem; margin-top:12px;"></p>
+        </div>
     </div>
 
-    <!-- Messages View -->
-    <div id="view-messages" class="view">
-      <!-- Messages content same as original -->
-    </div>
+    <script type="module">
+        // ---------- FIREBASE INIT (v9 modular) ----------
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            onAuthStateChanged,
+            signOut
+        } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
 
-    <!-- Profile View -->
-    <div id="view-profile" class="view">
-      <!-- Profile content same as original -->
-    </div>
+        const firebaseConfig = {
+            apiKey: 'AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg',
+            authDomain: 'gigscourt.firebaseapp.com',
+            projectId: 'gigscourt',
+            storageBucket: 'gigscourt.firebasestorage.app',
+            appId: '1:1055157379736:web:215763c63606c2c5a966ed'
+        };
 
-    <!-- Admin View -->
-    <div id="view-admin" class="view">
-      <!-- Admin content same as original -->
-    </div>
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-    <!-- Bottom Nav -->
-    <nav id="bottom-nav">
-      <!-- Nav buttons same as original -->
-    </nav>
-  </div>
+        // ---------- DOM ELEMENTS ----------
+        const panel = document.getElementById('panel');
+        const overlay = document.getElementById('authOverlay');
+        const closeAuthBtn = document.getElementById('closeAuthBtn');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authPrimaryBtn = document.getElementById('authPrimaryBtn');
+        const googleBtn = document.getElementById('googleSignInBtn');
+        const authToggleBtn = document.getElementById('authToggleBtn');
+        const authToggleText = document.getElementById('authToggleText');
+        const authMessage = document.getElementById('authMessage');
 
-  <!-- Scripts -->
-  <script src="firebaseConfig.js"></script>
-  <script src="auth.js"></script>
-  <script src="mapComponent.js"></script>
-  <script src="messages.js"></script>
-  <script src="profile.js"></script>
-  <script src="admin.js"></script>
-  <script src="app.js?v=2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vconsole"></script>
-<script>
-  var vConsole = new VConsole();
-</script>
-  <script>
-  // Wait for everything to load
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, app starting...');
-  });
-</script>
+        // tab buttons
+        const tabHome = document.getElementById('tabHome');
+        const tabSearch = document.getElementById('tabSearch');
+        const tabMessages = document.getElementById('tabMessages');
+        const tabProfile = document.getElementById('tabProfile');
+        const navItems = [tabHome, tabSearch, tabMessages, tabProfile];
+
+        // state
+        let currentAuthMode = 'login'; // 'login' or 'signup'
+        let currentUser = null;
+
+        // ---------- HELPER: render panel based on active tab + user state----------
+        function renderPanel(tabId) {
+            if (!panel) return;
+            // if profile tab and no user → show auth overlay instead of stub? we show stub with login CTA.
+            let content = '';
+
+            if (tabId === 'home') {
+                content = `
+                    <div class="section-title">Featured talent <span style="color:#FF385C;">· near you</span></div>
+                    <div class="talent-grid">
+                        <div class="talent-card">
+                            <div class="avatar-preview"><i class="fas fa-user-tie"></i></div>
+                            <div class="card-info">
+                                <h4>Aisha Karim</h4>
+                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> Full‑stack · AI</p>
+                                <span class="badge-red">available now</span>
+                            </div>
+                        </div>
+                        <div class="talent-card">
+                            <div class="avatar-preview"><i class="fas fa-laptop-code"></i></div>
+                            <div class="card-info">
+                                <h4>Marcus V.</h4>
+                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> UX / product</p>
+                                <span class="badge-red">top rated</span>
+                            </div>
+                        </div>
+                        <div class="talent-card">
+                            <div class="avatar-preview"><i class="fas fa-megaphone"></i></div>
+                            <div class="card-info">
+                                <h4>Elena Rossi</h4>
+                                <p><i class="fas fa-bolt" style="color:#FF385C;"></i> growth marketing</p>
+                                <span class="badge-red">book today</span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="text-small"><i class="fa-regular fa-clock"></i> 500+ vetted pros · instant booking</p>
+                `;
+            } else if (tabId === 'search') {
+                content = `
+                    <div class="section-title"><i class="fas fa-sliders-h" style="color:#FF385C;"></i> refine</div>
+                    <div style="background:#1d1d1d; border-radius:40px; padding:20px;">
+                        <p style="display:flex; gap:10px; flex-wrap:wrap;"><span class="badge-red">frontend</span><span class="badge-red">backend</span><span class="badge-red">mobile</span></p>
+                        <p style="color:#bbb; margin-top:30px;"><i class="fas fa-search" style="color:#FF385C;"></i> 200+ results</p>
+                        <div class="talent-card" style="margin-top:12px;">
+                            <div class="avatar-preview"><i class="fas fa-code"></i></div>
+                            <div class="card-info"><h4>Reyansh I.</h4><p>react · node · firebase</p></div>
+                        </div>
+                        <div class="talent-card">
+                            <div class="avatar-preview"><i class="fas fa-paint-brush"></i></div>
+                            <div class="card-info"><h4>Clara W.</h4><p>UI/UX · design sys</p></div>
+                        </div>
+                    </div>
+                `;
+            } else if (tabId === 'messages') {
+                content = `
+                    <div class="section-title">inbox <i class="fas fa-chevron-right" style="color:#FF385C;"></i></div>
+                    <div class="talent-card">
+                        <div class="avatar-preview"><i class="fas fa-user-circle"></i></div>
+                        <div class="card-info"><h4>Alex Rivera</h4><p>RE: proposal · 2h ago</p></div>
+                    </div>
+                    <div class="talent-card">
+                        <div class="avatar-preview"><i class="fas fa-user-circle"></i></div>
+                        <div class="card-info"><h4>Talent team</h4><p>welcome to gigscourt</p></div>
+                    </div>
+                    <div class="talent-card">
+                        <div class="avatar-preview"><i class="fas fa-user-circle"></i></div>
+                        <div class="card-info"><h4>Support</h4><p>your verification ✅</p></div>
+                    </div>
+                `;
+            } else if (tabId === 'profile') {
+                if (currentUser) {
+                    content = `
+                        <div class="profile-stub">
+                            <i class="fas fa-user-astronaut"></i>
+                            <h3 style="color:#FF385C;">${currentUser.email || 'talent'}</h3>
+                            <p class="text-small">member since · premium</p>
+                            <button class="btn" style="margin-top:24px; background:#222; box-shadow:0 4px 0 #111;" id="signOutBtnProfile">sign out</button>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <div class="profile-stub">
+                            <i class="fas fa-user-lock"></i>
+                            <h3>sign in required</h3>
+                            <p class="text-small">login to manage your profile</p>
+                            <button class="btn" style="margin-top:16px;" id="showAuthFromProfile">Login / Sign up</button>
+                        </div>
+                    `;
+                }
+            }
+            panel.innerHTML = content;
+
+            // attach dynamic listeners after innerHTML (guardrail)
+            if (tabId === 'profile') {
+                const signOutBtn = document.getElementById('signOutBtnProfile');
+                if (signOutBtn) {
+                    signOutBtn.addEventListener('click', async () => {
+                        try { await signOut(auth); } catch (e) { console.warn(e); }
+                    });
+                }
+                const showAuthBtn = document.getElementById('showAuthFromProfile');
+                if (showAuthBtn) {
+                    showAuthBtn.addEventListener('click', () => {
+                        overlay.classList.add('show');
+                    });
+                }
+            }
+        }
+
+        // update active tab class
+        function setActiveTab(activeId) {
+            navItems.forEach(item => {
+                const tab = item.dataset.tab;
+                if (tab === activeId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // default tab
+        let currentTab = 'home';
+        setActiveTab('home');
+        renderPanel('home');
+
+        // ---------- BOTTOM NAV EVENT LISTENERS (guardrail: each button works) ----------
+        tabHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentTab = 'home';
+            setActiveTab('home');
+            renderPanel('home');
+        });
+        tabSearch.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentTab = 'search';
+            setActiveTab('search');
+            renderPanel('search');
+        });
+        tabMessages.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentTab = 'messages';
+            setActiveTab('messages');
+            renderPanel('messages');
+        });
+        tabProfile.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentTab = 'profile';
+            setActiveTab('profile');
+            renderPanel('profile');
+        });
+
+        // ---------- AUTH LOGIC ----------
+        function showAuthMessage(msg, isError = true) {
+            authMessage.innerText = msg;
+        }
+
+        // toggle between login/signup
+        function setAuthMode(mode) {
+            currentAuthMode = mode;
+            if (mode === 'login') {
+                authPrimaryBtn.innerText = 'Login';
+                authToggleText.innerText = "Don't have an account?";
+                authToggleBtn.innerText = 'Sign up';
+            } else {
+                authPrimaryBtn.innerText = 'Sign up';
+                authToggleText.innerText = 'Already have an account?';
+                authToggleBtn.innerText = 'Login';
+            }
+            authMessage.innerText = '';
+        }
+
+        authToggleBtn.addEventListener('click', () => {
+            if (currentAuthMode === 'login') {
+                setAuthMode('signup');
+            } else {
+                setAuthMode('login');
+            }
+        });
+
+        // email/password action
+        authPrimaryBtn.addEventListener('click', async () => {
+            const email = authEmail.value.trim();
+            const pass = authPassword.value.trim();
+            if (!email || !pass) {
+                showAuthMessage('fill all fields');
+                return;
+            }
+            try {
+                if (currentAuthMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                }
+                overlay.classList.remove('show');
+                authEmail.value = ''; authPassword.value = '';
+            } catch (error) {
+                showAuthMessage(error.message);
+            }
+        });
+
+        // google sign in
+        googleBtn.addEventListener('click', async () => {
+            try {
+                await signInWithPopup(auth, provider);
+                overlay.classList.remove('show');
+            } catch (error) {
+                showAuthMessage(error.message);
+            }
+        });
+
+        // close overlay
+        closeAuthBtn.addEventListener('click', () => {
+            overlay.classList.remove('show');
+        });
+
+        // if click outside card (simple) but we also have close btn
+
+        // auth state observer
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                overlay.classList.remove('show');
+                if (currentTab === 'profile') renderPanel('profile');
+            } else {
+                // if profile tab open, re-render to show non-login stub
+                if (currentTab === 'profile') renderPanel('profile');
+            }
+        });
+
+        // optional: show overlay on first load if user not signed? we do not force, but we want to demonstrate.
+        // However we keep it hidden initially. The profile will show login button.
+
+        // also ensure we show auth overlay from profile stub (already handled)
+        // Guard: also from any click we want close overlay if needed.
+        window.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.classList.remove('show');
+        });
+
+        // extra: reattach if profile re-rendered, but done inside renderPanel
+
+        // ensure auth overlay hidden at start
+        overlay.classList.remove('show');
+        setAuthMode('login');   // default
+
+        // safety: all buttons have listeners (nav items, auth toggles, close, primary, google, etc.)
+        console.log('GigsCourt — all event listeners active');
+    </script>
 </body>
 </html>
