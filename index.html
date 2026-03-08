@@ -210,6 +210,55 @@ async function uploadToCloudinary(imageFile, providerId, onProgress) {
   return secureUrl;
 }
 
+/**
+ * uploadIdentityImage  — LIVE
+ * Same XHR + Cloudinary pattern as uploadToCloudinary.
+ * Writes a SCALAR field (coverPhoto or profileImage) — not arrayUnion —
+ * so it overwrites the previous value in Firestore.
+ *
+ * @param {File}     imageFile  — File from input
+ * @param {string}   providerId — Firestore doc ID
+ * @param {string}   field      — 'coverPhoto' | 'profileImage'
+ * @param {function} onProgress — optional progress callback (0-100)
+ * @returns {string} secure_url from Cloudinary
+ */
+async function uploadIdentityImage(imageFile, providerId, field, onProgress) {
+  const CLOUD_NAME    = 'dszdwnuua';
+  const UPLOAD_PRESET = 'Gigscourt';
+
+  const formData = new FormData();
+  formData.append('file',          imageFile);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder',        `gigscourt/${providerId}/identity`);
+
+  const secureUrl = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        console.log(`[Cloudinary] ${field} upload OK:`, data.secure_url);
+        resolve(data.secure_url);
+      } else {
+        reject(new Error(`Cloudinary ${xhr.status}: ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Cloudinary network error'));
+    xhr.send(formData);
+  });
+
+  // Overwrite the scalar field in Firestore (set — not arrayUnion)
+  await db.collection('providers').doc(providerId).update({
+    [field]:   secureUrl,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log(`[Firestore] ${field} updated for ${providerId}`);
+  return secureUrl;
+}
+
 /** Shell: Google Maps Init */
 function initGoogleMaps(ref, coords) {
   // TODO: new google.maps.Map(ref.current, { center: coords, zoom: 14 });
@@ -558,19 +607,65 @@ function ProfileDetail({ provider, onBack, currentUser }) {
   const [booked, setBooked] = React.useState(false);
   const [liked, setLiked]   = React.useState(false);
 
-  // Subscribe to live availability updates for this specific provider
+  // Subscribe to live availability + identity updates for this provider
   const [liveProvider, setLiveProvider] = React.useState(provider);
   React.useEffect(() => {
-    if (provider.id.startsWith('mock')) return; // skip Firestore for mock docs
+    if (provider.id.startsWith('mock')) return;
     const unsub = db.collection('providers').doc(provider.id)
       .onSnapshot(snap => { if (snap.exists) setLiveProvider({ id: snap.id, ...snap.data(), portfolio: snap.data().portfolio || [] }); });
     return () => unsub();
   }, [provider.id]);
 
-  // Provider is the owner if they are signed in and their UID matches the doc ID
-  const isOwner = !!(currentUser && currentUser.uid === provider.id);
+  // Identity upload state
+  const [coverUploading,  setCoverUploading]  = React.useState(false);
+  const [coverPct,        setCoverPct]        = React.useState(0);
+  const [coverPreview,    setCoverPreview]    = React.useState(null); // local blob url
+  const [avatarUploading, setAvatarUploading] = React.useState(false);
+  const [avatarPct,       setAvatarPct]       = React.useState(0);
+  const [avatarPreview,   setAvatarPreview]   = React.useState(null);
+  const [identityMsg,     setIdentityMsg]     = React.useState('');
 
+  const isOwner = !!(currentUser && currentUser.uid === provider.id);
   const p = liveProvider;
+
+  // Displayed images: prefer local preview (instant feedback) → Firestore live → original prop
+  const coverSrc  = coverPreview  || p.coverPhoto  || p.cover  || '';
+  const avatarSrc = avatarPreview || p.profileImage || p.avatar || '';
+
+  function pickAndUpload(field, setUploading, setPct, setPreview) {
+    if (!isOwner) return;
+    const inp = document.createElement('input');
+    inp.type   = 'file';
+    inp.accept = 'image/jpeg,image/png,image/webp';
+    inp.onchange = async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { setIdentityMsg('⚠ Image must be under 10 MB'); setTimeout(()=>setIdentityMsg(''),3000); return; }
+
+      // Instant local preview
+      const blobUrl = URL.createObjectURL(file);
+      setPreview(blobUrl);
+      setUploading(true); setPct(0);
+      setIdentityMsg(field === 'coverPhoto' ? 'Uploading cover…' : 'Uploading avatar…');
+
+      try {
+        await uploadIdentityImage(file, provider.id, field, pct => setPct(pct));
+        // Firestore onSnapshot will update liveProvider; revoke blob url
+        setPreview(null);
+        URL.revokeObjectURL(blobUrl);
+        setIdentityMsg(field === 'coverPhoto' ? '✓ Cover photo updated!' : '✓ Avatar updated!');
+      } catch(err) {
+        console.error(`[ProfileDetail] ${field} upload failed:`, err.message);
+        setPreview(null);
+        URL.revokeObjectURL(blobUrl);
+        setIdentityMsg('⚠ Upload failed — try again');
+      } finally {
+        setUploading(false); setPct(0);
+        setTimeout(() => setIdentityMsg(''), 3500);
+      }
+    };
+    inp.click();
+  }
 
   return (
     <div className="min-h-screen bg-white fade-up">
@@ -586,17 +681,101 @@ function ProfileDetail({ provider, onBack, currentUser }) {
         </button>
       </div>
 
-      {/* Cover */}
-      <div className="relative" style={{ height:280, marginTop:56 }}>
-        <img src={p.cover} alt="cover" className="w-full h-full object-cover" />
+      {/* ── COVER PHOTO — clickable for owner ── */}
+      <div
+        className="relative"
+        style={{ height:280, marginTop:56, cursor: isOwner ? 'pointer' : 'default' }}
+        onClick={() => !coverUploading && pickAndUpload('coverPhoto', setCoverUploading, setCoverPct, setCoverPreview)}
+      >
+        <img
+          src={coverSrc}
+          alt="cover"
+          className="w-full h-full object-cover"
+          style={{ opacity: coverUploading ? 0.6 : 1, transition:'opacity 0.3s' }}
+        />
         <div className="absolute inset-0 img-gradient" />
+
+        {/* Owner edit overlay — idle */}
+        {isOwner && !coverUploading && (
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+            style={{ background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)' }}>
+            <Icon.Camera size={13} color="white" />
+            <span className="text-white text-xs font-semibold" style={{ fontFamily:'Syne' }}>Edit Cover</span>
+          </div>
+        )}
+
+        {/* Upload in-progress overlay */}
+        {coverUploading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+            style={{ background:'rgba(0,0,0,0.45)' }}>
+            {/* Circular progress ring */}
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4"/>
+              <circle cx="26" cy="26" r="22" fill="none" stroke="white" strokeWidth="4"
+                strokeDasharray={`${(coverPct/100)*138.2} 138.2`}
+                strokeLinecap="round" transform="rotate(-90 26 26)"/>
+            </svg>
+            <span className="text-white font-bold text-sm" style={{ fontFamily:'Syne' }}>{coverPct}%</span>
+          </div>
+        )}
+
+        {/* Progress bar at bottom of cover */}
+        {coverUploading && coverPct > 0 && (
+          <div className="absolute bottom-0 left-0 right-0" style={{ height:3, background:'rgba(255,255,255,0.2)' }}>
+            <div className="h-full transition-all" style={{ width:`${coverPct}%`, background:'var(--red)' }} />
+          </div>
+        )}
       </div>
 
-      {/* Avatar + name */}
+      {/* Identity message toast */}
+      {identityMsg && (
+        <div className="mx-5 mt-3 rounded-xl px-4 py-2.5 text-sm font-semibold fade-up flex items-center gap-2"
+          style={{
+            background: identityMsg.startsWith('✓') ? 'rgba(0,196,140,0.1)' : identityMsg.startsWith('⚠') ? 'rgba(255,56,92,0.08)' : '#F9FAFB',
+            color: identityMsg.startsWith('✓') ? 'var(--green)' : identityMsg.startsWith('⚠') ? 'var(--red)' : '#374151',
+          }}>
+          {identityMsg}
+        </div>
+      )}
+
+      {/* ── AVATAR + NAME — avatar clickable for owner ── */}
       <div className="px-5 -mt-10 relative z-10 flex items-end justify-between">
         <div className="flex items-end gap-3">
-          <img src={p.avatar} alt={p.name} className="w-20 h-20 rounded-2xl border-4 border-white object-cover"
-            style={{ boxShadow:'0 4px 16px rgba(0,0,0,0.12)' }} />
+          {/* Clickable avatar wrapper */}
+          <div
+            className="relative flex-shrink-0"
+            style={{ cursor: isOwner ? 'pointer' : 'default' }}
+            onClick={() => !avatarUploading && pickAndUpload('profileImage', setAvatarUploading, setAvatarPct, setAvatarPreview)}
+          >
+            <img
+              src={avatarSrc}
+              alt={p.name}
+              className="w-20 h-20 rounded-2xl border-4 border-white object-cover"
+              style={{ boxShadow:'0 4px 16px rgba(0,0,0,0.12)', opacity: avatarUploading ? 0.5 : 1, transition:'opacity 0.3s' }}
+            />
+
+            {/* Red camera badge — visible when owner, idle */}
+            {isOwner && !avatarUploading && (
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white"
+                style={{ background:'var(--red)', boxShadow:'0 2px 8px rgba(255,56,92,0.4)' }}>
+                <Icon.Camera size={13} color="white" />
+              </div>
+            )}
+
+            {/* Upload progress ring over avatar */}
+            {avatarUploading && (
+              <div className="absolute inset-0 rounded-2xl flex items-center justify-center"
+                style={{ background:'rgba(0,0,0,0.45)' }}>
+                <svg width="38" height="38" viewBox="0 0 38 38">
+                  <circle cx="19" cy="19" r="15" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3"/>
+                  <circle cx="19" cy="19" r="15" fill="none" stroke="white" strokeWidth="3"
+                    strokeDasharray={`${(avatarPct/100)*94.2} 94.2`}
+                    strokeLinecap="round" transform="rotate(-90 19 19)"/>
+                </svg>
+              </div>
+            )}
+          </div>
+
           <div className="mb-1">
             <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily:'Syne' }}>{p.name}</h2>
             <p className="text-sm text-gray-500 font-medium">{p.service}</p>
@@ -899,11 +1078,23 @@ function ProfileTab({ currentUser }) {
   const [isAvailable, setIsAvailable] = React.useState(true);
   const [toggling,    setToggling]    = React.useState(false);
   const [toggleMsg,   setToggleMsg]   = React.useState('');
-  const [authModal,   setAuthModal]   = React.useState(null); // 'login'|'signup'|null
-  // Cloudinary upload state for the Dashboard "Upload Work" quick-action
+  const [authModal,   setAuthModal]   = React.useState(null);
+
+  // Portfolio upload state (for Quick Actions tile)
   const [uploading,   setUploading]   = React.useState(false);
   const [uploadPct,   setUploadPct]   = React.useState(0);
   const [uploadMsg,   setUploadMsg]   = React.useState('');
+
+  // Dashboard identity upload state (cover + avatar)
+  const [dashCoverUploading,  setDashCoverUploading]  = React.useState(false);
+  const [dashCoverPct,        setDashCoverPct]        = React.useState(0);
+  const [dashCoverPreview,    setDashCoverPreview]    = React.useState(null);
+  const [dashAvatarUploading, setDashAvatarUploading] = React.useState(false);
+  const [dashAvatarPct,       setDashAvatarPct]       = React.useState(0);
+  const [dashAvatarPreview,   setDashAvatarPreview]   = React.useState(null);
+  const [dashIdentityMsg,     setDashIdentityMsg]     = React.useState('');
+  // Live Firestore snapshot of the provider doc (for reading updated coverPhoto / profileImage)
+  const [dashProviderData,    setDashProviderData]    = React.useState(null);
 
   // Keep auth in sync
   React.useEffect(() => {
@@ -911,14 +1102,56 @@ function ProfileTab({ currentUser }) {
     return () => unsub();
   }, []);
 
-  // Subscribe to this user's provider doc so availability reflects Firestore truth
+  // Subscribe to this user's provider doc (availability + identity fields)
   React.useEffect(() => {
     if (!user) return;
     const unsub = db.collection('providers').doc(user.uid)
-      .onSnapshot(snap => { if (snap.exists) setIsAvailable(snap.data().available ?? true); },
-        err => console.warn('[Firestore] Profile listen:', err.message));
+      .onSnapshot(snap => {
+        if (snap.exists) {
+          const data = snap.data();
+          setIsAvailable(data.available ?? true);
+          setDashProviderData(data);
+        }
+      }, err => console.warn('[Firestore] Profile listen:', err.message));
     return () => unsub();
   }, [user?.uid]);
+
+  // ── Identity upload picker for Dashboard cover/avatar ──
+  function pickDashIdentity(field, setUploadingFn, setPctFn, setPreviewFn) {
+    if (!user) return;
+    const inp = document.createElement('input');
+    inp.type   = 'file';
+    inp.accept = 'image/jpeg,image/png,image/webp';
+    inp.onchange = async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        setDashIdentityMsg('⚠ Image must be under 10 MB');
+        setTimeout(() => setDashIdentityMsg(''), 3000);
+        return;
+      }
+      const blobUrl = URL.createObjectURL(file);
+      setPreviewFn(blobUrl);
+      setUploadingFn(true); setPctFn(0);
+      setDashIdentityMsg(field === 'coverPhoto' ? 'Uploading cover photo…' : 'Uploading avatar…');
+      try {
+        await uploadIdentityImage(file, user.uid, field, pct => setPctFn(pct));
+        setPreviewFn(null);
+        URL.revokeObjectURL(blobUrl);
+        // onSnapshot will pick up the new URL from Firestore automatically
+        setDashIdentityMsg(field === 'coverPhoto' ? '✓ Cover photo updated!' : '✓ Avatar updated!');
+      } catch(err) {
+        console.error('[Dashboard identity]', err.message);
+        setPreviewFn(null);
+        URL.revokeObjectURL(blobUrl);
+        setDashIdentityMsg('⚠ Upload failed — try again');
+      } finally {
+        setUploadingFn(false); setPctFn(0);
+        setTimeout(() => setDashIdentityMsg(''), 3500);
+      }
+    };
+    inp.click();
+  }
 
   // ── LIVE TOGGLE — writes to Firestore ──
   async function handleAvailabilityToggle(val) {
@@ -941,7 +1174,7 @@ function ProfileTab({ currentUser }) {
     }
   }
 
-  // ── CLOUDINARY UPLOAD — called from Quick Actions tile ──
+  // ── CLOUDINARY UPLOAD — Quick Actions portfolio tile ──
   function handleUploadPortfolio() {
     if (!user) { alert('Sign in first to upload portfolio images.'); return; }
     if (uploading) return;
@@ -952,29 +1185,21 @@ function ProfileTab({ currentUser }) {
     inp.onchange = async e => {
       const file = e.target.files[0];
       if (!file) return;
-
       if (file.size > 10 * 1024 * 1024) {
         setUploadMsg('⚠ Image must be under 10 MB');
         setTimeout(() => setUploadMsg(''), 3500);
         return;
       }
-
-      setUploading(true);
-      setUploadPct(0);
+      setUploading(true); setUploadPct(0);
       setUploadMsg('Uploading to Cloudinary…');
-
       try {
-        await uploadToCloudinary(file, user.uid, pct => {
-          setUploadPct(pct);
-          setUploadMsg(`Uploading… ${pct}%`);
-        });
+        await uploadToCloudinary(file, user.uid, pct => { setUploadPct(pct); setUploadMsg(`Uploading… ${pct}%`); });
         setUploadMsg('✓ Photo added! View it on your profile.');
       } catch(err) {
         console.error('[Upload]', err.message);
         setUploadMsg('⚠ Upload failed — try again');
       } finally {
-        setUploading(false);
-        setUploadPct(0);
+        setUploading(false); setUploadPct(0);
         setTimeout(() => setUploadMsg(''), 4000);
       }
     };
@@ -998,65 +1223,142 @@ function ProfileTab({ currentUser }) {
         </div>
 
         {/* Dark provider card */}
-        <div className="rounded-3xl p-5 mb-5"
+        <div className="rounded-3xl overflow-hidden mb-5"
           style={{ background:'linear-gradient(135deg,#1A1A2E 0%,#2D2D44 100%)', boxShadow:'0 8px 32px rgba(26,26,46,0.3)' }}>
-          {/* Avatar + identity */}
-          <div className="flex items-center gap-4 mb-5">
-            <div className="relative">
-              <img src={user ? `https://i.pravatar.cc/300?u=${user.uid}` : 'https://i.pravatar.cc/300?img=60'}
-                alt="me" className="w-16 h-16 rounded-2xl object-cover border-2 border-white" />
-              <button onClick={handleUploadPortfolio}
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background:'var(--red)' }}>
-                <Icon.Camera size={12} color="white" />
-              </button>
+
+          {/* ── COVER PHOTO STRIP — clickable for signed-in users ── */}
+          <div
+            className="relative"
+            style={{ height:110, cursor: user ? 'pointer' : 'default' }}
+            onClick={() => user && !dashCoverUploading && pickDashIdentity('coverPhoto', setDashCoverUploading, setDashCoverPct, setDashCoverPreview)}
+          >
+            <img
+              src={dashCoverPreview || (user && dashProviderData?.coverPhoto) || 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80'}
+              alt="cover"
+              className="w-full h-full object-cover"
+              style={{ opacity: dashCoverUploading ? 0.55 : 1, transition:'opacity 0.3s' }}
+            />
+            {/* Dark tint so the card gradient still shows through */}
+            <div className="absolute inset-0" style={{ background:'rgba(26,26,46,0.55)' }} />
+
+            {/* Edit badge */}
+            {user && !dashCoverUploading && (
+              <div className="absolute top-2 right-3 flex items-center gap-1 px-2.5 py-1 rounded-xl"
+                style={{ background:'rgba(255,56,92,0.85)', backdropFilter:'blur(4px)' }}>
+                <Icon.Camera size={11} color="white" />
+                <span className="text-white text-xs font-bold" style={{ fontFamily:'Syne' }}>Edit Cover</span>
+              </div>
+            )}
+
+            {/* Cover upload progress */}
+            {dashCoverUploading && (
+              <>
+                <div className="absolute inset-0 flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent spin inline-block" />
+                  <span className="text-white text-sm font-bold" style={{ fontFamily:'Syne' }}>{dashCoverPct}%</span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0" style={{ height:3, background:'rgba(255,255,255,0.15)' }}>
+                  <div className="h-full transition-all" style={{ width:`${dashCoverPct}%`, background:'var(--red)' }} />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Card body */}
+          <div className="p-5">
+            {/* Avatar + identity */}
+            <div className="flex items-center gap-4 mb-5 -mt-10">
+              {/* ── AVATAR — clickable for signed-in users ── */}
+              <div
+                className="relative flex-shrink-0"
+                style={{ cursor: user ? 'pointer' : 'default' }}
+                onClick={() => user && !dashAvatarUploading && pickDashIdentity('profileImage', setDashAvatarUploading, setDashAvatarPct, setDashAvatarPreview)}
+              >
+                <img
+                  src={dashAvatarPreview || (user && dashProviderData?.profileImage) || (user ? `https://i.pravatar.cc/300?u=${user.uid}` : 'https://i.pravatar.cc/300?img=60')}
+                  alt="me"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-white"
+                  style={{ opacity: dashAvatarUploading ? 0.5 : 1, transition:'opacity 0.3s', boxShadow:'0 4px 12px rgba(0,0,0,0.3)' }}
+                />
+                {/* Red camera badge — idle */}
+                {user && !dashAvatarUploading && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white"
+                    style={{ background:'var(--red)', boxShadow:'0 2px 6px rgba(255,56,92,0.5)' }}>
+                    <Icon.Camera size={11} color="white" />
+                  </div>
+                )}
+                {/* Avatar upload ring */}
+                {dashAvatarUploading && (
+                  <div className="absolute inset-0 rounded-2xl flex items-center justify-center"
+                    style={{ background:'rgba(0,0,0,0.5)' }}>
+                    <svg width="32" height="32" viewBox="0 0 32 32">
+                      <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3"/>
+                      <circle cx="16" cy="16" r="12" fill="none" stroke="white" strokeWidth="3"
+                        strokeDasharray={`${(dashAvatarPct/100)*75.4} 75.4`}
+                        strokeLinecap="round" transform="rotate(-90 16 16)"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h2 className="text-white font-bold text-lg truncate" style={{ fontFamily:'Syne' }}>{displayName}</h2>
+                <p className="text-gray-400 text-xs truncate">{displayEmail}</p>
+                {user && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Icon.Firebase size={11} />
+                    <span className="text-xs" style={{ color:'var(--green)' }}>Firebase Auth active</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-white font-bold text-lg truncate" style={{ fontFamily:'Syne' }}>{displayName}</h2>
-              <p className="text-gray-400 text-xs truncate">{displayEmail}</p>
-              {user && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Icon.Firebase size={11} />
-                  <span className="text-xs" style={{ color:'var(--green)' }}>Firebase Auth active</span>
+
+            {/* Dashboard identity upload feedback */}
+            {dashIdentityMsg && (
+              <div className="mb-4 rounded-xl px-3 py-2 text-xs font-medium fade-up flex items-center gap-2"
+                style={{
+                  background: dashIdentityMsg.startsWith('✓') ? 'rgba(0,196,140,0.15)' : dashIdentityMsg.startsWith('⚠') ? 'rgba(255,56,92,0.15)' : 'rgba(255,255,255,0.08)',
+                  color: dashIdentityMsg.startsWith('✓') ? 'var(--green)' : dashIdentityMsg.startsWith('⚠') ? '#FF6B85' : 'white',
+                }}>
+                {dashIdentityMsg}
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[{l:'Bookings',v:user?'24':'—'},{l:'Earnings',v:user?'$1,840':'—'},{l:'Rating',v:'4.9'}].map(s=>(
+                <div key={s.l} className="rounded-2xl p-3 text-center" style={{ background:'rgba(255,255,255,0.07)' }}>
+                  <p className="text-white font-bold" style={{ fontFamily:'Syne' }}>{s.v}</p>
+                  <p className="text-gray-400 text-xs mt-0.5">{s.l}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ── LIVE AVAILABILITY TOGGLE ── */}
+            <div className="rounded-2xl p-4" style={{ background:'rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-sm">Availability Status</p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    {user
+                      ? (isAvailable ? 'Visible to nearby clients' : 'Hidden from search')
+                      : 'Sign in to manage status'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <StatusBadge available={isAvailable} />
+                  <ToggleSwitch value={isAvailable} onChange={handleAvailabilityToggle} disabled={toggling} />
+                </div>
+              </div>
+              {/* Firestore write feedback message */}
+              {(toggleMsg || toggling) && (
+                <div className="mt-3 rounded-xl px-3 py-2 text-xs font-medium fade-up flex items-center gap-2"
+                  style={{ background:'rgba(255,255,255,0.1)', color: toggleMsg.startsWith('✓') ? 'var(--green)' : toggleMsg.startsWith('⚠') ? '#FFA000' : '#FFF' }}>
+                  {toggling && <span className="w-3 h-3 rounded-full border border-white border-t-transparent spin inline-block flex-shrink-0" />}
+                  {toggleMsg || 'Saving to Firestore…'}
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[{l:'Bookings',v:user?'24':'—'},{l:'Earnings',v:user?'$1,840':'—'},{l:'Rating',v:'4.9'}].map(s=>(
-              <div key={s.l} className="rounded-2xl p-3 text-center" style={{ background:'rgba(255,255,255,0.07)' }}>
-                <p className="text-white font-bold" style={{ fontFamily:'Syne' }}>{s.v}</p>
-                <p className="text-gray-400 text-xs mt-0.5">{s.l}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ── LIVE AVAILABILITY TOGGLE ── */}
-          <div className="rounded-2xl p-4" style={{ background:'rgba(255,255,255,0.07)' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-white font-semibold text-sm">Availability Status</p>
-                <p className="text-gray-400 text-xs mt-0.5">
-                  {user
-                    ? (isAvailable ? 'Visible to nearby clients' : 'Hidden from search')
-                    : 'Sign in to manage status'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 ml-3">
-                <StatusBadge available={isAvailable} />
-                <ToggleSwitch value={isAvailable} onChange={handleAvailabilityToggle} disabled={toggling} />
-              </div>
-            </div>
-            {/* Firestore write feedback message */}
-            {(toggleMsg || toggling) && (
-              <div className="mt-3 rounded-xl px-3 py-2 text-xs font-medium fade-up flex items-center gap-2"
-                style={{ background:'rgba(255,255,255,0.1)', color: toggleMsg.startsWith('✓') ? 'var(--green)' : toggleMsg.startsWith('⚠') ? '#FFA000' : '#FFF' }}>
-                {toggling && <span className="w-3 h-3 rounded-full border border-white border-t-transparent spin inline-block flex-shrink-0" />}
-                {toggleMsg || 'Saving to Firestore…'}
-              </div>
-            )}
           </div>
         </div>
 
