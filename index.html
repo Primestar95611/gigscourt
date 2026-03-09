@@ -247,6 +247,9 @@
     .distance {
       font-size: 12px;
       color: #6b7280;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-style: dotted;
     }
     .skills {
       font-size: 12px;
@@ -469,6 +472,18 @@
       text-align: center;
       padding: 40px 20px;
       color: #6b7280;
+    }
+    .highlighted-pin {
+      filter: drop-shadow(0 0 10px #0066ff);
+      z-index: 1000;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .pulse-marker {
+      animation: pulse 1s ease infinite;
     }
   </style>
 </head>
@@ -728,6 +743,7 @@
   let aktuellesSuchwort = '';
   let aktuellerRadius = 25;
   let touchOnMap = false;
+  let currentHighlightedMarker = null;
 
   // ==================== SEED USERS WITH FIXED LOCATIONS ====================
   async function seedUsers() {
@@ -808,20 +824,74 @@
         lastVisible = snap.docs[snap.docs.length - 1];
         snap.forEach(doc => {
           const d = doc.data();
-          const card = document.createElement('div');
-          card.className = 'provider-card';
-          card.innerHTML = `
-            <img class="card-img" src="${cloudUrl(d.profileImage)}" loading="lazy">
-            <div class="business-name">${d.businessName}</div>
-            <div class="rating-row"><span class="star">⭐</span> ${d.rating} (${d.reviewCount})</div>
-            <div class="distance">${(Math.random() * 3 + 0.5).toFixed(1)} km</div>
-            <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
-          `;
-          card.addEventListener('click', () => openQuickView(doc.id, d));
-          homeGrid.appendChild(card);
+          addProviderCard(doc.id, d, 'home');
         });
       }
     } finally { loadingMore = false; }
+  }
+
+  // ==================== ADD PROVIDER CARD ====================
+  function addProviderCard(id, d, source) {
+    const card = document.createElement('div');
+    card.className = 'provider-card';
+    
+    const distance = calculateDistance(d.location);
+    
+    card.innerHTML = `
+      <img class="card-img" src="${cloudUrl(d.profileImage)}" loading="lazy">
+      <div class="business-name">${d.businessName}</div>
+      <div class="rating-row"><span class="star">⭐</span> ${d.rating} (${d.reviewCount})</div>
+      <div class="distance" data-id="${id}" data-lat="${d.location?.latitude}" data-lng="${d.location?.longitude}" data-source="${source}">${distance} km</div>
+      <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
+    `;
+    
+    card.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('distance')) {
+        openQuickView(id, d);
+      }
+    });
+    
+    homeGrid.appendChild(card);
+  }
+
+  // ==================== CALCULATE DISTANCE ====================
+  function calculateDistance(location) {
+    if (!location) return (Math.random() * 3 + 0.5).toFixed(1);
+    const distance = Math.sqrt(
+      Math.pow((location.latitude - 7.0667) * 111, 2) + 
+      Math.pow((location.longitude - 6.2667) * 111, 2)
+    );
+    return distance.toFixed(1);
+  }
+
+  // ==================== HIGHLIGHT PROVIDER ON MAP ====================
+  async function highlightProviderOnMap(lat, lng, providerId) {
+    // Switch to search tab if not already there
+    if (document.getElementById('searchTab').classList.contains('hidden')) {
+      switchTab('search');
+      // Wait for map to initialize
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Center map on provider
+    map.setView([lat, lng], 15);
+    
+    // Remove previous highlight
+    if (currentHighlightedMarker) {
+      currentHighlightedMarker.getElement()?.classList.remove('highlighted-pin', 'pulse-marker');
+    }
+    
+    // Find and highlight the marker
+    mapMarkers.forEach(marker => {
+      if (marker._latlng.lat === lat && marker._latlng.lng === lng) {
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.classList.add('highlighted-pin', 'pulse-marker');
+          currentHighlightedMarker = marker;
+        }
+        marker.openPopup();
+      }
+    });
   }
 
   // ==================== LOAD ALL USERS ====================
@@ -847,7 +917,6 @@
         if (!skillMatch) return false;
       }
       
-      // Simplified distance calculation (replace with real formula later)
       const distance = Math.sqrt(
         Math.pow((user.location.latitude - 7.0667) * 111, 2) + 
         Math.pow((user.location.longitude - 6.2667) * 111, 2)
@@ -910,14 +979,32 @@
           <img src="${cloudUrl(user.profileImage, 100)}">
           <div>
             <strong>${user.businessName}</strong><br>
-            <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · ${distance}km</span>
+            <span style="color: #6b7280;">⭐ ${user.rating} (${user.reviewCount}) · <span class="distance" data-id="${user.id}" data-lat="${user.location.latitude}" data-lng="${user.location.longitude}" data-source="search">${distance}km</span></span>
           </div>
         `;
-        item.addEventListener('click', () => openQuickView(user.id, user));
+        item.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('distance')) {
+            openQuickView(user.id, user);
+          }
+        });
         providerListDrawer.appendChild(item);
       });
     }
   }
+
+  // ==================== DISTANCE CLICK HANDLER ====================
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('distance')) {
+      const lat = parseFloat(e.target.dataset.lat);
+      const lng = parseFloat(e.target.dataset.lng);
+      const id = e.target.dataset.id;
+      const source = e.target.dataset.source;
+      
+      if (lat && lng) {
+        highlightProviderOnMap(lat, lng, id);
+      }
+    }
+  });
 
   // ==================== INIT MAP ====================
   async function initMap() {
@@ -1057,7 +1144,6 @@
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     
-    // Check if touch started on map
     const mapElement = document.getElementById('map');
     if (mapElement && mapElement.contains(e.target)) {
       touchOnMap = true;
@@ -1067,7 +1153,6 @@
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
-    // Skip edge swipe if touch started on map
     if (touchOnMap) return;
     
     const dx = e.changedTouches[0].clientX - touchStartX;
