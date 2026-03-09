@@ -201,7 +201,6 @@
       font-size: 16px;
       cursor: pointer;
     }
-    /* Home Grid */
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -264,7 +263,6 @@
       height: 10px;
       width: 100%;
     }
-    /* Profile Page Styles */
     .profile-header {
       display: flex;
       gap: 20px;
@@ -608,6 +606,7 @@
   const bioTextarea = document.getElementById('bioTextarea');
   const missingContactContainer = document.getElementById('missingContactContainer');
   const portfolioGrid = document.getElementById('portfolioGrid');
+  const saveBioBtn = document.getElementById('saveBioBtn');
 
   // State
   let selectedEmailSkills = new Set();
@@ -939,12 +938,21 @@
   });
 
   // ==================== SAVE BIO ====================
-  document.getElementById('saveBioBtn').addEventListener('click', async () => {
-    if (!auth.currentUser) return;
-    const bio = bioTextarea.value;
-    await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
-    alert('Bio saved');
-  });
+  if (saveBioBtn) {
+    saveBioBtn.addEventListener('click', async () => {
+      if (!auth.currentUser) {
+        alert('No user logged in');
+        return;
+      }
+      const bio = bioTextarea.value;
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio });
+        alert('Bio saved successfully');
+      } catch (err) {
+        alert('Error saving bio: ' + err.message);
+      }
+    });
+  }
 
   // ==================== LOGOUT ====================
   document.getElementById('logoutBtn').addEventListener('click', async () => {
