@@ -703,50 +703,73 @@
   async function loadProfileData() {
     if (!auth.currentUser) return;
     
-    const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      profileBusinessName.textContent = data.businessName || '';
-      profileJobs.textContent = data.jobsDone || 0;
-      profileRating.textContent = data.rating || 0;
-      bioTextarea.value = data.bio || '';
-      profileImage.src = cloudUrl(data.profileImage, 200);
-      
-      const portfolio = data.portfolioImages || ['sample1', 'sample2', 'sample3'];
-      portfolioGrid.innerHTML = portfolio.slice(0, 3).map(img => 
-        `<img src="${cloudUrl(img, 200)}" loading="lazy">`
-      ).join('');
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userDoc = await getDoc(userRef);
+    
+    // If user document doesn't exist, create it
+    if (!userDoc.exists()) {
+      const newUser = {
+        businessName: auth.currentUser.email?.split('@')[0] || 'User',
+        email: auth.currentUser.email || '',
+        phoneNumber: '',
+        skills: [],
+        profileImage: 'default_avatar',
+        rating: 0,
+        reviewCount: 0,
+        jobsDone: 0,
+        location: new GeoPoint(7.0667, 6.2667),
+        createdAt: Date.now(),
+        portfolioImages: ['sample1', 'sample2', 'sample3'],
+        bio: '',
+        signupMethod: 'email',
+        emailVerified: true,
+        phoneVerified: false
+      };
+      await setDoc(userRef, newUser);
+      userDoc.data = () => newUser;
+    }
+    
+    const data = userDoc.data();
+    profileBusinessName.textContent = data.businessName || '';
+    profileJobs.textContent = data.jobsDone || 0;
+    profileRating.textContent = data.rating || 0;
+    bioTextarea.value = data.bio || '';
+    profileImage.src = cloudUrl(data.profileImage, 200);
+    
+    const portfolio = data.portfolioImages || ['sample1', 'sample2', 'sample3'];
+    portfolioGrid.innerHTML = portfolio.slice(0, 3).map(img => 
+      `<img src="${cloudUrl(img, 200)}" loading="lazy">`
+    ).join('');
 
-      // Show missing contact options
-      if (!data.email && data.signupMethod === 'phone') {
-        missingContactContainer.innerHTML = `
-          <div class="missing-contact">
-            <h4 style="margin-bottom: 12px;">Add Email</h4>
-            <input type="email" id="newEmail" class="input-field" placeholder="Email">
-            <button class="btn-outline" id="addEmailBtn">Add & Verify</button>
+    // Show missing contact options
+    if (!data.email && data.signupMethod === 'phone') {
+      missingContactContainer.innerHTML = `
+        <div class="missing-contact">
+          <h4 style="margin-bottom: 12px;">Add Email</h4>
+          <input type="email" id="newEmail" class="input-field" placeholder="Email">
+          <button class="btn-outline" id="addEmailBtn">Add & Verify</button>
+        </div>
+      `;
+      document.getElementById('addEmailBtn')?.addEventListener('click', addEmail);
+    } else if (!data.phoneNumber && data.signupMethod === 'email') {
+      missingContactContainer.innerHTML = `
+        <div class="missing-contact">
+          <h4 style="margin-bottom: 12px;">Add Phone</h4>
+          <div class="phone-input-container">
+            <select id="newPhoneCode">
+              <option value="+234">🇳🇬 +234</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+81">🇯🇵 +81</option>
+            </select>
+            <input type="tel" id="newPhone" class="input-field" style="width:70%" placeholder="Phone number">
           </div>
-        `;
-        document.getElementById('addEmailBtn')?.addEventListener('click', addEmail);
-      } else if (!data.phoneNumber && data.signupMethod === 'email') {
-        missingContactContainer.innerHTML = `
-          <div class="missing-contact">
-            <h4 style="margin-bottom: 12px;">Add Phone</h4>
-            <div class="phone-input-container">
-              <select id="newPhoneCode">
-                <option value="+234">🇳🇬 +234</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+44">🇬🇧 +44</option>
-                <option value="+81">🇯🇵 +81</option>
-              </select>
-              <input type="tel" id="newPhone" class="input-field" style="width:70%" placeholder="Phone number">
-            </div>
-            <button class="btn-outline" id="addPhoneBtn">Add & Verify</button>
-          </div>
-        `;
-        document.getElementById('addPhoneBtn')?.addEventListener('click', addPhone);
-      } else {
-        missingContactContainer.innerHTML = '';
-      }
+          <button class="btn-outline" id="addPhoneBtn">Add & Verify</button>
+        </div>
+      `;
+      document.getElementById('addPhoneBtn')?.addEventListener('click', addPhone);
+    } else {
+      missingContactContainer.innerHTML = '';
     }
   }
 
@@ -1025,7 +1048,9 @@
       authContainer.classList.add('hidden');
       mainApp.classList.remove('hidden');
       switchTab(getSavedTab());
-      loadProfileData();
+      
+      // Load profile data (this will create user document if missing)
+      await loadProfileData();
     } else if (user && !user.emailVerified) {
       authContainer.classList.remove('hidden');
       mainApp.classList.add('hidden');
