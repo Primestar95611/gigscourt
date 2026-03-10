@@ -1013,7 +1013,7 @@
   import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
-    addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion, arrayRemove
+    addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1031,7 +1031,7 @@
   const db = getFirestore(app);
 
   const CLOUD_NAME = 'dszdwnuua';
-  const UPLOAD_PRESET = 'Gigscourt'; // Matches your Cloudinary preset exactly
+  const UPLOAD_PRESET = 'Gigscourt';
   const cloudUrl = (id, w = 400, q = 'good') => `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_${w},q_auto:${q},f_auto/${id || 'default_avatar'}`;
 
   // DOM elements
@@ -1102,6 +1102,29 @@
   let pullStartY = 0;
   let isPulling = false;
   let isTouchingMap = false;
+  let cloudinaryReady = false;
+
+  // Check if Cloudinary is loaded
+  function checkCloudinary() {
+    return typeof cloudinary !== 'undefined' && cloudinary;
+  }
+
+  // Wait for Cloudinary to be ready
+  function waitForCloudinary(callback, maxAttempts = 20) {
+    let attempts = 0;
+    const check = () => {
+      if (checkCloudinary()) {
+        cloudinaryReady = true;
+        callback();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(check, 250);
+      } else {
+        alert('Cloudinary upload widget failed to load. Please refresh the page.');
+      }
+    };
+    check();
+  }
 
   // ==================== PULL TO REFRESH (FIXED FOR MAP) ====================
   function createRefreshIndicator() {
@@ -1119,7 +1142,6 @@
     const tabContent = document.querySelector('.tab-content');
     
     tabContent.addEventListener('touchstart', (e) => {
-      // Check if touch started on map
       const mapElement = document.getElementById('map');
       if (mapElement && mapElement.contains(e.target)) {
         isTouchingMap = true;
@@ -1134,9 +1156,7 @@
     }, { passive: true });
 
     tabContent.addEventListener('touchmove', (e) => {
-      // Disable pull-to-refresh if touching map
       if (isTouchingMap) return;
-      
       if (!isPulling || tabContent.scrollTop > 0) return;
       
       const currentY = e.touches[0].clientY;
@@ -1210,73 +1230,92 @@
 
   // ==================== CLOUDINARY UPLOAD FUNCTIONS ====================
   function initializeCloudinaryUpload(callback, options = {}) {
-    const widget = cloudinary.createUploadWidget({
-      cloudName: CLOUD_NAME,
-      uploadPreset: UPLOAD_PRESET, // Using your preset 'Gigscourt'
-      sources: ['local', 'camera'],
-      multiple: options.multiple || false,
-      maxFiles: options.maxFiles || 1,
-      maxFileSize: 5000000, // 5MB
-      cropping: options.cropping || true,
-      croppingAspectRatio: options.aspectRatio || 1,
-      showSkipCropButton: false,
-      folder: 'gigscourt',
-      clientAllowedFormats: ['image'],
-      styles: {
-        palette: {
-          window: "#FFFFFF",
-          windowBorder: "#90A0B3",
-          tabIcon: "#0066FF",
-          menuIcons: "#5A616D",
-          textDark: "#000000",
-          textLight: "#FFFFFF",
-          link: "#0066FF",
-          action: "#0066FF",
-          inactiveTabIcon: "#0E2F5A",
-          error: "#F44235",
-          inProgress: "#0066FF",
-          complete: "#20B832",
-          sourceBg: "#F4F6F9"
+    if (!checkCloudinary()) {
+      alert('Upload widget not ready. Please try again.');
+      return null;
+    }
+    
+    try {
+      const widget = cloudinary.createUploadWidget({
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'camera'],
+        multiple: options.multiple || false,
+        maxFiles: options.maxFiles || 1,
+        maxFileSize: 5000000,
+        cropping: options.cropping || true,
+        croppingAspectRatio: options.aspectRatio || 1,
+        showSkipCropButton: false,
+        folder: 'gigscourt',
+        clientAllowedFormats: ['image'],
+        styles: {
+          palette: {
+            window: "#FFFFFF",
+            windowBorder: "#90A0B3",
+            tabIcon: "#0066FF",
+            menuIcons: "#5A616D",
+            textDark: "#000000",
+            textLight: "#FFFFFF",
+            link: "#0066FF",
+            action: "#0066FF",
+            inactiveTabIcon: "#0E2F5A",
+            error: "#F44235",
+            inProgress: "#0066FF",
+            complete: "#20B832",
+            sourceBg: "#F4F6F9"
+          }
         }
-      }
-    }, (error, result) => {
-      if (!error && result && result.event === 'success') {
-        callback(result.info.public_id);
-      }
-    });
-    return widget;
+      }, (error, result) => {
+        if (error) {
+          console.error('Upload error:', error);
+          alert('Upload failed: ' + (error.message || 'Unknown error'));
+          return;
+        }
+        if (result && result.event === 'success') {
+          callback(result.info.public_id);
+        }
+      });
+      return widget;
+    } catch (err) {
+      console.error('Widget creation error:', err);
+      alert('Failed to initialize upload widget');
+      return null;
+    }
   }
 
   // ==================== PHOTOSWIPE GALLERY ====================
   function openGallery(images, startIndex = 0) {
-    const lightbox = new PhotoSwipeLightbox({
-      gallery: '#portfolioGrid',
-      children: 'img',
-      pswpModule: PhotoSwipe,
-      initialZoomLevel: 'fit',
-      secondaryZoomLevel: 1.5,
-      maxZoomLevel: 3,
-      bgOpacity: 0.9,
-      loop: true,
-      preload: [1, 2]
-    });
+    if (typeof PhotoSwipeLightbox === 'undefined') {
+      alert('Gallery viewer not ready');
+      return;
+    }
     
-    // Custom data source
-    const dataSource = images.map(img => ({
-      src: cloudUrl(img, 1000, 'best'),
-      width: 1000,
-      height: 1000,
-      alt: 'Portfolio image'
-    }));
-    
-    lightbox.addFilter('numItems', () => dataSource.length);
-    lightbox.addFilter('itemData', (itemData, index) => dataSource[index]);
-    
-    lightbox.init();
-    lightbox.loadAndOpen(startIndex);
+    try {
+      const dataSource = images.map(img => ({
+        src: cloudUrl(img, 1000, 'best'),
+        width: 1000,
+        height: 1000,
+        alt: 'Portfolio image'
+      }));
+      
+      const lightbox = new PhotoSwipeLightbox({
+        dataSource: dataSource,
+        index: startIndex,
+        pswpModule: PhotoSwipe,
+        bgOpacity: 0.9,
+        loop: true,
+        preload: [1, 2]
+      });
+      
+      lightbox.init();
+      lightbox.loadAndOpen(startIndex);
+    } catch (err) {
+      console.error('Gallery error:', err);
+      alert('Could not open gallery');
+    }
   }
 
-  // ==================== SEED USERS WITH FIXED LOCATIONS ====================
+  // ==================== SEED USERS ====================
   async function seedUsers() {
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
@@ -1692,8 +1731,8 @@
     chatPartnerName.textContent = currentChatPartner.name;
     
     messagesTab.classList.add('hidden');
-    mainApp.classList.add('hidden'); // Hide main app
-    chatView.classList.remove('hidden'); // Show chat overlay
+    mainApp.classList.add('hidden');
+    chatView.classList.remove('hidden');
     
     if (unsubscribeMessages) {
       unsubscribeMessages();
@@ -1713,13 +1752,11 @@
         return;
       }
       
-      // Mark messages from other user as read
       const batch = writeBatch(db);
       let hasUnread = false;
       
       snapshot.forEach(doc => {
         const msg = doc.data();
-        // If message is from other user and not read, mark it as read
         if (msg.senderId !== currentUser.uid && !msg.read) {
           batch.update(doc.ref, { read: true });
           hasUnread = true;
@@ -1736,7 +1773,6 @@
         const time = msg.timestamp?.toDate() || new Date();
         const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
-        // Determine tick color based on read status
         const tickClass = msg.read ? 'tick-red' : 'tick-white';
         
         html += `
@@ -1755,47 +1791,31 @@
     });
   }
 
-  // ==================== FIXED SEND MESSAGE FUNCTION ====================
+  // ==================== SEND MESSAGE ====================
   async function sendMessage() {
     const text = messageInput.value.trim();
-    if (!text || !currentChatId || !currentUser) {
-      console.log('Cannot send: missing data');
-      return;
-    }
+    if (!text || !currentChatId || !currentUser) return;
     
-    // Clear input immediately for better UX
     messageInput.value = '';
     
     try {
-      console.log('Sending message to chat:', currentChatId);
-      
-      // Create the message document
-      const messageData = {
+      await addDoc(collection(db, 'messages'), {
         chatId: currentChatId,
         senderId: currentUser.uid,
         text: text,
         timestamp: Timestamp.now(),
         read: false
-      };
+      });
       
-      const messageRef = await addDoc(collection(db, 'messages'), messageData);
-      console.log('Message saved with ID:', messageRef.id);
-      
-      // Update the chat's last message
-      const chatRef = doc(db, 'chats', currentChatId);
-      await updateDoc(chatRef, {
+      await updateDoc(doc(db, 'chats', currentChatId), {
         lastMessage: text,
         lastMessageTimestamp: Timestamp.now(),
         lastMessageSender: currentUser.uid
       });
       
-      console.log('Chat updated successfully');
-      
     } catch (error) {
-      console.error('ERROR sending message:', error);
-      alert('Failed to send: ' + error.message);
-      
-      // Put the text back if it failed
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
       messageInput.value = text;
     }
   }
@@ -1847,11 +1867,10 @@
     profileImage.src = cloudUrl(data.profileImage, 200, 'good');
     
     const portfolio = data.portfolioImages || ['sample1', 'sample2', 'sample3'];
-    portfolioGrid.innerHTML = portfolio.slice(0, 9).map(img => 
-      `<img src="${cloudUrl(img, 200, 'good')}" loading="lazy" data-index="${portfolio.indexOf(img)}">`
+    portfolioGrid.innerHTML = portfolio.slice(0, 9).map((img, index) => 
+      `<img src="${cloudUrl(img, 200, 'good')}" loading="lazy" data-index="${index}">`
     ).join('');
     
-    // Add click handlers for portfolio images
     document.querySelectorAll('#portfolioGrid img').forEach(img => {
       img.addEventListener('click', () => {
         const index = parseInt(img.dataset.index);
@@ -1910,49 +1929,53 @@
   // ==================== PROFILE PICTURE UPLOAD ====================
   if (uploadProfilePicBtn) {
     uploadProfilePicBtn.addEventListener('click', () => {
-      const widget = initializeCloudinaryUpload(async (publicId) => {
-        uploadProgress.classList.remove('hidden');
-        try {
-          await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-            profileImage: publicId
-          });
-          profileImage.src = cloudUrl(publicId, 200, 'good');
-          alert('Profile picture updated!');
-        } catch (err) {
-          alert('Error updating profile picture');
-        } finally {
-          uploadProgress.classList.add('hidden');
-        }
-      }, {
-        cropping: true,
-        aspectRatio: 1
+      waitForCloudinary(() => {
+        const widget = initializeCloudinaryUpload(async (publicId) => {
+          uploadProgress.classList.remove('hidden');
+          try {
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+              profileImage: publicId
+            });
+            profileImage.src = cloudUrl(publicId, 200, 'good');
+            alert('Profile picture updated!');
+          } catch (err) {
+            alert('Error updating profile picture');
+          } finally {
+            uploadProgress.classList.add('hidden');
+          }
+        }, {
+          cropping: true,
+          aspectRatio: 1
+        });
+        if (widget) widget.open();
       });
-      widget.open();
     });
   }
 
   // ==================== PORTFOLIO IMAGE UPLOAD ====================
   if (addPortfolioBtn) {
     addPortfolioBtn.addEventListener('click', () => {
-      const widget = initializeCloudinaryUpload(async (publicId) => {
-        uploadProgress.classList.remove('hidden');
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          await updateDoc(userRef, {
-            portfolioImages: arrayUnion(publicId)
-          });
-          await loadProfileData(); // Refresh portfolio grid
-        } catch (err) {
-          alert('Error adding portfolio image');
-        } finally {
-          uploadProgress.classList.add('hidden');
-        }
-      }, {
-        multiple: true,
-        maxFiles: 5,
-        cropping: false
+      waitForCloudinary(() => {
+        const widget = initializeCloudinaryUpload(async (publicId) => {
+          uploadProgress.classList.remove('hidden');
+          try {
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            await updateDoc(userRef, {
+              portfolioImages: arrayUnion(publicId)
+            });
+            await loadProfileData();
+          } catch (err) {
+            alert('Error adding portfolio image');
+          } finally {
+            uploadProgress.classList.add('hidden');
+          }
+        }, {
+          multiple: true,
+          maxFiles: 5,
+          cropping: false
+        });
+        if (widget) widget.open();
       });
-      widget.open();
     });
   }
 
@@ -2239,7 +2262,7 @@
     });
   }
 
-  // ==================== KEYBOARD DISMISS ON OUTSIDE TAP ====================
+  // ==================== KEYBOARD DISMISS ====================
   document.addEventListener('touchstart', (e) => {
     if (chatView.classList.contains('hidden')) return;
     
