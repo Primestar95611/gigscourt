@@ -1019,6 +1019,62 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe-lightbox.umd.min.js"></script>
 
 <script type="module">
+  // ==================== ON-SCREEN DEBUG CONSOLE ====================
+  const debugDiv = document.createElement('div');
+  debugDiv.id = 'debug-console';
+  debugDiv.style.cssText = `
+    position: fixed;
+    bottom: 70px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.85);
+    color: #0f0;
+    font-size: 12px;
+    font-family: monospace;
+    z-index: 10000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+    border-top: 2px solid #0f0;
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  `;
+  document.body.appendChild(debugDiv);
+
+  // Override console.log and console.error
+  const originalLog = console.log;
+  const originalError = console.error;
+
+  console.log = function(...args) {
+    originalLog.apply(console, args);
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+    const line = document.createElement('div');
+    line.textContent = `> ${msg}`;
+    debugDiv.appendChild(line);
+    debugDiv.scrollTop = debugDiv.scrollHeight;
+  };
+
+  console.error = function(...args) {
+    originalError.apply(console, args);
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+    const line = document.createElement('div');
+    line.style.color = '#f00';
+    line.textContent = `! ${msg}`;
+    debugDiv.appendChild(line);
+    debugDiv.scrollTop = debugDiv.scrollHeight;
+  };
+
+  window.addEventListener('error', (e) => {
+    console.error('Global error:', e.error || e.message);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled rejection:', e.reason);
+  });
+
+  console.log('Debug console active');
+
+  // ==================== FIREBASE IMPORTS ====================
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { 
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -1029,25 +1085,6 @@
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
     addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-  // Global error handler to catch all errors
-  window.addEventListener('error', function(event) {
-    console.error('Global error:', event.error || event.message);
-    const errorDiv = document.getElementById('cloudinaryError');
-    if (errorDiv) {
-      errorDiv.textContent = 'Error: ' + (event.message || 'Unknown error');
-      errorDiv.classList.remove('hidden');
-    }
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    console.error('Unhandled promise rejection:', event.reason);
-    const errorDiv = document.getElementById('cloudinaryError');
-    if (errorDiv) {
-      errorDiv.textContent = 'Error: ' + (event.reason || 'Promise rejected');
-      errorDiv.classList.remove('hidden');
-    }
-  });
 
   const firebaseConfig = {
     apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
@@ -1137,6 +1174,8 @@
   let isPulling = false;
   let isTouchingMap = false;
   let cloudinaryReady = false;
+
+  console.log('App initialized');
 
   // Check if Cloudinary is loaded
   function checkCloudinary() {
