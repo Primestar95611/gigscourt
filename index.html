@@ -769,6 +769,18 @@
       animation: spin 0.7s linear infinite;
       margin: 0 auto 12px;
     }
+
+    /* Error message styling */
+    .error-banner {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 12px;
+      margin: 16px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 14px;
+      border: 1px solid #fecaca;
+    }
   </style>
 </head>
 <body>
@@ -890,6 +902,8 @@
 
       <!-- Profile Tab -->
       <div id="profileTab" class="tab-pane hidden">
+        <div id="cloudinaryError" class="error-banner hidden" style="margin-top: 0;"></div>
+        
         <div class="profile-header">
           <div class="profile-image-container">
             <img id="profileImage" src="" alt="Profile">
@@ -998,8 +1012,8 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Cloudinary Upload Widget -->
-<script src="https://upload-widget.cloudinary.com/latest/global.js"></script>
+<!-- Cloudinary Upload Widget - Updated URL -->
+<script src="https://widget.cloudinary.com/v2.0/global.js"></script>
 <!-- PhotoSwipe for Instagram-style gallery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe-lightbox.umd.min.js"></script>
@@ -1015,6 +1029,25 @@
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
     addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  // Global error handler to catch all errors
+  window.addEventListener('error', function(event) {
+    console.error('Global error:', event.error || event.message);
+    const errorDiv = document.getElementById('cloudinaryError');
+    if (errorDiv) {
+      errorDiv.textContent = 'Error: ' + (event.message || 'Unknown error');
+      errorDiv.classList.remove('hidden');
+    }
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    const errorDiv = document.getElementById('cloudinaryError');
+    if (errorDiv) {
+      errorDiv.textContent = 'Error: ' + (event.reason || 'Promise rejected');
+      errorDiv.classList.remove('hidden');
+    }
+  });
 
   const firebaseConfig = {
     apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
@@ -1077,6 +1110,7 @@
   const uploadProfilePicBtn = document.getElementById('uploadProfilePicBtn');
   const addPortfolioBtn = document.getElementById('addPortfolioBtn');
   const uploadProgress = document.getElementById('uploadProgress');
+  const cloudinaryError = document.getElementById('cloudinaryError');
 
   // State
   let selectedEmailSkills = new Set();
@@ -1114,19 +1148,28 @@
     let attempts = 0;
     const check = () => {
       if (checkCloudinary()) {
+        console.log('Cloudinary widget loaded successfully');
         cloudinaryReady = true;
+        if (cloudinaryError) cloudinaryError.classList.add('hidden');
         callback();
       } else if (attempts < maxAttempts) {
         attempts++;
-        setTimeout(check, 250);
+        console.log('Waiting for Cloudinary... attempt ' + attempts);
+        setTimeout(check, 500);
       } else {
-        alert('Cloudinary upload widget failed to load. Please refresh the page.');
+        const errorMsg = 'Cloudinary widget failed to load after multiple attempts';
+        console.error(errorMsg);
+        if (cloudinaryError) {
+          cloudinaryError.textContent = errorMsg + '. Please check your internet connection and refresh.';
+          cloudinaryError.classList.remove('hidden');
+        }
+        alert(errorMsg);
       }
     };
     check();
   }
 
-  // ==================== PULL TO REFRESH (FIXED FOR MAP) ====================
+  // ==================== PULL TO REFRESH ====================
   function createRefreshIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'refresh-indicator';
@@ -1230,12 +1273,13 @@
 
   // ==================== CLOUDINARY UPLOAD FUNCTIONS ====================
   function initializeCloudinaryUpload(callback, options = {}) {
-    if (!checkCloudinary()) {
-      alert('Upload widget not ready. Please try again.');
-      return null;
-    }
-    
     try {
+      if (!checkCloudinary()) {
+        throw new Error('Cloudinary widget not available');
+      }
+      
+      console.log('Creating Cloudinary widget with preset:', UPLOAD_PRESET);
+      
       const widget = cloudinary.createUploadWidget({
         cloudName: CLOUD_NAME,
         uploadPreset: UPLOAD_PRESET,
@@ -1269,16 +1313,25 @@
         if (error) {
           console.error('Upload error:', error);
           alert('Upload failed: ' + (error.message || 'Unknown error'));
+          if (cloudinaryError) {
+            cloudinaryError.textContent = 'Upload error: ' + (error.message || 'Unknown error');
+            cloudinaryError.classList.remove('hidden');
+          }
           return;
         }
         if (result && result.event === 'success') {
+          console.log('Upload successful, public ID:', result.info.public_id);
           callback(result.info.public_id);
         }
       });
       return widget;
     } catch (err) {
       console.error('Widget creation error:', err);
-      alert('Failed to initialize upload widget');
+      alert('Failed to initialize upload widget: ' + err.message);
+      if (cloudinaryError) {
+        cloudinaryError.textContent = 'Widget error: ' + err.message;
+        cloudinaryError.classList.remove('hidden');
+      }
       return null;
     }
   }
@@ -1929,7 +1982,9 @@
   // ==================== PROFILE PICTURE UPLOAD ====================
   if (uploadProfilePicBtn) {
     uploadProfilePicBtn.addEventListener('click', () => {
+      console.log('Profile picture button clicked');
       waitForCloudinary(() => {
+        console.log('Cloudinary ready, creating widget...');
         const widget = initializeCloudinaryUpload(async (publicId) => {
           uploadProgress.classList.remove('hidden');
           try {
@@ -1938,6 +1993,7 @@
             });
             profileImage.src = cloudUrl(publicId, 200, 'good');
             alert('Profile picture updated!');
+            if (cloudinaryError) cloudinaryError.classList.add('hidden');
           } catch (err) {
             alert('Error updating profile picture');
           } finally {
@@ -1947,7 +2003,12 @@
           cropping: true,
           aspectRatio: 1
         });
-        if (widget) widget.open();
+        if (widget) {
+          console.log('Widget created, opening...');
+          widget.open();
+        } else {
+          console.error('Failed to create widget');
+        }
       });
     });
   }
@@ -1955,7 +2016,9 @@
   // ==================== PORTFOLIO IMAGE UPLOAD ====================
   if (addPortfolioBtn) {
     addPortfolioBtn.addEventListener('click', () => {
+      console.log('Portfolio button clicked');
       waitForCloudinary(() => {
+        console.log('Cloudinary ready, creating widget...');
         const widget = initializeCloudinaryUpload(async (publicId) => {
           uploadProgress.classList.remove('hidden');
           try {
@@ -1964,6 +2027,7 @@
               portfolioImages: arrayUnion(publicId)
             });
             await loadProfileData();
+            if (cloudinaryError) cloudinaryError.classList.add('hidden');
           } catch (err) {
             alert('Error adding portfolio image');
           } finally {
@@ -1974,7 +2038,12 @@
           maxFiles: 5,
           cropping: false
         });
-        if (widget) widget.open();
+        if (widget) {
+          console.log('Widget created, opening...');
+          widget.open();
+        } else {
+          console.error('Failed to create widget');
+        }
       });
     });
   }
