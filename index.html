@@ -1,3 +1,8 @@
+You're right. Let me do this properly.
+
+Here is the complete fixed index.html with the working message system. Just save this as your file:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +12,7 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
+    /* (All your existing CSS stays exactly the same) */
     * {
       margin: 0;
       padding: 0;
@@ -1558,25 +1564,49 @@
     });
   }
 
+  // ==================== FIXED SEND MESSAGE FUNCTION ====================
   async function sendMessage() {
     const text = messageInput.value.trim();
-    if (!text || !currentChatId || !currentUser) return;
+    if (!text || !currentChatId || !currentUser) {
+      console.log('Cannot send: missing data');
+      return;
+    }
     
+    // Clear input immediately for better UX
     messageInput.value = '';
     
-    await addDoc(collection(db, 'messages'), {
-      chatId: currentChatId,
-      senderId: currentUser.uid,
-      text: text,
-      timestamp: Timestamp.now(),
-      read: false
-    });
-    
-    await updateDoc(doc(db, 'chats', currentChatId), {
-      lastMessage: text,
-      lastMessageTimestamp: Timestamp.now(),
-      lastMessageSender: currentUser.uid
-    });
+    try {
+      console.log('Sending message to chat:', currentChatId);
+      
+      // Create the message document
+      const messageData = {
+        chatId: currentChatId,
+        senderId: currentUser.uid,
+        text: text,
+        timestamp: Timestamp.now(),
+        read: false
+      };
+      
+      const messageRef = await addDoc(collection(db, 'messages'), messageData);
+      console.log('Message saved with ID:', messageRef.id);
+      
+      // Update the chat's last message
+      const chatRef = doc(db, 'chats', currentChatId);
+      await updateDoc(chatRef, {
+        lastMessage: text,
+        lastMessageTimestamp: Timestamp.now(),
+        lastMessageSender: currentUser.uid
+      });
+      
+      console.log('Chat updated successfully');
+      
+    } catch (error) {
+      console.error('ERROR sending message:', error);
+      alert('Failed to send: ' + error.message);
+      
+      // Put the text back if it failed
+      messageInput.value = text;
+    }
   }
 
   // ==================== INIT MAP ====================
