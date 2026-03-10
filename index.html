@@ -1023,7 +1023,7 @@
   </div>
 
   <!-- Hidden file input for ImageKit upload -->
-  <input type="file" id="fileInput" accept="image/*">
+  <input type="file" id="fileInput" accept="image/*" multiple>
 </div>
 
 <!-- Leaflet JS -->
@@ -1058,7 +1058,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // ImageKit configuration
+  // ImageKit configuration - UNSIGNED UPLOADS
   const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
   const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
   const imageKitUrl = (fileId, w = 400) => `${IK_URL_ENDPOINT}/${fileId}?tr=w-${w}`;
@@ -1238,7 +1238,7 @@
     }, { passive: true });
   }
 
-  // ==================== IMAGEKIT UPLOAD ====================
+  // ==================== IMAGEKIT UNSIGNED UPLOAD ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1256,6 +1256,7 @@
       formData.append('publicKey', IK_PUBLIC_KEY);
       formData.append('fileName', file.name);
       formData.append('folder', type === 'profile' ? 'profiles' : 'portfolios');
+      formData.append('useUniqueFileName', 'true');
 
       const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
         method: 'POST',
@@ -1263,11 +1264,13 @@
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();
-      return result.fileId; // ImageKit file ID
+      console.log('Upload success:', result);
+      return result.fileId;
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -1291,11 +1294,11 @@
     
     try {
       const dataSource = images.map(fileId => ({
-        src: imageKitUrl(fileId, 1600), // Full size
+        src: imageKitUrl(fileId, 1600),
         width: 1600,
         height: 1600,
         alt: 'Portfolio image',
-        thumbnail: imageKitUrl(fileId, 300) // Thumbnail
+        thumbnail: imageKitUrl(fileId, 300)
       }));
       
       const lightbox = new PhotoSwipeLightbox({
@@ -1305,7 +1308,7 @@
         bgOpacity: 0.9,
         loop: true,
         preload: [1, 2],
-        closeOnVerticalDrag: true, // Swipe down to close
+        closeOnVerticalDrag: true,
         wheelToZoom: true,
         pinchToClose: true
       });
@@ -1948,40 +1951,41 @@
 
   // ==================== FILE INPUT HANDLER ====================
   fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
-    const fileId = await uploadToImageKit(file, currentUploadType);
-    if (!fileId) return;
-
-    try {
-      if (currentUploadType === 'profile') {
+    // Handle multiple files for portfolio
+    if (currentUploadType === 'portfolio') {
+      for (const file of files) {
+        const fileId = await uploadToImageKit(file, 'portfolio');
+        if (fileId) {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          await updateDoc(userRef, {
+            portfolioImages: arrayUnion(fileId)
+          });
+        }
+      }
+      await loadProfileData(); // Refresh grid after all uploads
+    } 
+    // Single file for profile
+    else if (currentUploadType === 'profile' && files[0]) {
+      const fileId = await uploadToImageKit(files[0], 'profile');
+      if (fileId) {
         await updateDoc(doc(db, 'users', auth.currentUser.uid), {
           profileImage: fileId
         });
         profileImage.src = imageKitUrl(fileId, 200);
-        alert('Profile picture updated!');
-      } else if (currentUploadType === 'portfolio') {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userRef, {
-          portfolioImages: arrayUnion(fileId)
-        });
-        await loadProfileData(); // Refresh portfolio grid
       }
-      
-      if (uploadError) uploadError.classList.add('hidden');
-    } catch (err) {
-      console.error('Firestore update error:', err);
-      alert('Error updating database');
-    } finally {
-      fileInput.value = ''; // Clear input
     }
+
+    fileInput.value = ''; // Clear input
   });
 
   // ==================== PROFILE PICTURE UPLOAD ====================
   if (uploadProfilePicBtn) {
     uploadProfilePicBtn.addEventListener('click', () => {
       currentUploadType = 'profile';
+      fileInput.removeAttribute('multiple');
       fileInput.click();
     });
   }
@@ -1990,9 +1994,8 @@
   if (addPortfolioBtn) {
     addPortfolioBtn.addEventListener('click', () => {
       currentUploadType = 'portfolio';
-      fileInput.setAttribute('multiple', 'true');
+      fileInput.setAttribute('multiple', 'multiple');
       fileInput.click();
-      fileInput.removeAttribute('multiple'); // Reset after click
     });
   }
 
