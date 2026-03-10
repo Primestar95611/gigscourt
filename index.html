@@ -910,7 +910,7 @@
   import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
     collection, query, orderBy, limit, startAfter, getDocs, GeoPoint,
-    addDoc, onSnapshot, Timestamp, where
+    addDoc, onSnapshot, Timestamp, where, writeBatch
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1515,10 +1515,27 @@
     
     messagesContainer.innerHTML = '<div class="empty-state">Loading messages...</div>';
     
-    unsubscribeMessages = onSnapshot(q, (snapshot) => {
+    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
       if (snapshot.empty) {
         messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hello!</div>';
         return;
+      }
+      
+      // Mark messages from other user as read
+      const batch = writeBatch(db);
+      let hasUnread = false;
+      
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        // If message is from other user and not read, mark it as read
+        if (msg.senderId !== currentUser.uid && !msg.read) {
+          batch.update(doc.ref, { read: true });
+          hasUnread = true;
+        }
+      });
+      
+      if (hasUnread) {
+        await batch.commit();
       }
       
       let html = '';
