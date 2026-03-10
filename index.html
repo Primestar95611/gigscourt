@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- PhotoSwipe CSS for Instagram-style gallery -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css" />
+  <!-- ImageKit JavaScript SDK -->
+  <script src="https://unpkg.com/imagekit-javascript/dist/imagekit.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -660,14 +662,14 @@
     }
     
     .message.sent {
-      background: #5B21B6; /* Midnight purple */
+      background: #5B21B6;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
       margin-left: auto;
     }
     
     .message.received {
-      background: #4F46E5; /* Indigo */
+      background: #4F46E5;
       align-self: flex-start;
       border-bottom-left-radius: 4px;
     }
@@ -701,10 +703,9 @@
       flex-direction: column;
       gap: 4px;
       -webkit-overflow-scrolling: touch;
-      background: #0f172a; /* Dark background like WhatsApp */
+      background: #0f172a;
     }
 
-    /* Chat Input Area */
     .chat-input {
       flex: 1;
       padding: 12px 16px;
@@ -738,7 +739,6 @@
       cursor: pointer;
     }
 
-    /* PhotoSwipe custom styles */
     .pswp__bg {
       background: rgba(0, 0, 0, 0.9);
     }
@@ -749,7 +749,6 @@
       color: white;
     }
 
-    /* Upload progress indicator */
     .upload-progress {
       position: fixed;
       top: 50%;
@@ -772,7 +771,6 @@
       margin: 0 auto 12px;
     }
 
-    /* Error message styling */
     .error-banner {
       background: #fee2e2;
       color: #dc2626;
@@ -784,13 +782,11 @@
       border: 1px solid #fecaca;
     }
 
-    /* Disabled button style */
     .btn-disabled {
       opacity: 0.5;
       pointer-events: none;
     }
 
-    /* Hidden file input */
     #fileInput {
       display: none;
     }
@@ -977,7 +973,7 @@
     </div>
   </div>
 
-  <!-- Chat View (full screen overlay) -->
+  <!-- Chat View -->
   <div id="chatView" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000;">
     <div style="height: 100%; display: flex; flex-direction: column;">
       <div style="padding: 16px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 16px; flex-shrink: 0;">
@@ -1022,13 +1018,13 @@
     <p>Uploading...</p>
   </div>
 
-  <!-- Hidden file input for ImageKit upload -->
+  <!-- Hidden file input -->
   <input type="file" id="fileInput" accept="image/*" multiple>
 </div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- PhotoSwipe for Instagram-style gallery -->
+<!-- PhotoSwipe -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe-lightbox.umd.min.js"></script>
 
@@ -1058,9 +1054,11 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // ImageKit configuration - UNSIGNED UPLOADS
+  // ImageKit config
   const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
   const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
+  const AUTH_ENDPOINT = '/api/imagekit-auth';
+  
   const imageKitUrl = (fileId, w = 400) => `${IK_URL_ENDPOINT}/${fileId}?tr=w-${w}`;
 
   // DOM elements
@@ -1134,7 +1132,7 @@
   let isPulling = false;
   let isTouchingMap = false;
   let isUploading = false;
-  let currentUploadType = null; // 'profile' or 'portfolio'
+  let currentUploadType = null;
 
   // ==================== PULL TO REFRESH ====================
   function createRefreshIndicator() {
@@ -1238,7 +1236,50 @@
     }, { passive: true });
   }
 
-  // ==================== IMAGEKIT UNSIGNED UPLOAD - FIXED VERSION ====================
+  // ==================== IMAGE COMPRESSION ====================
+  async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 1600;
+          
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          }, 'image/jpeg', 0.85);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  }
+
+  // ==================== IMAGEKIT UPLOAD ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1251,14 +1292,24 @@
     if (uploadError) uploadError.classList.add('hidden');
 
     try {
+      const compressedFile = await compressImage(file);
+      
+      const authResponse = await fetch(AUTH_ENDPOINT);
+      if (!authResponse.ok) {
+        throw new Error('Failed to get upload authentication');
+      }
+      const authData = await authResponse.json();
+      
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('publicKey', IK_PUBLIC_KEY);
+      formData.append('signature', authData.signature);
+      formData.append('token', authData.token);
+      formData.append('expire', authData.expire);
       formData.append('fileName', file.name);
       formData.append('folder', type === 'profile' ? 'profiles' : 'portfolios');
       formData.append('useUniqueFileName', 'true');
 
-      // IMPORTANT: Do NOT set Content-Type header - let browser set it automatically
       const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
         method: 'POST',
         body: formData
@@ -1270,7 +1321,6 @@
       }
 
       const result = await response.json();
-      console.log('Upload success:', result);
       return result.fileId;
 
     } catch (error) {
@@ -1955,7 +2005,6 @@
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    // Handle multiple files for portfolio
     if (currentUploadType === 'portfolio') {
       for (const file of files) {
         const fileId = await uploadToImageKit(file, 'portfolio');
@@ -1966,9 +2015,8 @@
           });
         }
       }
-      await loadProfileData(); // Refresh grid after all uploads
+      await loadProfileData();
     } 
-    // Single file for profile
     else if (currentUploadType === 'profile' && files[0]) {
       const fileId = await uploadToImageKit(files[0], 'profile');
       if (fileId) {
@@ -1979,7 +2027,7 @@
       }
     }
 
-    fileInput.value = ''; // Clear input
+    fileInput.value = '';
   });
 
   // ==================== PROFILE PICTURE UPLOAD ====================
