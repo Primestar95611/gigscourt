@@ -18,17 +18,16 @@
     }
     body {
       background: #f5f7fa;
-      height: 100vh;
+      min-height: 100vh;
       width: 100%;
-      position: fixed;
-      overflow: hidden;
     }
     #app {
-      height: 100%;
+      height: 100vh;
       width: 100%;
       display: flex;
       flex-direction: column;
       background: white;
+      overflow: hidden;
     }
     .auth-container {
       flex: 1;
@@ -1102,7 +1101,7 @@
     </div>
   </div>
 
-  <!-- Start Chat Modal (still used for direct message initiation) -->
+  <!-- Start Chat Modal -->
   <div id="startChatModal" class="modal-overlay hidden">
     <div class="modal">
       <h3 id="startChatModalTitle">Start Chat</h3>
@@ -1123,7 +1122,7 @@
   <!-- Hidden file input -->
   <input type="file" id="fileInput" accept="image/*" multiple>
 
-  <!-- Quick-View Bottom Sheet (NEW) -->
+  <!-- Quick-View Bottom Sheet -->
   <div class="sheet-overlay" id="sheetOverlay"></div>
   <div class="quick-view-sheet" id="quickViewSheet">
     <div class="sheet-handle"></div>
@@ -1362,7 +1361,8 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      if (diff > 60 && tabContent.scrollTop === 0) {
+      // Increased threshold from 60 to 120 for less sensitivity
+      if (diff > 120 && tabContent.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
@@ -1405,9 +1405,8 @@
   }
 
   // ==================== IMAGE COMPRESSION - TEMPORARILY DISABLED ====================
-  // Will be restored in Phase 2
   async function compressImage(file) {
-    return file; // Return original file without compression for now
+    return file;
   }
 
   // ==================== IMAGEKIT UPLOAD ====================
@@ -1609,7 +1608,6 @@
       <div class="skills">${d.skills.slice(0, 2).join(', ')}${d.skills.length > 2 ? '…' : ''}</div>
     `;
     
-    // Updated click handler - opens Quick-View instead of chat modal
     card.addEventListener('click', (e) => {
       if (!e.target.classList.contains('distance')) {
         openQuickView(id, d);
@@ -1719,7 +1717,6 @@
 
       const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
       
-      // Updated popup to have a button that opens Quick-View
       const popupContent = document.createElement('div');
       popupContent.innerHTML = `
         <b>${user.businessName}</b><br>
