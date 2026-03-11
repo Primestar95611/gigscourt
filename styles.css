@@ -961,33 +961,108 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   display: block;
 }
 @media (prefers-color-scheme: dark) {
+  /* Base */
   html { background: #1a1a1a; }
   body { background: #1a1a1a !important; }
   #app { background: #1a1a1a; }
   
-  /* Fix the profile header white area */
-  .profile-header { background: #1a1a1a; }
-  .profile-header .business-name { color: white; }
-  .profile-image-container img { border-color: #333; }
+  /* Auth screens */
+  .auth-container { background: #1a1a1a; }
+  .auth-container h2 { color: white; }
+  .auth-toggle { background: #2a2a2a; }
+  .auth-toggle button { color: #888; }
+  .auth-toggle button.active { background: #0066ff; color: white; }
   
+  /* All text */
+  h1, h2, h3, h4, h5, h6, p, div, span { color: #fff; }
+  
+  /* Inputs */
+  .input-field { background: #2a2a2a; border-color: #444; color: white; }
+  .input-field::placeholder { color: #888; }
+  
+  /* Buttons */
+  .btn { background: #0066ff; color: white; }
+  .btn-outline { background: #2a2a2a; border-color: #444; color: white; }
+  .btn-outline:hover { background: #333; }
+  .btn-danger { background: #dc2626; }
+  
+  /* Tabs */
   .tab-bar { background: rgba(30, 30, 30, 0.96); border-top-color: #333; }
   .tab-item { color: #888; }
   .tab-item.active { color: #0066ff; }
-  .input-field { background: #2a2a2a; border-color: #444; color: white; }
+  
+  /* Home tab */
   .provider-card { background: #2a2a2a; border-color: #333; }
   .business-name { color: white; }
   .skills { color: #aaa; }
+  .distance { color: #0066ff; }
+  
+  /* Search tab - everything */
+  .search-controls { background: #1a1a1a; border-bottom-color: #333; }
+  .search-input { background: #2a2a2a; border-color: #444; color: white; }
+  .search-input::placeholder { color: #888; }
+  .slider-row span { color: white; }
+  .slider-row input { background: #444; }
+  .slider-row input::-webkit-slider-thumb { background: #0066ff; }
   .drawer-list { background: #1a1a1a; }
   .provider-list-item { background: #2a2a2a; }
-  .bio-section { background: #2a2a2a; }
-  .bio-section textarea { background: #2a2a2a; color: white; }
-  .settings-section { background: #2a2a2a; }
+  .provider-list-item strong { color: white; }
+  .provider-list-item span { color: #aaa; }
+  .pull-handle { background: #444; }
+  
+  /* Messages tab */
+  .conversations-list { background: #1a1a1a; }
   .conversation-item { background: #2a2a2a; border-bottom-color: #333; }
   .conversation-name { color: white; }
   .last-message { color: #aaa; }
-  .modal { background: #2a2a2a; color: white; }
+  .timestamp { color: #888; }
+  
+  /* Profile tab */
+  .profile-header { background: #1a1a1a; }
+  .profile-stats .stat-number { color: white; }
+  .profile-stats .stat-label { color: #aaa; }
+  .bio-section { background: #2a2a2a; }
+  .bio-section textarea { background: #2a2a2a; color: white; }
+  .bio-section textarea::placeholder { color: #888; }
+  .settings-section { background: #2a2a2a; }
+  .settings-title { color: white; }
+  .missing-contact { background: #333; }
+  .missing-contact h4 { color: white; }
+  
+  /* Portfolio */
+  .portfolio-header h4 { color: white; }
+  .portfolio-header span { color: #aaa; }
+  .add-portfolio-btn { background: #0066ff; }
+  .portfolio-grid { background: #1a1a1a; }
+  
+  /* Review section */
+  .star-rating-input span { color: #444; }
+  .star-rating-input span.selected { color: #f5b342; }
+  
+  /* Modals and popups */
+  .modal-overlay { background: rgba(0, 0, 0, 0.8); }
+  .modal { background: #2a2a2a; }
+  .modal h3 { color: white; }
   .modal p { color: #ccc; }
-  .btn-outline { background: #2a2a2a; color: white; }
-  .quick-view-sheet { background: #1a1a1a; color: white; }
+  
+  /* Quick view sheet */
+  .quick-view-sheet { background: #1a1a1a; }
+  .quick-view-sheet h3 { color: white; }
+  .quick-view-sheet div { color: #ccc; }
   .sheet-handle { background: #444; }
+  .sheet-profile-row div { color: #aaa; }
+  .sheet-btn-secondary { background: #2a2a2a; border-color: #444; color: white; }
+  
+  /* Chat */
+  #chatView { background: #0f172a; }
+  .chat-input { background: #1e293b; border-color: #334155; color: white; }
+  .send-btn { background: #5B21B6; }
+  
+  /* All backgrounds */
+  .tab-content { background: #1a1a1a; }
+  .grid-2 { background: #1a1a1a; }
+  .empty-state { color: #888; }
+  .coming-soon { background: #333; color: #fbbf24; }
+  .error-msg { color: #f87171; }
+  .error-banner { background: #451a1a; color: #f87171; border-color: #7f1d1d; }
 }
