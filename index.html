@@ -1055,8 +1055,14 @@
   // ImageKit config
   const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
   const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
-  
-  const imageKitUrl = (fileId, w = 400) => `${IK_URL_ENDPOINT}/${fileId}?tr=w-${w}`;
+  const DEFAULT_AVATAR = 'https://ik.imagekit.io/GigsCourt/default_avatar';
+
+  // Helper to add thumbnail parameters to any ImageKit URL
+  const getThumbnailUrl = (url, w = 400) => {
+    if (!url) return DEFAULT_AVATAR;
+    // Add transformation parameters to existing URL
+    return url.includes('?') ? `${url}&tr=w-${w}` : `${url}?tr=w-${w}`;
+  };
 
   // DOM elements
   const authContainer = document.getElementById('authContainer');
@@ -1276,7 +1282,7 @@
     });
   }
 
-  // ==================== IMAGEKIT UPLOAD - FIXED VERSION ====================
+  // ==================== IMAGEKIT UPLOAD - RETURNS URL ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1297,8 +1303,8 @@
       // Step 1: Compress the image first
       const compressedFile = await compressImage(file);
       
-      // Step 2: Get authentication parameters from your API
-      const authResponse = await fetch('/api/imagekit-auth');
+      // Step 2: Get authentication parameters from your API with the file name
+      const authResponse = await fetch(`/api/imagekit-auth?fileName=${encodeURIComponent(file.name)}`);
       if (!authResponse.ok) {
         throw new Error('Failed to get upload authentication');
       }
@@ -1321,13 +1327,16 @@
       });
 
       if (!response.ok) {
-  const errorText = await response.text();
-  console.error('Full ImageKit error response:', errorText);
-  throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-}
+        const errorText = await response.text();
+        console.error('Full ImageKit error response:', errorText);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
 
       const result = await response.json();
-      return result.fileId;
+      
+      // Return the URL instead of fileId
+      console.log('Upload successful, URL:', result.url);
+      return result.url;
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -1350,12 +1359,12 @@
     }
     
     try {
-      const dataSource = images.map(fileId => ({
-        src: imageKitUrl(fileId, 1600),
+      const dataSource = images.map(url => ({
+        src: getThumbnailUrl(url, 1600),
         width: 1600,
         height: 1600,
         alt: 'Portfolio image',
-        thumbnail: imageKitUrl(fileId, 300)
+        thumbnail: getThumbnailUrl(url, 300)
       }));
       
       const lightbox = new PhotoSwipeLightbox({
@@ -1409,18 +1418,25 @@
     ];
 
     for (let i = 0; i < 20; i++) {
+      const profileUrl = `https://ik.imagekit.io/GigsCourt/sample${(i % 3) + 1}`;
+      const portfolioUrls = [
+        'https://ik.imagekit.io/GigsCourt/sample1',
+        'https://ik.imagekit.io/GigsCourt/sample2',
+        'https://ik.imagekit.io/GigsCourt/sample3'
+      ];
+      
       await setDoc(doc(db, 'users', `seed_${i}`), {
         businessName: businesses[i],
         email: `seed${i}@example.com`,
         phoneNumber: '',
         skills: skillsList[i],
-        profileImage: `sample${(i % 3) + 1}`,
+        profileImage: profileUrl,
         rating: Number((3.5 + (i * 0.08) % 1.5).toFixed(1)),
         reviewCount: 50 + (i * 17),
         jobsDone: 20 + (i * 9),
         location: new GeoPoint(locations[i].lat, locations[i].lng),
         createdAt: Date.now() - (i * 86400000),
-        portfolioImages: ['sample1', 'sample2', 'sample3'],
+        portfolioImages: portfolioUrls,
         bio: `Professional ${skillsList[i][0].toLowerCase()} services in Auchi area. ${i+1} years experience.`,
         signupMethod: 'seed',
         emailVerified: true,
@@ -1454,7 +1470,7 @@
     card.className = 'provider-card';
     
     const distance = calculateDistance(d.location);
-    const profileImageUrl = d.profileImage ? imageKitUrl(d.profileImage, 400) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+    const profileImageUrl = getThumbnailUrl(d.profileImage, 400);
     
     card.innerHTML = `
       <img class="card-img" src="${profileImageUrl}" loading="lazy">
@@ -1573,7 +1589,7 @@
 
       const marker = L.marker([user.location.latitude, user.location.longitude], { icon: customIcon }).addTo(map);
       
-      const profileImageUrl = user.profileImage ? imageKitUrl(user.profileImage, 100) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+      const profileImageUrl = getThumbnailUrl(user.profileImage, 100);
       
       const popupContent = document.createElement('div');
       popupContent.innerHTML = `
@@ -1614,7 +1630,7 @@
           Math.pow((user.location.longitude - 6.2667) * 111, 2)
         ).toFixed(1);
         
-        const profileImageUrl = user.profileImage ? imageKitUrl(user.profileImage, 100) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+        const profileImageUrl = getThumbnailUrl(user.profileImage, 100);
         
         const item = document.createElement('div');
         item.className = 'provider-list-item';
@@ -1758,7 +1774,7 @@
         const userData = userMap.get(chat.otherUserId);
         if (!userData) return;
         
-        const profileImageUrl = userData.profileImage ? imageKitUrl(userData.profileImage, 100) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+        const profileImageUrl = getThumbnailUrl(userData.profileImage, 100);
         
         const time = chat.lastMessageTimestamp?.toDate() || new Date();
         const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1797,7 +1813,7 @@
   }
 
   function openChat() {
-    const profileImageUrl = currentChatPartner.image ? imageKitUrl(currentChatPartner.image, 100) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+    const profileImageUrl = getThumbnailUrl(currentChatPartner.image, 100);
     chatPartnerImg.src = profileImageUrl;
     chatPartnerName.textContent = currentChatPartner.name;
     
@@ -1914,13 +1930,17 @@
         email: auth.currentUser.email || '',
         phoneNumber: '',
         skills: [],
-        profileImage: 'default_avatar',
+        profileImage: DEFAULT_AVATAR,
         rating: 0,
         reviewCount: 0,
         jobsDone: 0,
         location: new GeoPoint(7.0667, 6.2667),
         createdAt: Date.now(),
-        portfolioImages: ['sample1', 'sample2', 'sample3'],
+        portfolioImages: [
+          'https://ik.imagekit.io/GigsCourt/sample1',
+          'https://ik.imagekit.io/GigsCourt/sample2',
+          'https://ik.imagekit.io/GigsCourt/sample3'
+        ],
         bio: '',
         signupMethod: 'email',
         emailVerified: true,
@@ -1936,15 +1956,19 @@
     profileRating.textContent = data.rating || 0;
     bioTextarea.value = data.bio || '';
     
-    const profileImageUrl = data.profileImage ? imageKitUrl(data.profileImage, 200) : 'https://ik.imagekit.io/GigsCourt/default_avatar';
+    const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
     profileImage.src = profileImageUrl;
     
-    const portfolio = data.portfolioImages || ['sample1', 'sample2', 'sample3'];
+    const portfolio = data.portfolioImages || [
+      'https://ik.imagekit.io/GigsCourt/sample1',
+      'https://ik.imagekit.io/GigsCourt/sample2',
+      'https://ik.imagekit.io/GigsCourt/sample3'
+    ];
     portfolioGrid.innerHTML = '';
     
-    portfolio.slice(0, 9).forEach((fileId, index) => {
+    portfolio.slice(0, 9).forEach((url, index) => {
       const img = document.createElement('img');
-      img.src = imageKitUrl(fileId, 300);
+      img.src = getThumbnailUrl(url, 300);
       img.loading = 'lazy';
       img.dataset.index = index;
       img.classList.add('lazy-load');
@@ -2013,23 +2037,23 @@
 
     if (currentUploadType === 'portfolio') {
       for (const file of files) {
-        const fileId = await uploadToImageKit(file, 'portfolio');
-        if (fileId) {
+        const url = await uploadToImageKit(file, 'portfolio');
+        if (url) {
           const userRef = doc(db, 'users', auth.currentUser.uid);
           await updateDoc(userRef, {
-            portfolioImages: arrayUnion(fileId)
+            portfolioImages: arrayUnion(url)
           });
         }
       }
       await loadProfileData();
     } 
     else if (currentUploadType === 'profile' && files[0]) {
-      const fileId = await uploadToImageKit(files[0], 'profile');
-      if (fileId) {
+      const url = await uploadToImageKit(files[0], 'profile');
+      if (url) {
         await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-          profileImage: fileId
+          profileImage: url
         });
-        profileImage.src = imageKitUrl(fileId, 200);
+        profileImage.src = getThumbnailUrl(url, 200);
       }
     }
 
@@ -2202,13 +2226,17 @@
         email,
         phoneNumber: '',
         skills,
-        profileImage: 'default_avatar',
+        profileImage: DEFAULT_AVATAR,
         rating: 0,
         reviewCount: 0,
         jobsDone: 0,
         location: new GeoPoint(7.0667, 6.2667),
         createdAt: Date.now(),
-        portfolioImages: ['sample1', 'sample2', 'sample3'],
+        portfolioImages: [
+          'https://ik.imagekit.io/GigsCourt/sample1',
+          'https://ik.imagekit.io/GigsCourt/sample2',
+          'https://ik.imagekit.io/GigsCourt/sample3'
+        ],
         bio: '',
         signupMethod: 'email',
         emailVerified: false,
