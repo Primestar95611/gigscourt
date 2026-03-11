@@ -583,9 +583,9 @@ confirmDeletePortfolio?.addEventListener('click', async () => {
   }
 });
 
-// ==================== PHOTOSWIPE GALLERY ====================
+// ==================== PHOTOSWIPE GALLERY - INSTAGRAM STYLE ====================
 function openGallery(images, startIndex = 0) {
-  if (typeof PhotoSwipeLightbox === 'undefined') {
+  if (typeof PhotoSwipeLightbox === 'undefined' || typeof PhotoSwipe === 'undefined') {
     alert('Gallery viewer not ready');
     return;
   }
@@ -596,19 +596,32 @@ function openGallery(images, startIndex = 0) {
       width: 1600,
       height: 1600,
       alt: 'Portfolio image',
-      thumbnail: getThumbnailUrl(url, 300)
+      thumb: getThumbnailUrl(url, 300)
     }));
     
     const lightbox = new PhotoSwipeLightbox({
       dataSource: dataSource,
       index: startIndex,
       pswpModule: PhotoSwipe,
-      bgOpacity: 0.9,
+      bgOpacity: 0.95,
       loop: true,
       preload: [1, 2],
       closeOnVerticalDrag: true,
-      wheelToZoom: true,
-      pinchToClose: true
+      wheelToZoom: false,
+      pinchToClose: true,
+      tapToClose: true,
+      tapToToggleControls: true,
+      
+      // Instagram style settings
+      arrowKeys: true,
+      closeOnScroll: false,
+      imageClickAction: 'zoom',
+      toggleControlsOnTap: true,
+      
+      // Better mobile experience
+      showHideAnimationType: 'fade',
+      zoom: true,
+      doubleTapAction: 'zoom'
     });
     
     lightbox.init();
@@ -618,7 +631,6 @@ function openGallery(images, startIndex = 0) {
     alert('Could not open gallery');
   }
 }
-
 
 
 // ==================== LOAD PROVIDERS ====================
