@@ -26,7 +26,7 @@ const db = getFirestore(app);
 // ImageKit config
 const IK_PUBLIC_KEY = 'public_t2gpKmHQ/9binh9kNSsQBq0zsys=';
 const IK_URL_ENDPOINT = 'https://ik.imagekit.io/GigsCourt';
-const DEFAULT_AVATAR = 'https://ik.imagekit.io/GigsCourt/default_avatar';
+const DEFAULT_AVATAR = 'https://ik.imagekit.io/GigsCourt/default-person';
 
 // Helper to add thumbnail parameters to any ImageKit URL
 const getThumbnailUrl = (url, w = 400) => {
