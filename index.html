@@ -1321,10 +1321,10 @@
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload error response:', errorText);
-        throw new Error(`Upload failed: ${response.status}`);
-      }
+  const errorText = await response.text();
+  console.error('Full ImageKit error response:', errorText);
+  throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+}
 
       const result = await response.json();
       return result.fileId;
