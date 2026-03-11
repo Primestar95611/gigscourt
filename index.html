@@ -270,14 +270,14 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- PhotoSwipe -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe-lightbox.umd.min.js"></script>
+<!-- PhotoSwipe - Alternative CDN -->
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe-lightbox.umd.min.js"></script>
 <script>
   // Make sure PhotoSwipe is available globally
   window.PhotoSwipe = PhotoSwipe;
   window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-  console.log('PhotoSwipe loaded:', !!window.PhotoSwipe);
+  console.log('✅ PhotoSwipe loaded');
 </script>
 <!-- Our app code - load AFTER PhotoSwipe -->
 <script type="module" src="app.js" defer></script>
