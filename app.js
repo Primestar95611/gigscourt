@@ -354,10 +354,11 @@ function initProfilePullToRefresh() {
   const profileTab = document.getElementById('profileTab');
   
   profileTab.addEventListener('touchstart', (e) => {
-    if (profileTab.scrollTop === 0) {
-      profilePullStartY = e.touches[0].clientY;
-      isPullingProfile = true;
-    }
+    const touchY = e.touches[0].clientY;
+if (profileTab.scrollTop === 0 && touchY < 60) {
+  profilePullStartY = touchY;
+  isPullingProfile = true;
+}
   }, { passive: true });
 
   profileTab.addEventListener('touchmove', (e) => {
