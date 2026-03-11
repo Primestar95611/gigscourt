@@ -1284,7 +1284,6 @@
     quickViewSheet.classList.add('active');
     sheetOverlay.classList.add('active');
     
-    // Add event listeners for buttons
     document.getElementById('sheetMessageBtn')?.addEventListener('click', () => {
       closeQuickView();
       showStartChatModal(providerId, providerData.businessName, providerData.profileImage);
@@ -1301,7 +1300,7 @@
     sheetOverlay.classList.remove('active');
   }
 
-  // ==================== PULL TO REFRESH ====================
+  // ==================== PULL TO REFRESH - COMBINED FIX ====================
   function createRefreshIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'refresh-indicator';
@@ -1335,18 +1334,40 @@
       if (!isPulling || tabContent.scrollTop > 0) return;
       
       const currentY = e.touches[0].clientY;
-      const diff = currentY - pullStartY;
+      let diff = currentY - pullStartY;
       
       if (diff > 0) {
         e.preventDefault();
-        const pullDistance = Math.min(diff * 0.5, 80);
+        
+        // APPLY RESISTANCE - the further you pull, the harder it gets
+        // This creates a rubber-band effect that requires intentional force
+        let resistance = 1;
+        if (diff > 30) resistance = 0.8;
+        if (diff > 60) resistance = 0.6;
+        if (diff > 90) resistance = 0.4;
+        if (diff > 120) resistance = 0.3;
+        if (diff > 150) resistance = 0.2;
+        
+        const pullDistance = Math.min(diff * resistance, 100);
         
         if (!refreshIndicator) {
           refreshIndicator = createRefreshIndicator();
         }
         
         refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
-        refreshIndicator.querySelector('span').textContent = pullDistance > 60 ? 'Release to refresh' : 'Pull to refresh';
+        
+        // Update text based on resistance (how hard they're pulling)
+        if (diff > 150) {
+          refreshIndicator.querySelector('span').textContent = 'Really pull hard to refresh';
+        } else if (diff > 120) {
+          refreshIndicator.querySelector('span').textContent = 'Almost there... pull harder';
+        } else if (diff > 90) {
+          refreshIndicator.querySelector('span').textContent = 'Keep pulling...';
+        } else if (diff > 60) {
+          refreshIndicator.querySelector('span').textContent = 'Pull further';
+        } else {
+          refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
+        }
       }
     }, { passive: false });
 
@@ -1361,8 +1382,8 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      // Increased threshold from 60 to 120 for less sensitivity
-      if (diff > 120 && tabContent.scrollTop === 0) {
+      // Only refresh if they pulled HARD (through the resistance)
+      if (diff > 150 && tabContent.scrollTop === 0) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
