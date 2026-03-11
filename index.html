@@ -1276,7 +1276,7 @@
     });
   }
 
-  // ==================== IMAGEKIT UPLOAD ====================
+  // ==================== IMAGEKIT UPLOAD - FIXED VERSION ====================
   async function uploadToImageKit(file, type) {
     if (isUploading) {
       alert('Upload already in progress');
@@ -1294,16 +1294,17 @@
     if (uploadError) uploadError.classList.add('hidden');
 
     try {
-      // Compress the image first
+      // Step 1: Compress the image first
       const compressedFile = await compressImage(file);
       
-      // Get authentication parameters from your API
+      // Step 2: Get authentication parameters from your API
       const authResponse = await fetch('/api/imagekit-auth');
       if (!authResponse.ok) {
         throw new Error('Failed to get upload authentication');
       }
       const authData = await authResponse.json();
       
+      // Step 3: Upload the compressed file with the auth parameters
       const formData = new FormData();
       formData.append('file', compressedFile);
       formData.append('publicKey', IK_PUBLIC_KEY);
@@ -1321,7 +1322,8 @@
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+        console.error('Upload error response:', errorText);
+        throw new Error(`Upload failed: ${response.status}`);
       }
 
       const result = await response.json();
