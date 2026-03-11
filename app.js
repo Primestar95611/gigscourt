@@ -1140,9 +1140,11 @@ async function sendMessage() {
 async function initMap() {
   if (map) return;
   map = L.map('map').setView([7.0667, 6.2667], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap, © CartoDB',
+  subdomains: 'abcd',
+  maxZoom: 20
+}).addTo(map);
   await loadAllUsers();
   await updateMapAndList();
 }
