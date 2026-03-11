@@ -250,10 +250,12 @@ function initPullToRefresh() {
       return;
     }
     
-    if (tabContent.scrollTop === 0) {
-      pullStartY = e.touches[0].clientY;
-      isPulling = true;
-    }
+    // Only allow pull-to-refresh if touch starts in top 60px of screen
+const touchY = e.touches[0].clientY;
+if (tabContent.scrollTop === 0 && touchY < 60) {
+  pullStartY = touchY;
+  isPulling = true;
+}
   }, { passive: true });
 
   tabContent.addEventListener('touchmove', (e) => {
