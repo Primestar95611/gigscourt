@@ -375,6 +375,8 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
       padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
     }
     .portfolio-grid .portfolio-item {
       position: relative;
@@ -413,7 +415,6 @@
       transition: opacity 0.2s;
       z-index: 10;
     }
-    .portfolio-item:hover .delete-overlay,
     .portfolio-item.long-press .delete-overlay {
       opacity: 1;
     }
@@ -978,6 +979,32 @@
     .delete-modal-overlay.active {
       display: block;
     }
+
+    /* Dark Mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #000; }
+      #app { background: #1a1a1a; }
+      .tab-bar { background: rgba(30, 30, 30, 0.96); border-top-color: #333; }
+      .tab-item { color: #888; }
+      .tab-item.active { color: #0066ff; }
+      .input-field { background: #2a2a2a; border-color: #444; color: white; }
+      .provider-card { background: #2a2a2a; border-color: #333; }
+      .business-name { color: white; }
+      .skills { color: #aaa; }
+      .drawer-list { background: #1a1a1a; }
+      .provider-list-item { background: #2a2a2a; }
+      .bio-section { background: #2a2a2a; }
+      .bio-section textarea { background: #2a2a2a; color: white; }
+      .settings-section { background: #2a2a2a; }
+      .conversation-item { background: #2a2a2a; border-bottom-color: #333; }
+      .conversation-name { color: white; }
+      .last-message { color: #aaa; }
+      .modal { background: #2a2a2a; color: white; }
+      .modal p { color: #ccc; }
+      .btn-outline { background: #2a2a2a; color: white; }
+      .quick-view-sheet { background: #1a1a1a; color: white; }
+      .sheet-handle { background: #444; }
+    }
   </style>
 </head>
 <body>
@@ -1369,6 +1396,8 @@
   let selectedImageUrl = null;
   let isPullingProfile = false;
   let profilePullStartY = 0;
+  let portfolioStartIndex = 0;
+  const portfolioBatchSize = 9;
 
   // ==================== IMAGE COMPRESSION - RESTORED ====================
   async function compressImage(file) {
@@ -1486,7 +1515,7 @@
       }
       isTouchingMap = false;
       
-      if (tabContent.scrollTop === 0) {
+      if (tabContent.scrollTop <= 5) {
         pullStartY = e.touches[0].clientY;
         isPulling = true;
       }
@@ -1494,7 +1523,7 @@
 
     tabContent.addEventListener('touchmove', (e) => {
       if (isTouchingMap) return;
-      if (!isPulling || tabContent.scrollTop > 0) return;
+      if (!isPulling || tabContent.scrollTop > 5) return;
       
       const currentY = e.touches[0].clientY;
       let diff = currentY - pullStartY;
@@ -1542,7 +1571,7 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - pullStartY;
       
-      if (diff > 220 && tabContent.scrollTop === 0) {
+      if (diff > 220 && tabContent.scrollTop <= 5) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
@@ -1589,14 +1618,14 @@
     const profileTab = document.getElementById('profileTab');
     
     profileTab.addEventListener('touchstart', (e) => {
-      if (profileTab.scrollTop === 0) {
+      if (profileTab.scrollTop <= 5) {
         profilePullStartY = e.touches[0].clientY;
         isPullingProfile = true;
       }
     }, { passive: true });
 
     profileTab.addEventListener('touchmove', (e) => {
-      if (!isPullingProfile || profileTab.scrollTop > 0) return;
+      if (!isPullingProfile || profileTab.scrollTop > 5) return;
       
       const currentY = e.touches[0].clientY;
       let diff = currentY - profilePullStartY;
@@ -1639,7 +1668,7 @@
       const endY = e.changedTouches[0].clientY;
       const diff = endY - profilePullStartY;
       
-      if (diff > 220 && profileTab.scrollTop === 0) {
+      if (diff > 220 && profileTab.scrollTop <= 5) {
         refreshIndicator.querySelector('span').textContent = 'Refreshing...';
         
         if (currentUser) {
@@ -1785,6 +1814,14 @@
       item.addEventListener('touchmove', () => {
         clearTimeout(longPressTimer);
         item.classList.remove('long-press');
+      });
+      
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-overlay')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
       });
     });
   }
@@ -2431,31 +2468,47 @@
     
     portfolioCount.textContent = `(${portfolio.length})`;
     portfolioGrid.innerHTML = '';
+    portfolioStartIndex = 0;
     
-    portfolio.slice(0, 9).forEach((url, index) => {
-      const item = document.createElement('div');
-      item.className = 'portfolio-item';
-      item.dataset.url = url;
-      item.dataset.index = index;
-      
-      const img = document.createElement('img');
-      img.src = getThumbnailUrl(url, 300);
-      img.loading = 'lazy';
-      img.classList.add('lazy-load');
-      
-      img.onload = () => img.classList.add('loaded');
-      
-      img.addEventListener('click', () => {
-        openGallery(portfolio, index);
+    function loadMorePortfolio() {
+      const nextBatch = portfolio.slice(portfolioStartIndex, portfolioStartIndex + portfolioBatchSize);
+      nextBatch.forEach((url, index) => {
+        const actualIndex = portfolioStartIndex + index;
+        const item = document.createElement('div');
+        item.className = 'portfolio-item';
+        item.dataset.url = url;
+        item.dataset.index = actualIndex;
+        
+        const img = document.createElement('img');
+        img.src = getThumbnailUrl(url, 300);
+        img.loading = 'lazy';
+        img.classList.add('lazy-load');
+        
+        img.onload = () => img.classList.add('loaded');
+        
+        img.addEventListener('click', () => {
+          openGallery(portfolio, actualIndex);
+        });
+        
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-overlay';
+        deleteBtn.innerHTML = '×';
+        
+        item.appendChild(img);
+        item.appendChild(deleteBtn);
+        portfolioGrid.appendChild(item);
       });
-      
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-overlay';
-      deleteBtn.innerHTML = '×';
-      
-      item.appendChild(img);
-      item.appendChild(deleteBtn);
-      portfolioGrid.appendChild(item);
+      portfolioStartIndex += nextBatch.length;
+    }
+    
+    loadMorePortfolio();
+    
+    portfolioGrid.addEventListener('scroll', () => {
+      if (portfolioGrid.scrollTop + portfolioGrid.clientHeight >= portfolioGrid.scrollHeight - 100) {
+        if (portfolioStartIndex < portfolio.length) {
+          loadMorePortfolio();
+        }
+      }
     });
 
     setupLongPress();
@@ -2587,10 +2640,30 @@
     }
   }
 
+  let lastTapTime = 0;
+  let lastTapTab = '';
+
   document.querySelectorAll('.tab-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      switchTab(btn.dataset.tab);
+      const tabId = btn.dataset.tab;
+      const now = Date.now();
+      const isActive = !document.getElementById(tabId + 'Tab').classList.contains('hidden');
+      
+      if (isActive && tabId === lastTapTab && (now - lastTapTime) < 500) {
+        if (tabId === 'home') loadProviders(true);
+        if (tabId === 'search') {
+          loadAllUsers().then(() => updateMapAndList());
+        }
+        if (tabId === 'messages') loadConversations();
+      } else if (isActive) {
+        document.getElementById(tabId + 'Tab').scrollTop = 0;
+      } else {
+        switchTab(tabId);
+      }
+      
+      lastTapTime = now;
+      lastTapTab = tabId;
     });
   });
 
@@ -2815,10 +2888,15 @@
 
   // ==================== SEARCH CONTROLS ====================
   if (radiusSlider) {
-    radiusSlider.addEventListener('input', async (e) => {
+    let sliderTimeout;
+    radiusSlider.addEventListener('input', (e) => {
       aktuellerRadius = parseInt(e.target.value);
       radiusValue.textContent = aktuellerRadius;
-      if (map) await updateMapAndList();
+      
+      clearTimeout(sliderTimeout);
+      sliderTimeout = setTimeout(async () => {
+        if (map) await updateMapAndList();
+      }, 150);
     });
   }
 
