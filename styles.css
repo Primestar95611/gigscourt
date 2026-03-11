@@ -961,7 +961,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   display: block;
 }
 @media (prefers-color-scheme: dark) {
-  body { background: #000; }
+  html { background: #1a1a1a; }
+  body { background: #1a1a1a !important; }
   #app { background: #1a1a1a; }
   .tab-bar { background: rgba(30, 30, 30, 0.96); border-top-color: #333; }
   .tab-item { color: #888; }
