@@ -9,6 +9,9 @@ import {
   addDoc, onSnapshot, Timestamp, where, writeBatch, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+console.log('App started');
+alert('App loaded');
+
 const firebaseConfig = {
   apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
   authDomain: "gigscourt.firebaseapp.com",
