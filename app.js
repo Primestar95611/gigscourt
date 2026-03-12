@@ -1787,7 +1787,55 @@ window.editSkill = async (userId, oldSkill) => {
     pendingSkills: data.pendingSkills.map(s => s === oldSkill ? newSkill : s)
   });
   
-  alert('Updated!');
+  // ===== SEND NOTIFICATION DM =====
+  try {
+    // Check if there's already a chat with this user
+    const chatsRef = collection(db, 'chats');
+    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+    const chatsSnap = await getDocs(q);
+    
+    let chatId = null;
+    chatsSnap.forEach(doc => {
+      const chat = doc.data();
+      if (chat.participants.includes(userId)) {
+        chatId = doc.id;
+      }
+    });
+    
+    // If no chat exists, create one
+    if (!chatId) {
+      const newChat = await addDoc(chatsRef, {
+        participants: [currentUser.uid, userId],
+        createdAt: Timestamp.now(),
+        lastMessage: `Your skill suggestion was updated`,
+        lastMessageTimestamp: Timestamp.now(),
+        lastMessageSender: currentUser.uid
+      });
+      chatId = newChat.id;
+    }
+    
+    // Send the update message
+    await addDoc(collection(db, 'messages'), {
+      chatId: chatId,
+      senderId: currentUser.uid,
+      text: `✏️ Your skill "${oldSkill}" has been updated to "${newSkill}" and is pending approval.`,
+      timestamp: Timestamp.now(),
+      read: false
+    });
+    
+    // Update chat's last message
+    await updateDoc(doc(db, 'chats', chatId), {
+      lastMessage: `✏️ Your skill was updated to "${newSkill}"`,
+      lastMessageTimestamp: Timestamp.now(),
+      lastMessageSender: currentUser.uid
+    });
+    
+  } catch (error) {
+    console.error('Error sending notification:', error);
+  }
+  // ===== END NOTIFICATION =====
+  
+  alert(`Skill updated to "${newSkill}" and user notified!`);
   loadPendingSkills();
 };
 
