@@ -47,7 +47,10 @@ const verifyView = document.getElementById('verifyView');
 const authError = document.getElementById('authError');
 const loginError = document.getElementById('loginError');
 const adminTabBtn = document.getElementById('adminTabBtn');
-adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Skills</h2><div id="pendingList"></div></div>';
+const adminTab = document.getElementById('adminTab');
+if (adminTab) {
+  adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Skills</h2><div id="pendingList"></div></div>';
+}
 const homeGrid = document.getElementById('homeGrid');
 const deleteModal = document.getElementById('deleteModal');
 const providerListDrawer = document.getElementById('providerListDrawer');
