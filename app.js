@@ -1723,7 +1723,55 @@ window.approveSkill = async (userId, skill) => {
     skills: [...(data.skills || []), skill]
   });
   
-  alert('Approved!');
+  // ===== SEND NOTIFICATION DM =====
+  try {
+    // Check if there's already a chat with this user
+    const chatsRef = collection(db, 'chats');
+    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+    const chatsSnap = await getDocs(q);
+    
+    let chatId = null;
+    chatsSnap.forEach(doc => {
+      const chat = doc.data();
+      if (chat.participants.includes(userId)) {
+        chatId = doc.id;
+      }
+    });
+    
+    // If no chat exists, create one
+    if (!chatId) {
+      const newChat = await addDoc(chatsRef, {
+        participants: [currentUser.uid, userId],
+        createdAt: Timestamp.now(),
+        lastMessage: `Your skill "${skill}" was approved!`,
+        lastMessageTimestamp: Timestamp.now(),
+        lastMessageSender: currentUser.uid
+      });
+      chatId = newChat.id;
+    }
+    
+    // Send the approval message
+    await addDoc(collection(db, 'messages'), {
+      chatId: chatId,
+      senderId: currentUser.uid,
+      text: `✅ Your skill "${skill}" has been approved and is now live on your profile!`,
+      timestamp: Timestamp.now(),
+      read: false
+    });
+    
+    // Update chat's last message
+    await updateDoc(doc(db, 'chats', chatId), {
+      lastMessage: `✅ Your skill "${skill}" was approved`,
+      lastMessageTimestamp: Timestamp.now(),
+      lastMessageSender: currentUser.uid
+    });
+    
+  } catch (error) {
+    console.error('Error sending notification:', error);
+  }
+  // ===== END NOTIFICATION =====
+  
+  alert(`Skill "${skill}" approved and user notified!`);
   loadPendingSkills();
 };
 
