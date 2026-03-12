@@ -1208,7 +1208,12 @@ document.querySelectorAll('.tab-item').forEach(btn => {
     e.preventDefault();
     const tabId = btn.dataset.tab;
     const now = Date.now();
-    const isActive = !document.getElementById(tabId + 'Tab').classList.contains('hidden');
+    
+    // Check if tab element exists
+    const tabElement = document.getElementById(tabId + 'Tab');
+    if (!tabElement) return;
+    
+    const isActive = !tabElement.classList.contains('hidden');
     
     if (isActive && tabId === lastTapTab && (now - lastTapTime) < 500) {
       if (tabId === 'home') loadProviders(true);
@@ -1217,7 +1222,7 @@ document.querySelectorAll('.tab-item').forEach(btn => {
       }
       if (tabId === 'messages') loadConversations();
     } else if (isActive) {
-      document.getElementById(tabId + 'Tab').scrollTop = 0;
+      tabElement.scrollTop = 0;
     } else {
       switchTab(tabId);
     }
