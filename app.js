@@ -1709,5 +1709,64 @@ onAuthStateChanged(auth, async (user) => {
     phoneSignupView.classList.add('hidden');
     loginView.classList.add('hidden');
     verifyView.classList.add('hidden');
-  }
+  } // ==================== ADMIN FUNCTIONS ====================
+async function loadPendingSkills() {
+  if (!currentUser || currentUser.email !== 'agboghidiaugust@gmail.com') return;
+  
+  const adminTab = document.getElementById('adminTab');
+  adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Skills</h2><div id="pendingList"></div></div>';
+  
+  const usersSnap = await getDocs(collection(db, 'users'));
+  let html = '';
+  
+  usersSnap.forEach(doc => {
+    const data = doc.data();
+    if (data.pendingSkills && data.pendingSkills.length > 0) {
+      html += `<div style="background:#f0f0f0;margin:10px;padding:10px;border-radius:10px">`;
+      html += `<h3>${data.businessName}</h3>`;
+      data.pendingSkills.forEach(skill => {
+        html += `
+          <div style="margin:5px 0">
+            <span style="background:#ffd700;padding:5px">${skill}</span>
+            <button onclick="approveSkill('${doc.id}','${skill}')" style="background:green;color:white;margin:5px">✓ Approve</button>
+            <button onclick="editSkill('${doc.id}','${skill}')" style="background:blue;color:white;margin:5px">✎ Edit</button>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+  });
+  
+  document.getElementById('pendingList').innerHTML = html || '<p>No pending skills</p>';
+}
+
+window.approveSkill = async (userId, skill) => {
+  const userRef = doc(db, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data();
+  
+  await updateDoc(userRef, {
+    pendingSkills: data.pendingSkills.filter(s => s !== skill),
+    skills: [...(data.skills || []), skill]
+  });
+  
+  alert('Approved!');
+  loadPendingSkills();
+};
+
+window.editSkill = async (userId, oldSkill) => {
+  const newSkill = prompt('Edit skill:', oldSkill);
+  if (!newSkill) return;
+  
+  const userRef = doc(db, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data();
+  
+  await updateDoc(userRef, {
+    pendingSkills: data.pendingSkills.map(s => s === oldSkill ? newSkill : s)
+  });
+  
+  alert('Updated!');
+  loadPendingSkills();
+};
 });
