@@ -1268,4 +1268,51 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   #pendingList button[style*="background:blue"] {
     background: #2563eb !important;
   }
+  /* Edit Profile Screen Dark Mode */
+  #editProfileScreen {
+    background: #000 !important;
+  }
+  
+  #editProfileScreen .edit-profile-header {
+    background: #000 !important;
+    border-bottom-color: #262626 !important;
+  }
+  
+  #editProfileScreen h2,
+  #editProfileScreen button,
+  #editProfileScreen div,
+  #editProfileScreen label {
+    color: #fff !important;
+  }
+  
+  #editProfileScreen input,
+  #editProfileScreen textarea {
+    color: #fff !important;
+    background: transparent !important;
+  }
+  
+  #editProfileScreen input::placeholder,
+  #editProfileScreen textarea::placeholder {
+    color: #8e8e8e !important;
+  }
+  
+  #editProfileScreen [style*="border-bottom: 1px solid #efefef"] {
+    border-bottom-color: #262626 !important;
+  }
+  
+  #editProfileScreen [style*="border: 1px solid #dbdbdb"] {
+    border-color: #333 !important;
+    background: #1a1a1a !important;
+  }
+  
+  #editProfileScreen #addSkillBtn {
+    background: #0095f6 !important;
+    color: white !important;
+  }
+  
+  #editProfileScreen #editLogoutBtn,
+  #editProfileScreen #editDeleteAccountBtn {
+    color: #ed4956 !important;
+    border-bottom-color: #262626 !important;
+  }
 }
