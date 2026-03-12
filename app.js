@@ -1556,15 +1556,6 @@ document.getElementById('resendVerifyBtn').addEventListener('click', async () =>
   }
 });
 
-// ==================== SAVE BIO ====================
-if (saveBioBtn) {
-  saveBioBtn.addEventListener('click', async () => {
-    if (!auth.currentUser) return;
-    await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio: bioTextarea.value });
-    alert('Bio saved');
-  });
-}
-
 // ==================== LOGOUT ====================
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await signOut(auth);
