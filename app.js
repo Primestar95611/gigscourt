@@ -1462,16 +1462,6 @@ if (confirmDeleteBtn) {
     }
   });
 }
-document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-  if (!auth.currentUser) return;
-  try {
-    await deleteDoc(doc(db, 'users', auth.currentUser.uid));
-    await deleteUser(auth.currentUser);
-    deleteModal.classList.add('hidden');
-  } catch (err) {
-    alert('Error deleting account');
-  }
-});
 
 // ==================== REVIEW ====================
 document.getElementById('submitReviewBtn').addEventListener('click', () => {
