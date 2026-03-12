@@ -1112,6 +1112,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   await updateMapAndList();
 }
 
+```javascript
 // ==================== LOAD PROFILE DATA ====================
 async function loadProfileData() {
   if (!auth.currentUser) return;
@@ -1122,7 +1123,9 @@ async function loadProfileData() {
     const newUser = {
       businessName: auth.currentUser.email?.split('@')[0] || 'User',
       email: auth.currentUser.email || '',
+      username: auth.currentUser.email?.split('@')[0] || 'user',
       phoneNumber: '',
+      address: '',
       skills: [],
       profileImage: DEFAULT_AVATAR,
       rating: 0,
@@ -1138,21 +1141,52 @@ async function loadProfileData() {
       bio: '',
       signupMethod: 'email',
       emailVerified: true,
-      phoneVerified: false
+      phoneVerified: false,
+      businessNameLastChanged: null,
+      usernameLastChanged: null
     };
     await setDoc(userRef, newUser);
     userDoc.data = () => newUser;
   }
   
   const data = userDoc.data();
-  profileBusinessName.textContent = data.businessName || '';
-  profileJobs.textContent = data.jobsDone || 0;
-  profileRating.textContent = data.rating || 0;
-  profileReviews.textContent = data.reviewCount || 0;
-  bioTextarea.value = data.bio || '';
+  
+  if (profileBusinessName) {
+    profileBusinessName.textContent = data.businessName || '';
+  }
+  
+  if (profileUsername) {
+    profileUsername.textContent = data.username ? '@' + data.username : '@user';
+  }
+  
+  if (profileJobs) profileJobs.textContent = data.jobsDone || 0;
+  if (profileRating) profileRating.textContent = data.rating || 0;
+  if (profileReviews) profileReviews.textContent = data.reviewCount || 0;
+  
+  if (profileBio) {
+    profileBio.textContent = data.bio || 'No bio yet.';
+  }
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
-  profileImage.src = profileImageUrl;
+  if (profileImage) profileImage.src = profileImageUrl;
+  
+  if (profilePhone && profilePhoneContainer) {
+    if (data.phoneNumber) {
+      profilePhone.textContent = data.phoneNumber;
+      profilePhoneContainer.style.display = 'flex';
+    } else {
+      profilePhoneContainer.style.display = 'none';
+    }
+  }
+  
+  if (profileAddress && profileAddressContainer) {
+    if (data.address) {
+      profileAddress.textContent = data.address;
+      profileAddressContainer.style.display = 'flex';
+    } else {
+      profileAddressContainer.style.display = 'none';
+    }
+  }
   
   const portfolio = data.portfolioImages || [
     'https://ik.imagekit.io/GigsCourt/sample1',
@@ -1160,99 +1194,58 @@ async function loadProfileData() {
     'https://ik.imagekit.io/GigsCourt/sample3'
   ];
   
-  portfolioCount.textContent = `(${portfolio.length})`;
-  portfolioGrid.innerHTML = '';
-  portfolioStartIndex = 0;
-  
-  function loadMorePortfolio() {
-    const nextBatch = portfolio.slice(portfolioStartIndex, portfolioStartIndex + portfolioBatchSize);
-    nextBatch.forEach((url, index) => {
-      const actualIndex = portfolioStartIndex + index;
-      const item = document.createElement('div');
-      item.className = 'portfolio-item';
-      item.dataset.url = url;
-      item.dataset.index = actualIndex;
-      
-      const img = document.createElement('img');
-      img.src = getThumbnailUrl(url, 300);
-      img.loading = 'lazy';
-      img.classList.add('lazy-load');
-      
-      img.onload = () => img.classList.add('loaded');
-      
-      img.addEventListener('click', () => {
-        openGallery(portfolio, actualIndex);
-      });
-      
-      const deleteBtn = document.createElement('div');
-      deleteBtn.className = 'delete-overlay';
-      deleteBtn.innerHTML = '×';
-      
-      item.appendChild(img);
-      item.appendChild(deleteBtn);
-      portfolioGrid.appendChild(item);
-    });
-    portfolioStartIndex += nextBatch.length;
+  const portfolioCount = document.getElementById('portfolioCount');
+  if (portfolioCount) {
+    portfolioCount.textContent = `(${portfolio.length})`;
   }
   
-  loadMorePortfolio();
-  
-  portfolioGrid.addEventListener('scroll', () => {
-    if (portfolioGrid.scrollTop + portfolioGrid.clientHeight >= portfolioGrid.scrollHeight - 100) {
-      if (portfolioStartIndex < portfolio.length) {
-        loadMorePortfolio();
-      }
+  if (portfolioGrid) {
+    portfolioGrid.innerHTML = '';
+    portfolioStartIndex = 0;
+    
+    function loadMorePortfolio() {
+      const nextBatch = portfolio.slice(portfolioStartIndex, portfolioStartIndex + portfolioBatchSize);
+      nextBatch.forEach((url, index) => {
+        const actualIndex = portfolioStartIndex + index;
+        const item = document.createElement('div');
+        item.className = 'portfolio-item';
+        item.dataset.url = url;
+        item.dataset.index = actualIndex;
+        
+        const img = document.createElement('img');
+        img.src = getThumbnailUrl(url, 300);
+        img.loading = 'lazy';
+        img.classList.add('lazy-load');
+        
+        img.onload = () => img.classList.add('loaded');
+        
+        img.addEventListener('click', () => {
+          openGallery(portfolio, actualIndex);
+        });
+        
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'delete-overlay';
+        deleteBtn.innerHTML = '×';
+        
+        item.appendChild(img);
+        item.appendChild(deleteBtn);
+        portfolioGrid.appendChild(item);
+      });
+      portfolioStartIndex += nextBatch.length;
     }
-  });
+    
+    loadMorePortfolio();
+    
+    portfolioGrid.addEventListener('scroll', () => {
+      if (portfolioGrid.scrollTop + portfolioGrid.clientHeight >= portfolioGrid.scrollHeight - 100) {
+        if (portfolioStartIndex < portfolio.length) {
+          loadMorePortfolio();
+        }
+      }
+    });
+  }
 
   setupLongPress();
-
-  if (!data.email && data.signupMethod === 'phone') {
-    missingContactContainer.innerHTML = `
-      <div class="missing-contact">
-        <h4 style="margin-bottom: 12px;">Add Email</h4>
-        <input type="email" id="newEmail" class="input-field" placeholder="Email">
-        <button class="btn-outline" id="addEmailBtn">Add & Verify</button>
-      </div>
-    `;
-    document.getElementById('addEmailBtn')?.addEventListener('click', addEmail);
-  } else if (!data.phoneNumber && data.signupMethod === 'email') {
-    missingContactContainer.innerHTML = `
-      <div class="missing-contact">
-        <h4 style="margin-bottom: 12px;">Add Phone</h4>
-        <div class="phone-input-container">
-          <select id="newPhoneCode">
-            <option value="+234">🇳🇬 +234</option>
-            <option value="+1">🇺🇸 +1</option>
-            <option value="+44">🇬🇧 +44</option>
-            <option value="+81">🇯🇵 +81</option>
-          </select>
-          <input type="tel" id="newPhone" class="input-field" style="width:70%" placeholder="Phone number">
-        </div>
-        <button class="btn-outline" id="addPhoneBtn">Add & Verify</button>
-      </div>
-    `;
-    document.getElementById('addPhoneBtn')?.addEventListener('click', addPhone);
-  } else {
-    missingContactContainer.innerHTML = '';
-  }
-}
-
-async function addEmail() {
-  const email = document.getElementById('newEmail')?.value;
-  if (!email || !auth.currentUser) return;
-  await updateDoc(doc(db, 'users', auth.currentUser.uid), { email });
-  alert('Email added.');
-  loadProfileData();
-}
-
-async function addPhone() {
-  const code = document.getElementById('newPhoneCode')?.value;
-  const phone = document.getElementById('newPhone')?.value;
-  if (!phone || !auth.currentUser) return;
-  await updateDoc(doc(db, 'users', auth.currentUser.uid), { phoneNumber: code + phone });
-  alert('Phone number added.');
-  loadProfileData();
 }
 
 // ==================== FILE INPUT HANDLER ====================
