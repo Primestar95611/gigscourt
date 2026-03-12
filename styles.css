@@ -1166,6 +1166,41 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   .missing-contact { background: #333; }
   .missing-contact h4 { color: white; }
   
+  /* Profile tab - Instagram styles */
+  .profile-business-name {
+    color: white;
+  }
+  
+  .profile-username {
+    color: #aaa;
+  }
+  
+  .profile-bio {
+    color: white;
+  }
+  
+  .contact-text {
+    color: white;
+  }
+  
+  .profile-btn-secondary {
+    border-color: #333;
+    color: white;
+    background: transparent;
+  }
+  
+  .profile-btn-secondary:active {
+    background: #2a2a2a;
+  }
+  
+  .portfolio-header h4 {
+    color: white;
+  }
+  
+  .portfolio-header span {
+    color: #aaa;
+  }
+  
   /* Portfolio */
   .portfolio-header h4 { color: white; }
   .portfolio-header span { color: #aaa; }
