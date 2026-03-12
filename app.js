@@ -44,6 +44,7 @@ const verifyView = document.getElementById('verifyView');
 const authError = document.getElementById('authError');
 const loginError = document.getElementById('loginError');
 const adminTabBtn = document.getElementById('adminTabBtn');
+const adminTab = document.getElementById('adminTab');
 const homeGrid = document.getElementById('homeGrid');
 const deleteModal = document.getElementById('deleteModal');
 const providerListDrawer = document.getElementById('providerListDrawer');
