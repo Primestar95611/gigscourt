@@ -1453,20 +1453,43 @@ document.getElementById('signupWithEmailBtn').addEventListener('click', async ()
   const businessName = document.getElementById('emailBusinessName').value;
   const email = document.getElementById('emailAddress').value;
   const password = document.getElementById('emailPassword').value;
-  const skills = Array.from(selectedEmailSkills);
+  const selectedSkills = Array.from(selectedEmailSkills);
+  
+  // Get custom skills from the new input
+  const customSkillInput = document.getElementById('customSkillInput').value;
+  let customSkills = [];
+  
+  if (customSkillInput.trim() !== '') {
+    // Split by commas and trim each skill
+    customSkills = customSkillInput.split(',').map(skill => skill.trim()).filter(skill => skill !== '');
+  }
 
-  if (!businessName || !email || !password || skills.length === 0) {
-    authError.textContent = 'All fields required and select at least one skill';
+  // Combine selected and custom skills
+  const allSkills = [...selectedSkills, ...customSkills];
+
+  if (!businessName || !email || !password || allSkills.length === 0) {
+    authError.textContent = 'Business name, email, password and at least one skill are required';
     return;
   }
 
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Prepare skills array with pending status for custom skills
+    const skillsWithStatus = selectedSkills.map(skill => ({ name: skill, approved: true }));
+    
+    // Add custom skills as pending
+    customSkills.forEach(skill => {
+      skillsWithStatus.push({ name: skill, approved: false });
+    });
+
     await setDoc(doc(db, 'users', cred.user.uid), {
       businessName,
       email,
       phoneNumber: '',
-      skills,
+      skills: allSkills, // Keep simple array for backward compatibility
+      skillsWithStatus, // New array with approval status
+      pendingSkills: customSkills, // Store pending skills separately for admin
       profileImage: DEFAULT_AVATAR,
       rating: 0,
       reviewCount: 0,
@@ -1483,6 +1506,12 @@ document.getElementById('signupWithEmailBtn').addEventListener('click', async ()
       emailVerified: false,
       phoneVerified: false
     });
+
+    // Show pending message if they added custom skills
+    if (customSkills.length > 0) {
+      alert(`Your custom skills (${customSkills.join(', ')}) have been submitted for approval. You'll be notified when they're approved.`);
+    }
+
     await sendEmailVerification(cred.user);
     emailSignupView.classList.add('hidden');
     phoneSignupView.classList.add('hidden');
