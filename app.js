@@ -1440,10 +1440,28 @@ if (deleteAccountBtn) {
   });
 }
 
-document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-  deleteModal.classList.add('hidden');
-});
+// ==================== DELETE MODAL ====================
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
+if (cancelDeleteBtn) {
+  cancelDeleteBtn.addEventListener('click', () => {
+    deleteModal.classList.add('hidden');
+  });
+}
+
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener('click', async () => {
+    if (!auth.currentUser) return;
+    try {
+      await deleteDoc(doc(db, 'users', auth.currentUser.uid));
+      await deleteUser(auth.currentUser);
+      deleteModal.classList.add('hidden');
+    } catch (err) {
+      alert('Error deleting account');
+    }
+  });
+}
 document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
   if (!auth.currentUser) return;
   try {
