@@ -130,57 +130,70 @@
         </div>
       </div>
 
-      <!-- Messages Tab -->
-      <div id="messagesTab" class="tab-pane hidden">
-        <div id="conversationsList" class="conversations-list"></div>
-      </div>
-
       <!-- Profile Tab -->
-      <div id="profileTab" class="tab-pane hidden">
-        <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
-        
-        <div class="profile-header">
-          <div class="profile-image-container">
-            <img id="profileImage" src="" alt="Profile">
-            <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
-          </div>
-          <div>
-            <div class="business-name" id="profileBusinessName"></div>
-            <div class="profile-stats" id="profileStats">
-              <div><span class="stat-number" id="profileJobs">0</span> <span class="stat-label">jobs</span></div>
-              <div><span class="stat-number" id="profileRating">0</span> <span class="stat-label">⭐</span></div>
-              <div><span class="stat-number" id="profileReviews">0</span> <span class="stat-label">reviews</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bio-section">
-          <textarea id="bioTextarea" maxlength="300" placeholder="Tell us about your services (max 300 words)"></textarea>
-          <button class="btn-outline btn" id="saveBioBtn" style="margin-top: 8px;">Save bio</button>
-        </div>
-
-        <div class="settings-section">
-          <div class="settings-title">⚙️ Settings</div>
-          <div id="missingContactContainer"></div>
-          <button class="btn-outline btn" id="logoutBtn" style="margin-bottom: 12px;">🚪 Logout</button>
-          <button class="btn-danger" id="deleteAccountBtn">🗑️ Delete Account</button>
-        </div>
-
-        <div style="padding: 16px;">
-          <h4 style="margin-bottom: 12px;">Leave a review</h4>
-          <div class="star-rating-input" id="starRatingInput">
-            <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
-          </div>
-          <input type="text" id="reviewText" class="input-field" placeholder="Your review">
-          <button class="btn" id="submitReviewBtn">Submit review</button>
-        </div>
-
-        <div class="portfolio-header">
-          <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
-          <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
-        </div>
-        <div class="portfolio-grid" id="portfolioGrid"></div>
+<div id="profileTab" class="tab-pane hidden">
+  <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
+  
+  <!-- Profile Header with Picture and Stats -->
+  <div class="profile-header">
+    <div class="profile-image-container">
+      <img id="profileImage" src="" alt="Profile">
+      <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-item">
+        <span class="stat-number" id="profileJobs">0</span>
+        <span class="stat-label">jobs</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-number" id="profileRating">0</span>
+        <span class="stat-label">★</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="profileReviews">0</span>
+        <span class="stat-label">reviews</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Business Name and Username -->
+  <div class="profile-name-section">
+    <h2 class="profile-business-name" id="profileBusinessName"></h2>
+    <p class="profile-username" id="profileUsername">@username</p>
+  </div>
+
+  <!-- Bio Section (readable text, not textarea) -->
+  <div class="profile-bio" id="profileBio">
+    <!-- Bio will be inserted here by JavaScript -->
+  </div>
+
+  <!-- Contact Information -->
+  <div class="profile-contact">
+    <div class="contact-item" id="profilePhoneContainer" style="display: none;">
+      <span class="contact-icon">📞</span>
+      <span class="contact-text" id="profilePhone"></span>
+    </div>
+    <div class="contact-item" id="profileAddressContainer" style="display: none;">
+      <span class="contact-icon">📍</span>
+      <span class="contact-text" id="profileAddress"></span>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="profile-actions">
+    <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
+    <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
+  </div>
+
+  <!-- Portfolio Header -->
+  <div class="portfolio-header">
+    <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
+    <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
+  </div>
+
+  <!-- Portfolio Grid -->
+  <div class="portfolio-grid" id="portfolioGrid"></div>
+</div>
 
       <!-- Admin Tab -->
       <div id="adminTab" class="tab-pane hidden">
