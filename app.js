@@ -1463,6 +1463,19 @@ if (confirmDeleteBtn) {
   });
 }
 
+// ==================== SAVE BIO ====================
+const saveBioBtn = document.getElementById('saveBioBtn');
+if (saveBioBtn) {
+  saveBioBtn.addEventListener('click', async () => {
+    if (!auth.currentUser) return;
+    const bioTextarea = document.getElementById('bioTextarea');
+    if (bioTextarea) {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { bio: bioTextarea.value });
+      alert('Bio saved');
+    }
+  });
+}
+
 // ==================== REVIEW ====================
 const submitReviewBtn = document.getElementById('submitReviewBtn');
 if (submitReviewBtn) {
