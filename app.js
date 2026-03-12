@@ -1903,7 +1903,8 @@ onAuthStateChanged(auth, async (user) => {
     phoneSignupView.classList.add('hidden');
     loginView.classList.add('hidden');
     verifyView.classList.add('hidden');
-  } 
+  }
+});
 
 // ==================== EDIT PROFILE SCREEN ====================
 const editProfileScreen = document.getElementById('editProfileScreen');
@@ -2083,4 +2084,3 @@ if (existingLogoutBtn) {
     await signOut(auth);
   });
 }
-});
