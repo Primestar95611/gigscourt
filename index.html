@@ -35,11 +35,11 @@
         <span class="skill-tag" data-skill="Design">Design</span>
         <span class="skill-tag" data-skill="Marketing">Marketing</span>
       </div>
-  <div style="margin: 20px 0 10px 0;">
-  <p style="margin-bottom: 8px; color: #666;">Can't find your skill? Type it here:</p>
-  <input type="text" id="customSkillInput" class="input-field" placeholder="e.g., Wig Maker, Gele Tying, etc." maxlength="50">
-  <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple skills by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
-</div>
+      <div style="margin: 20px 0 10px 0;">
+        <p style="margin-bottom: 8px; color: #666;">Can't find your skill? Type it here:</p>
+        <input type="text" id="customSkillInput" class="input-field" placeholder="e.g., Wig Maker, Gele Tying, etc." maxlength="50">
+        <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple skills by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
+      </div>
       <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
       <div class="auth-footer">
         <button id="gotoLoginFromSignup">Already have an account? Log in</button>
@@ -131,130 +131,73 @@
       </div>
 
       <!-- Messages Tab -->
-<div id="messagesTab" class="tab-pane hidden">
-  <div id="conversationsList" class="conversations-list"></div>
-</div>
+      <div id="messagesTab" class="tab-pane hidden">
+        <div id="conversationsList" class="conversations-list"></div>
+      </div>
       
       <!-- Profile Tab -->
-<div id="profileTab" class="tab-pane hidden">
-  <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
-  
-  <!-- Profile Header with Picture and Stats -->
-  <div class="profile-header">
-    <div class="profile-image-container">
-      <img id="profileImage" src="" alt="Profile">
-      <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
-    </div>
-    <div class="profile-stats">
-      <div class="stat-item">
-        <span class="stat-number" id="profileJobs">0</span>
-        <span class="stat-label">jobs</span>
+      <div id="profileTab" class="tab-pane hidden">
+        <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
+        
+        <!-- Profile Header with Picture and Stats -->
+        <div class="profile-header">
+          <div class="profile-image-container">
+            <img id="profileImage" src="" alt="Profile">
+            <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
+          </div>
+          <div class="profile-stats">
+            <div class="stat-item">
+              <span class="stat-number" id="profileJobs">0</span>
+              <span class="stat-label">jobs</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="profileRating">0</span>
+              <span class="stat-label">★</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="profileReviews">0</span>
+              <span class="stat-label">reviews</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Business Name and Username -->
+        <div class="profile-name-section">
+          <h2 class="profile-business-name" id="profileBusinessName"></h2>
+          <p class="profile-username" id="profileUsername">@username</p>
+        </div>
+
+        <!-- Bio Section -->
+        <div class="profile-bio" id="profileBio"></div>
+
+        <!-- Contact Information -->
+        <div class="profile-contact">
+          <div class="contact-item" id="profilePhoneContainer" style="display: none;">
+            <span class="contact-icon">📞</span>
+            <span class="contact-text" id="profilePhone"></span>
+          </div>
+          <div class="contact-item" id="profileAddressContainer" style="display: none;">
+            <span class="contact-icon">📍</span>
+            <span class="contact-text" id="profileAddress"></span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="profile-actions">
+          <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
+          <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
+        </div>
+
+        <!-- Portfolio Header -->
+        <div class="portfolio-header">
+          <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
+          <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
+        </div>
+
+        <!-- Portfolio Grid -->
+        <div class="portfolio-grid" id="portfolioGrid"></div>
       </div>
-      <div class="stat-item">
-        <span class="stat-number" id="profileRating">0</span>
-        <span class="stat-label">★</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number" id="profileReviews">0</span>
-        <span class="stat-label">reviews</span>
-      </div>
-    </div>
-  </div>
 
-  <!-- Portfolio Header -->
-  <div class="portfolio-header">
-    <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
-    <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
-  </div>
-
-  <!-- Portfolio Grid -->
-  <div class="portfolio-grid" id="portfolioGrid"></div>
-</div>
-
- <!-- Edit Profile Screen - Instagram Minimalist Style -->
-<div id="editProfileScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto;">
-  
-  <!-- Header -->
-  <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid #efefef; padding: 12px 16px; display: flex; align-items: center; z-index: 10;">
-    <button id="backFromEditBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
-    <h2 style="margin: 0; flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #262626;">Edit Profile</h2>
-    <button id="saveEditProfileBtn" style="background: none; border: none; color: #0095f6; font-weight: 600; font-size: 16px; cursor: pointer; padding: 8px;">Save</button>
-  </div>
-
-  <!-- Profile Picture Section -->
-  <div style="padding: 20px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #efefef;">
-    <div style="width: 60px; height: 60px; position: relative;">
-      <img id="editProfileImage" src="" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-    </div>
-    <div>
-      <div style="font-weight: 600; color: #262626;">Change Profile Photo</div>
-      <div style="font-size: 12px; color: #8e8e8e;">Tap to change from main profile</div>
-    </div>
-  </div>
-
-  <!-- Form Fields - Instagram Style -->
-  <div style="padding: 8px 16px;">
-    
-    <!-- Business Name -->
-    <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-      <div style="display: flex; align-items: center;">
-        <div style="width: 100px; font-size: 14px; color: #262626;">Business name</div>
-        <input type="text" id="editBusinessName" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your business name">
-      </div>
-      <div id="businessNameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
-    </div>
-
-    <!-- Username -->
-    <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-      <div style="display: flex; align-items: center;">
-        <div style="width: 100px; font-size: 14px; color: #262626;">Username</div>
-        <input type="text" id="editUsername" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="username">
-      </div>
-      <div id="usernameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
-    </div>
-
-    <!-- Bio -->
-    <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-      <div style="display: flex;">
-        <div style="width: 100px; font-size: 14px; color: #262626;">Bio</div>
-        <textarea id="editBio" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent; min-height: 60px; resize: vertical;" placeholder="Tell us about your services..."></textarea>
-      </div>
-    </div>
-
-    <!-- Phone -->
-    <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-      <div style="display: flex; align-items: center;">
-        <div style="width: 100px; font-size: 14px; color: #262626;">Phone</div>
-        <input type="tel" id="editPhone" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Phone number">
-      </div>
-    </div>
-
-    <!-- Address -->
-    <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-      <div style="display: flex; align-items: center;">
-        <div style="width: 100px; font-size: 14px; color: #262626;">Address</div>
-        <input type="text" id="editAddress" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your address">
-      </div>
-    </div>
-
-    <!-- Skills Section -->
-    <div style="padding: 16px 0;">
-      <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Skills</div>
-      <div id="editSkillsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new skill">
-        <button id="addSkillBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;">Add</button>
-      </div>
-    </div>
-
-    <!-- Account Actions -->
-    <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 16px;">
-      <button id="editLogoutBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer; border-bottom: 1px solid #efefef;">Log Out</button>
-      <button id="editDeleteAccountBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer;">Delete Account</button>
-    </div>
-  </div>
-</div>
-      
       <!-- Admin Tab -->
       <div id="adminTab" class="tab-pane hidden">
         <div class="tab-placeholder">
@@ -273,7 +216,7 @@
     </div>
   </div>
 
-  <!-- TEMPORARY HIDDEN BUTTONS - remove after Edit Profile screen is built -->
+  <!-- TEMPORARY HIDDEN BUTTONS - will be removed when Edit Profile is complete -->
   <div style="display: none;">
     <button id="logoutBtn">Logout</button>
     <button id="deleteAccountBtn">Delete Account</button>
@@ -299,6 +242,91 @@
     </div>
   </div>
 
+  <!-- Edit Profile Screen - Instagram Minimalist Style -->
+  <div id="editProfileScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto;">
+    
+    <!-- Header -->
+    <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid #efefef; padding: 12px 16px; display: flex; align-items: center; z-index: 10;">
+      <button id="backFromEditBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
+      <h2 style="margin: 0; flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #262626;">Edit Profile</h2>
+      <button id="saveEditProfileBtn" style="background: none; border: none; color: #0095f6; font-weight: 600; font-size: 16px; cursor: pointer; padding: 8px;">Save</button>
+    </div>
+
+    <!-- Profile Picture Section -->
+    <div style="padding: 20px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #efefef;">
+      <div style="width: 60px; height: 60px; position: relative;">
+        <img id="editProfileImage" src="" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+      </div>
+      <div>
+        <div style="font-weight: 600; color: #262626;">Change Profile Photo</div>
+        <div style="font-size: 12px; color: #8e8e8e;">Tap to change from main profile</div>
+      </div>
+    </div>
+
+    <!-- Form Fields - Instagram Style -->
+    <div style="padding: 8px 16px;">
+      
+      <!-- Business Name -->
+      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 100px; font-size: 14px; color: #262626;">Business name</div>
+          <input type="text" id="editBusinessName" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your business name">
+        </div>
+        <div id="businessNameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
+      </div>
+
+      <!-- Username -->
+      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 100px; font-size: 14px; color: #262626;">Username</div>
+          <input type="text" id="editUsername" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="username">
+        </div>
+        <div id="usernameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
+      </div>
+
+      <!-- Bio -->
+      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
+        <div style="display: flex;">
+          <div style="width: 100px; font-size: 14px; color: #262626;">Bio</div>
+          <textarea id="editBio" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent; min-height: 60px; resize: vertical;" placeholder="Tell us about your services..."></textarea>
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 100px; font-size: 14px; color: #262626;">Phone</div>
+          <input type="tel" id="editPhone" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Phone number">
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 100px; font-size: 14px; color: #262626;">Address</div>
+          <input type="text" id="editAddress" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your address">
+        </div>
+      </div>
+
+      <!-- Skills Section -->
+      <div style="padding: 16px 0;">
+        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Skills</div>
+        <div id="editSkillsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new skill">
+          <button id="addSkillBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;">Add</button>
+        </div>
+      </div>
+
+      <!-- Account Actions -->
+      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 16px;">
+        <button id="editLogoutBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer; border-bottom: 1px solid #efefef;">Log Out</button>
+        <button id="editDeleteAccountBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer;">Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Account Modal -->
   <div id="deleteModal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Delete Account</h3>
@@ -362,12 +390,10 @@
 <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe-lightbox.umd.min.js"></script>
 <script>
-  // Make sure PhotoSwipe is available globally
   window.PhotoSwipe = PhotoSwipe;
   window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-  console.log('✅ PhotoSwipe loaded');
 </script>
-<!-- Our app code - load AFTER PhotoSwipe -->
+<!-- Our app code -->
 <script type="module" src="app.js" defer></script>
 <script>
   feather.replace();
