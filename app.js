@@ -1248,10 +1248,25 @@ document.addEventListener('touchend', (e) => {
   
   if (Math.abs(dx) > 50 && Math.abs(dy) < 70 && (touchStartX < width * 0.15 || touchStartX > width * 0.85)) {
     const tabs = ['home', 'search', 'messages', 'profile', 'admin'];
-    const current = tabs.find(t => !document.getElementById(t + 'Tab').classList.contains('hidden'));
+    
+    // Find current tab safely
+    let current = null;
+    for (let t of tabs) {
+      const tabElement = document.getElementById(t + 'Tab');
+      if (tabElement && !tabElement.classList.contains('hidden')) {
+        current = t;
+        break;
+      }
+    }
+    
+    if (!current) return;
+    
     const idx = tabs.indexOf(current);
-    if (dx > 0 && idx > 0) switchTab(tabs[idx - 1]);
-    else if (dx < 0 && idx < tabs.length - 1) switchTab(tabs[idx + 1]);
+    if (dx > 0 && idx > 0) {
+      switchTab(tabs[idx - 1]);
+    } else if (dx < 0 && idx < tabs.length - 1) {
+      switchTab(tabs[idx + 1]);
+    }
   }
 }, { passive: true });
 
