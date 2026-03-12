@@ -1425,14 +1425,20 @@ document.getElementById('resendVerifyBtn').addEventListener('click', async () =>
 });
 
 // ==================== LOGOUT ====================
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await signOut(auth);
-});
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    await signOut(auth);
+  });
+}
 
 // ==================== DELETE ACCOUNT ====================
-document.getElementById('deleteAccountBtn').addEventListener('click', () => {
-  deleteModal.classList.remove('hidden');
-});
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+if (deleteAccountBtn) {
+  deleteAccountBtn.addEventListener('click', () => {
+    deleteModal.classList.remove('hidden');
+  });
+}
 
 document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
   deleteModal.classList.add('hidden');
