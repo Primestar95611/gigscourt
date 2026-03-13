@@ -1212,6 +1212,36 @@ async function getUsersBatch(userIds) {
 // ==================== MESSAGING FUNCTIONS ====================
 async function loadConversations() {
   if (!currentUser) return;
+
+  // Add back button at the top of messages tab
+const messagesTab = document.getElementById('messagesTab');
+const existingBackBtn = document.getElementById('messagesBackBtn');
+if (!existingBackBtn) {
+  const backBtnContainer = document.createElement('div');
+  backBtnContainer.id = 'messagesBackBtn';
+  backBtnContainer.style.cssText = `
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 12px 16px;
+    border-bottom: 1px solid #efefef;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+  `;
+  backBtnContainer.innerHTML = `
+    <button style="background:none; border:none; font-size:24px; padding:8px; margin-right:8px; cursor:pointer;">←</button>
+    <span style="font-size:18px; font-weight:600;">Messages</span>
+  `;
+  
+  backBtnContainer.firstChild.addEventListener('click', () => {
+    // Go back to the previous tab (home, search, or profile)
+    const lastTab = localStorage.getItem('lastNonMessagesTab') || 'home';
+    switchTab(lastTab);
+  });
+  
+  messagesTab.insertBefore(backBtnContainer, messagesTab.firstChild);
+}
   
   conversationsList.innerHTML = '<div class="empty-state">Loading...</div>';
   
