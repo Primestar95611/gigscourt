@@ -428,9 +428,9 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   transition: all 0.2s ease;
 }
 .profile-btn-primary {
-  background: #666666;
-  color: white;
-  border: none;
+  background: transparent;
+  border: 1px solid #dbdbdb;
+  color: #1e1e2f;
 }
 .profile-btn-primary:active {
   opacity: 0.8;
