@@ -2082,5 +2082,6 @@ const existingLogoutBtn = document.getElementById('logoutBtn');
 if (existingLogoutBtn) {
   existingLogoutBtn.addEventListener('click', async () => {
     await signOut(auth);
+    window.location.reload();
   });
 }
