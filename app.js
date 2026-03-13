@@ -320,6 +320,19 @@ if (shareBtn) {
   
   shareBtn.parentNode.insertBefore(messageBtn, shareBtn);
 }
+
+    // Add back button at the top
+const profileHeader = document.querySelector('.profile-header');
+const backBtn = document.createElement('div');
+backBtn.innerHTML = '<button style="background:none; border:none; font-size:24px; padding:8px; margin-left:8px; cursor:pointer;">←</button>';
+backBtn.style.position = 'sticky';
+backBtn.style.top = '0';
+backBtn.style.zIndex = '100';
+backBtn.style.background = 'white';
+backBtn.firstChild.addEventListener('click', () => {
+  loadProfileData(); // Go back to your own profile
+});
+profileHeader.parentNode.insertBefore(backBtn, profileHeader);
     
   }, 100);
 });
