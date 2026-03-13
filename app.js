@@ -305,20 +305,22 @@ function openQuickView(providerId, providerData) {
     });
     
     
-    // Add Message button next to Share
-const shareBtn = document.querySelector('.profile-btn-secondary');
-if (shareBtn) {
-  const messageBtn = document.createElement('button');
-  messageBtn.className = 'profile-btn profile-btn-primary';
-  messageBtn.textContent = 'Message';
-  messageBtn.id = 'messageFromProfileBtn';
-  messageBtn.style.marginLeft = '10px';
-  
-  messageBtn.addEventListener('click', () => {
-    showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
-  });
-  
-  shareBtn.parentNode.insertBefore(messageBtn, shareBtn);
+    // Add Message button next to Share (only if viewing someone else)
+if (viewedProvider.id !== currentUser?.uid) {
+  const shareBtn = document.querySelector('.profile-btn-secondary');
+  if (shareBtn) {
+    const messageBtn = document.createElement('button');
+    messageBtn.className = 'profile-btn profile-btn-primary';
+    messageBtn.textContent = 'Message';
+    messageBtn.id = 'messageFromProfileBtn';
+    messageBtn.style.marginLeft = '10px';
+    
+    messageBtn.addEventListener('click', () => {
+      showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
+    });
+    
+    shareBtn.parentNode.insertBefore(messageBtn, shareBtn);
+  }
 }
 
     // Add back button at the top
