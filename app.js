@@ -335,10 +335,21 @@ function openQuickView(providerId, providerData) {
       loadProfileData(); // Reload current user's profile
     });
     
-    // Message button functionality
-    document.getElementById('messageFromProfileBtn').addEventListener('click', () => {
-      showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
-    });
+    // Add Message button next to Share
+const shareBtn = document.querySelector('.profile-btn-secondary');
+if (shareBtn) {
+  const messageBtn = document.createElement('button');
+  messageBtn.className = 'profile-btn profile-btn-primary';
+  messageBtn.textContent = 'Message';
+  messageBtn.id = 'messageFromProfileBtn';
+  messageBtn.style.marginLeft = '10px';
+  
+  messageBtn.addEventListener('click', () => {
+    showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
+  });
+  
+  shareBtn.parentNode.insertBefore(messageBtn, shareBtn);
+}
     
   }, 100);
 });
