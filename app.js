@@ -318,6 +318,7 @@ if (viewedProvider.id !== currentUser?.uid) {
   if (shareBtn) {
     const messageBtn = document.createElement('button');
     messageBtn.className = 'profile-btn profile-btn-primary';
+    messageBtn.classList.add('dynamic-message-btn');
     messageBtn.textContent = 'Message';
     messageBtn.id = 'messageFromProfileBtn';
     messageBtn.style.marginLeft = '10px';
@@ -333,6 +334,7 @@ if (viewedProvider.id !== currentUser?.uid) {
     // Add back button at the top
 const profileHeader = document.querySelector('.profile-header');
 const backBtn = document.createElement('div');
+backBtn.classList.add('dynamic-back-btn');
 backBtn.innerHTML = '<button style="background:none; border:none; font-size:24px; padding:8px; margin-left:8px; cursor:pointer;">←</button>';
 backBtn.style.position = 'sticky';
 backBtn.style.top = '0';
