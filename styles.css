@@ -1228,3 +1228,28 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     border-bottom-color: #262626 !important;
   }
 }
+/* Force Edit Profile Dark Mode - FINAL FIX */
+@media (prefers-color-scheme: dark) {
+  #editProfileScreen,
+  #editProfileScreen * {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  #editProfileScreen input,
+  #editProfileScreen textarea {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+    border: 1px solid #333333 !important;
+  }
+  
+  #editProfileScreen .skill-tag {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+  }
+  
+  #editProfileScreen #addSkillBtn {
+    background-color: #0095f6 !important;
+    color: #ffffff !important;
+  }
+}
