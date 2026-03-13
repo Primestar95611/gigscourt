@@ -1275,3 +1275,35 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ffffff !important;
   }
 }
+/* Home page brand styling */
+.home-brand {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+.gigs {
+  color: inherit;
+}
+
+.court {
+  color: #CC0000;
+}
+
+/* Light mode - brand colors */
+.home-brand .gigs {
+  color: #000000;
+}
+
+/* Dark mode - brand colors */
+@media (prefers-color-scheme: dark) {
+  .home-brand .gigs {
+    color: #ffffff;
+  }
+  
+  .court {
+    color: #CC0000;
+  }
+}
