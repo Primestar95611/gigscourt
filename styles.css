@@ -1227,47 +1227,4 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ed4956 !important;
     border-bottom-color: #262626 !important;
   }
-  /* Edit Profile Screen - Dark Mode Fixes */
-#editProfileScreen {
-  background: #000 !important;
-  color: white;
-}
-
-#editProfileScreen input,
-#editProfileScreen textarea {
-  color: white !important;
-  background: #1a1a1a !important;
-  border-color: #333 !important;
-}
-
-#editProfileScreen input::placeholder,
-#editProfileScreen textarea::placeholder {
-  color: #666 !important;
-}
-
-#editProfileScreen div,
-#editProfileScreen label,
-#editProfileScreen p,
-#editProfileScreen span {
-  color: white !important;
-}
-
-#editProfileScreen [style*="border-bottom"] {
-  border-bottom-color: #333 !important;
-}
-
-#editProfileScreen .skill-tag {
-  background: #2a2a2a !important;
-  color: white !important;
-}
-
-#editProfileScreen #addSkillBtn {
-  background: #0095f6 !important;
-  color: white !important;
-}
-
-#editProfileScreen #editLogoutBtn,
-#editProfileScreen #editDeleteAccountBtn {
-  color: #ed4956 !important;
-}
 }
