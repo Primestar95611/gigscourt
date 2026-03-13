@@ -46,7 +46,7 @@ const loginError = document.getElementById('loginError');
 const adminTabBtn = document.getElementById('adminTabBtn');
 const adminTab = document.getElementById('adminTab');
 if (adminTab) {
-  adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Skills</h2><div id="pendingList"></div></div>';
+ adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Services</h2><div id="pendingList"></div></div>';
 }
 const homeGrid = document.getElementById('homeGrid');
 const deleteModal = document.getElementById('deleteModal');
@@ -676,7 +676,7 @@ if (!profileSkillsContainer) {
   skillsSection.id = 'profileSkillsContainer';
   skillsSection.innerHTML = `
     <div style="padding: 0 16px 16px;">
-      <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666;">Skills</div>
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666;">Services</div>
       <div id="profileSkillsList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
     </div>
   `;
@@ -983,7 +983,7 @@ async function updateMapAndList() {
     providerListDrawer.innerHTML = `
       <div class="pull-handle"></div>
       <div class="empty-state">
-        No providers found matching "${aktuellesSuchwort || 'all skills'}" within ${aktuellerRadius}km
+        No providers found matching "${aktuellesSuchwort || 'all services'}" within ${aktuellerRadius}km
       </div>
     `;
   } else {
@@ -1528,7 +1528,7 @@ document.getElementById('signupWithEmailBtn').addEventListener('click', async ()
   const allSkills = [...selectedSkills, ...customSkills];
 
   if (!businessName || !email || !password || allSkills.length === 0) {
-    authError.textContent = 'Business name, email, password and at least one skill are required';
+    authError.textContent = 'Business name, email, password and at least one service are required';
     return;
   }
 
@@ -1568,8 +1568,8 @@ document.getElementById('signupWithEmailBtn').addEventListener('click', async ()
     });
 
     // Show pending message if they added custom skills
-    if (customSkills.length > 0) {
-      alert(`Your custom skills (${customSkills.join(', ')}) have been submitted for approval. You'll be notified when they're approved.`);
+   if (customSkills.length > 0) {
+      alert(`Your custom services (${customSkills.join(', ')}) have been submitted for approval. You'll be notified when they're approved.`);
     }
 
     await sendEmailVerification(cred.user);
@@ -1756,7 +1756,7 @@ async function loadPendingSkills() {
   if (!currentUser || currentUser.email !== 'agboghidiaugust@gmail.com') return;
   
   const adminTab = document.getElementById('adminTab');
-  adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Skills</h2><div id="pendingList"></div></div>';
+adminTab.innerHTML = '<div style="padding:20px"><h2>Pending Services</h2><div id="pendingList"></div></div>';
   
   const usersSnap = await getDocs(collection(db, 'users'));
   let html = '';
@@ -1779,7 +1779,7 @@ async function loadPendingSkills() {
     }
   });
   
-  document.getElementById('pendingList').innerHTML = html || '<p>No pending skills</p>';
+  document.getElementById('pendingList').innerHTML = html || '<p>No pending services</p>';
 }
 
 window.approveSkill = async (userId, skill) => {
@@ -1812,7 +1812,7 @@ window.approveSkill = async (userId, skill) => {
       const newChat = await addDoc(chatsRef, {
         participants: [currentUser.uid, userId],
         createdAt: Timestamp.now(),
-        lastMessage: `Your skill "${skill}" was approved!`,
+        lastMessage: `Your service "${skill}" was approved!`,
         lastMessageTimestamp: Timestamp.now(),
         lastMessageSender: currentUser.uid
       });
@@ -1823,14 +1823,14 @@ window.approveSkill = async (userId, skill) => {
     await addDoc(collection(db, 'messages'), {
       chatId: chatId,
       senderId: currentUser.uid,
-      text: `✅ Your skill "${skill}" has been approved and is now live on your profile!`,
+      text: `✅ Your service "${skill}" has been approved and is now live on your profile!`,
       timestamp: Timestamp.now(),
       read: false
     });
     
     // Update chat's last message
     await updateDoc(doc(db, 'chats', chatId), {
-      lastMessage: `✅ Your skill "${skill}" was approved`,
+      lastMessage: `✅ Your service "${skill}" was approved`,
       lastMessageTimestamp: Timestamp.now(),
       lastMessageSender: currentUser.uid
     });
@@ -1840,12 +1840,12 @@ window.approveSkill = async (userId, skill) => {
   }
   // ===== END NOTIFICATION =====
   
-  alert(`Skill "${skill}" approved and user notified!`);
+  alert(`Service "${skill}" approved and user notified!`);
   loadPendingSkills();
 };
 
 window.editSkill = async (userId, oldSkill) => {
-  const newSkill = prompt('Edit skill:', oldSkill);
+  const newSkill = prompt('Edit service:', oldSkill);
   if (!newSkill) return;
   
   const userRef = doc(db, 'users', userId);
@@ -1876,7 +1876,7 @@ window.editSkill = async (userId, oldSkill) => {
       const newChat = await addDoc(chatsRef, {
         participants: [currentUser.uid, userId],
         createdAt: Timestamp.now(),
-        lastMessage: `Your skill suggestion was updated`,
+        lastMessage: `Your service suggestion was updated`,
         lastMessageTimestamp: Timestamp.now(),
         lastMessageSender: currentUser.uid
       });
@@ -1887,14 +1887,14 @@ window.editSkill = async (userId, oldSkill) => {
     await addDoc(collection(db, 'messages'), {
       chatId: chatId,
       senderId: currentUser.uid,
-      text: `✏️ Your skill "${oldSkill}" has been updated to "${newSkill}" and is pending approval.`,
+      text: `✏️ Your service "${oldSkill}" has been updated to "${newSkill}" and is pending approval.`,
       timestamp: Timestamp.now(),
       read: false
     });
     
     // Update chat's last message
     await updateDoc(doc(db, 'chats', chatId), {
-      lastMessage: `✏️ Your skill was updated to "${newSkill}"`,
+      lastMessage: `✏️ Your service was updated to "${newSkill}"`,
       lastMessageTimestamp: Timestamp.now(),
       lastMessageSender: currentUser.uid
     });
@@ -1904,7 +1904,7 @@ window.editSkill = async (userId, oldSkill) => {
   }
   // ===== END NOTIFICATION =====
   
-  alert(`Skill updated to "${newSkill}" and user notified!`);
+  alert(`Service updated to "${newSkill}" and user notified!`);
   loadPendingSkills();
 };
 
