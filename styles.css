@@ -1283,3 +1283,21 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ffffff;
   }
 }
+
+/* Force override all inline styles in dark mode */
+@media (prefers-color-scheme: dark) {
+  #editProfileScreen [style*="color"] {
+    color: #ffffff !important;
+  }
+  
+  #editProfileScreen [style*="background"] {
+    background-color: #1a1a1a !important;
+  }
+  
+  #editProfileScreen input,
+  #editProfileScreen textarea {
+    color: #ffffff !important;
+    background-color: #1a1a1a !important;
+    border-color: #333 !important;
+  }
+}
