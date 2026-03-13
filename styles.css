@@ -450,7 +450,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   justify-content: space-between;
   align-items: center;
   padding: 16px 16px 8px;
-}.add-portfolio-btn {
+}
+.add-portfolio-btn {
   background: transparent;
   border: 1px solid #dbdbdb;
   color: #1e1e2f;
