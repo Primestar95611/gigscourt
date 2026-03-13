@@ -1250,39 +1250,15 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     color: #ed4956 !important;
     border-bottom-color: #262626 !important;
   }
-}
-/* Force Edit Profile Dark Mode - FINAL FIX */
-@media (prefers-color-scheme: dark) {
-  #editProfileScreen,
-  #editProfileScreen * {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-  }
-  
-  #editProfileScreen input,
-  #editProfileScreen textarea {
-    background-color: #1a1a1a !important;
-    color: #ffffff !important;
-    border: 1px solid #333333 !important;
-  }
-  
-  #editProfileScreen .skill-tag {
-    background-color: #2a2a2a !important;
-    color: #ffffff !important;
-  }
-  
-  #editProfileScreen #addSkillBtn {
-    background-color: #666666 !important;
-    color: #ffffff !important;
-  }
-}
-/* Home page brand styling */
+}/* Home page brand styling */
 .home-brand {
   font-size: 32px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-left: 10px;
-  white-space: nowrap;
 }
 
 .gigs {
@@ -1302,9 +1278,5 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 @media (prefers-color-scheme: dark) {
   .home-brand .gigs {
     color: #ffffff;
-  }
-  
-  .court {
-    color: #CC0000;
   }
 }
