@@ -1495,6 +1495,11 @@ function getSavedTab() {
 }
 
 function switchTab(tabId) {
+  // Save the previous tab before switching to messages
+if (tabId !== 'messages') {
+  localStorage.setItem('lastNonMessagesTab', tabId);
+}
+  
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
   document.getElementById(tabId + 'Tab').classList.remove('hidden');
   document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
