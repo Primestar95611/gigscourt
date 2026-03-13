@@ -1152,7 +1152,8 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 
 /* Edit Profile button */
 .profile-btn-primary {
-  background: #666666 !important;
+  background: transparent !important;
+  border: 1px solid #333 !important;
   color: white !important;
 }
   
