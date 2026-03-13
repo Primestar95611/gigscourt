@@ -1000,22 +1000,60 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   /* Auth screens */
   .auth-container { background: #1a1a1a; }
   .auth-container h2 { color: white; }
+  .auth-container,
+  .auth-container *,
+  .auth-container input,
+  .auth-container button,
+  .auth-container div,
+  .auth-container p,
+  .auth-container span {
+    color: white !important;
+  }
   .auth-toggle { background: #2a2a2a; }
   .auth-toggle button { color: #888; }
   .auth-toggle button.active { background: #0066ff; color: white; }
+  .auth-toggle button {
+    color: #aaa !important;
+  }
   
+    .auth-toggle button.active {
+    background: #0066ff !important;
+    color: white !important;
+  }
   /* All text */
   h1, h2, h3, h4, h5, h6, p, div, span { color: #fff; }
   
   /* Inputs */
   .input-field { background: #2a2a2a; border-color: #444; color: white; }
   .input-field::placeholder { color: #888; }
+
+    .auth-container input {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
+  
+  .auth-container input::placeholder {
+    color: #aaa !important;
+  }
   
   /* Buttons */
   .btn { background: #0066ff; color: white; }
   .btn-outline { background: #2a2a2a; border-color: #444; color: white; }
   .btn-outline:hover { background: #333; }
   .btn-danger { background: #dc2626; }
+
+  /* THIS MAKES SIGNUP BUTTONS WHITE */
+  .auth-container .btn {
+    background: #0066ff !important;
+    color: white !important;
+  }
+  
+  .auth-container .btn-outline {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: white !important;
+  }
   
   /* Tabs */
   .tab-bar { background: rgba(30, 30, 30, 0.96); border-top-color: #333; }
