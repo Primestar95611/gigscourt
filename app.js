@@ -2078,10 +2078,13 @@ if (editDeleteAccountBtn) {
   });
 }
 
-const existingLogoutBtn = document.getElementById('logoutBtn');
-if (existingLogoutBtn) {
-  existingLogoutBtn.addEventListener('click', async () => {
-    await signOut(auth);
-    window.location.reload();
-  });
-}
+// Make sure logout button exists before adding listener
+setTimeout(() => {
+  const existingLogoutBtn = document.getElementById('logoutBtn');
+  if (existingLogoutBtn) {
+    existingLogoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+      window.location.reload();
+    });
+  }
+}, 1000);
