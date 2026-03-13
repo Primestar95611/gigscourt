@@ -4,41 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GigsCourt</title>
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- PhotoSwipe CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css" />
-  <!-- Feather Icons -->
   <script src="https://unpkg.com/feather-icons"></script>
-  <!-- Our custom styles -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
-  <!-- AUTH CONTAINER -->
+  <!-- Auth -->
   <div id="authContainer" class="auth-container">
     <div class="auth-toggle">
       <button id="toggleEmailSignup" class="active">Email</button>
       <button id="togglePhoneSignup">Phone</button>
     </div>
 
-    <!-- Email Signup View -->
+    <!-- Email Signup -->
     <div id="emailSignupView">
       <h2>Create with email</h2>
       <input type="text" id="emailBusinessName" class="input-field" placeholder="Business name">
       <input type="email" id="emailAddress" class="input-field" placeholder="Email">
       <input type="password" id="emailPassword" class="input-field" placeholder="Password">
-      <div style="margin: 12px 0;">Skills (select multiple)</div>
-      <div id="emailSkillsContainer">
+      <div class="section-title">Skills (select multiple)</div>
+      <div id="emailSkillsContainer" class="skills-container">
         <span class="skill-tag" data-skill="Barber">Barber</span>
         <span class="skill-tag" data-skill="Tech">Tech</span>
         <span class="skill-tag" data-skill="Design">Design</span>
         <span class="skill-tag" data-skill="Marketing">Marketing</span>
       </div>
-      <div style="margin: 20px 0 10px 0;">
-        <p style="margin-bottom: 8px; color: #666;">Can't find your service? Type it here:</p>
+      <div class="custom-skill-section">
+        <p class="custom-skill-label">Can't find your service? Type it here:</p>
         <input type="text" id="customSkillInput" class="input-field" placeholder="e.g., Wig Maker, Gele Tying, etc." maxlength="50">
-        <p style="font-size: 12px; color: #999; margin-top: 5px;">You can add multiple services by separating with commas (e.g., Wig Maker, Hair Stylist)</p>
+        <p class="custom-skill-hint">You can add multiple services by separating with commas</p>
       </div>
       <button class="btn" id="signupWithEmailBtn">Sign up with Email</button>
       <div class="auth-footer">
@@ -46,12 +42,10 @@
       </div>
     </div>
 
-    <!-- Phone Signup View -->
+    <!-- Phone Signup (disabled) -->
     <div id="phoneSignupView" class="hidden">
       <h2>Create with phone</h2>
-      <div class="coming-soon">
-        📱 Phone signup coming soon! Use email for now.
-      </div>
+      <div class="coming-soon">📱 Phone signup coming soon! Use email for now.</div>
       <input type="text" id="phoneBusinessName" class="input-field" placeholder="Business name" disabled>
       <div class="phone-input-container">
         <select id="phoneCountryCode" disabled>
@@ -63,8 +57,8 @@
         <input type="tel" id="phoneNumber" class="input-field" placeholder="Phone number" disabled>
       </div>
       <input type="password" id="phonePassword" class="input-field" placeholder="Password" disabled>
-      <div style="margin: 12px 0;">Services (select multiple)</div>
-      <div id="phoneSkillsContainer">
+      <div class="section-title">Services (select multiple)</div>
+      <div id="phoneSkillsContainer" class="skills-container">
         <span class="skill-tag" data-skill="Barber">Barber</span>
         <span class="skill-tag" data-skill="Tech">Tech</span>
         <span class="skill-tag" data-skill="Design">Design</span>
@@ -76,7 +70,7 @@
       </div>
     </div>
 
-    <!-- Login View -->
+    <!-- Login -->
     <div id="loginView" class="hidden">
       <h2>Welcome back</h2>
       <input type="email" id="loginEmail" class="input-field" placeholder="Email">
@@ -88,10 +82,10 @@
       <div id="loginError" class="error-msg"></div>
     </div>
 
-    <!-- Verify View -->
+    <!-- Verify -->
     <div id="verifyView" class="hidden">
       <h2>Verify your email</h2>
-      <p style="margin: 24px 0; color: #4b5563;">We sent a verification link to your email.</p>
+      <p class="verify-text">We sent a verification link to your email.</p>
       <button class="btn" id="checkVerificationBtn">I've verified</button>
       <button class="btn btn-outline" id="resendVerifyBtn">Resend link</button>
     </div>
@@ -99,27 +93,26 @@
     <div id="authError" class="error-msg"></div>
   </div>
 
-  <!-- MAIN APP -->
+  <!-- Main App -->
   <div id="mainApp" class="main-app hidden">
-    <!-- Tab Content -->
     <div class="tab-content" id="tabContent">
-      <!-- Home Tab -->
+      <!-- Home -->
       <div id="homeTab" class="tab-pane">
-        <h3 style="padding: 20px 16px 4px; display: flex; justify-content: space-between; align-items: flex-start;">
-  <div style="display: flex; flex-direction: column;">
-    <span style="font-size: 26px; font-weight: 650;">Discover</span>
-    <span style="font-size: 14px; color: #CC0000; margin-top: 4px; font-style: italic;">best talents closest to you</span>
-  </div>
-  <div class="home-brand" style="font-size: 32px; font-weight: 700; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
-    <span class="gigs">Gigs</span>
-    <span class="court">Court</span>
-  </div>
-</h3>
+        <div class="home-header">
+          <div class="home-title">
+            <span class="discover">Discover</span>
+            <span class="tagline">best talents closest to you</span>
+          </div>
+          <div class="home-brand">
+            <span class="gigs">Gigs</span>
+            <span class="court">Court</span>
+          </div>
+        </div>
         <div id="homeGrid" class="grid-2"></div>
         <div id="sentinel"></div>
       </div>
 
-      <!-- Search Tab -->
+      <!-- Search -->
       <div id="searchTab" class="tab-pane hidden">
         <div class="search-container">
           <div class="map-container">
@@ -139,239 +132,192 @@
         </div>
       </div>
 
-      <!-- Messages Tab -->
+      <!-- Messages -->
       <div id="messagesTab" class="tab-pane hidden">
         <div id="conversationsList" class="conversations-list"></div>
       </div>
       
-      <!-- Profile Tab -->
+      <!-- Profile -->
       <div id="profileTab" class="tab-pane hidden">
-        <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
+        <div id="uploadError" class="error-banner hidden"></div>
         
-        <!-- Profile Header with Picture and Stats -->
         <div class="profile-header">
           <div class="profile-image-container">
             <img id="profileImage" src="" alt="Profile">
             <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
           </div>
           <div class="profile-stats">
-            <div class="stat-item">
-              <span class="stat-number" id="profileJobs">0</span>
-              <span class="stat-label">jobs</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number" id="profileRating">0</span>
-              <span class="stat-label">★</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number" id="profileReviews">0</span>
-              <span class="stat-label">reviews</span>
-            </div>
+            <div class="stat-item"><span class="stat-number" id="profileJobs">0</span><span class="stat-label">jobs</span></div>
+            <div class="stat-item"><span class="stat-number" id="profileRating">0</span><span class="stat-label">★</span></div>
+            <div class="stat-item"><span class="stat-number" id="profileReviews">0</span><span class="stat-label">reviews</span></div>
           </div>
         </div>
 
-        <!-- Business Name and Username -->
         <div class="profile-name-section">
           <h2 class="profile-business-name" id="profileBusinessName"></h2>
           <p class="profile-username" id="profileUsername">@username</p>
         </div>
 
-        <!-- Bio Section -->
         <div class="profile-bio" id="profileBio"></div>
 
-        <!-- Contact Information -->
         <div class="profile-contact">
           <div class="contact-item" id="profilePhoneContainer" style="display: none;">
-            <span class="contact-icon">📞</span>
-            <span class="contact-text" id="profilePhone"></span>
+            <span class="contact-icon">📞</span><span class="contact-text" id="profilePhone"></span>
           </div>
           <div class="contact-item" id="profileAddressContainer" style="display: none;">
-            <span class="contact-icon">📍</span>
-            <span class="contact-text" id="profileAddress"></span>
+            <span class="contact-icon">📍</span><span class="contact-text" id="profileAddress"></span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="profile-actions">
           <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
           <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
         </div>
 
-        <!-- Portfolio Header -->
         <div class="portfolio-header">
-          <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
+          <h4>Portfolio <span id="portfolioCount"></span></h4>
           <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
         </div>
 
-        <!-- Portfolio Grid -->
         <div class="portfolio-grid" id="portfolioGrid"></div>
       </div>
 
-      <!-- Admin Tab -->
+      <!-- Admin -->
       <div id="adminTab" class="tab-pane hidden">
         <div class="tab-placeholder">
           ⚙️ Admin Tab<br><br>
-          <span style="font-size: 14px;">Admin only visible for agboghidiaugust@gmail.com</span>
+          <span>Admin only visible for agboghidiaugust@gmail.com</span>
         </div>
       </div>
     </div>
 
+    <!-- Tab Bar -->
     <div class="tab-bar" id="tabBar">
-      <button class="tab-item active" data-tab="home"><span class="tab-icon" data-feather="home"></span>Home</button>
-      <button class="tab-item" data-tab="search"><span class="tab-icon" data-feather="search"></span>Search</button>
-      <button class="tab-item" data-tab="messages"><span class="tab-icon" data-feather="message-circle"></span>Messages</button>
-      <button class="tab-item" data-tab="profile"><span class="tab-icon" data-feather="user"></span>Profile</button>
-      <button class="tab-item" data-tab="admin" id="adminTabBtn"><span class="tab-icon" data-feather="settings"></span>Admin</button>
+      <button class="tab-item active" data-tab="home"><span class="tab-icon" data-feather="home"></span></button>
+      <button class="tab-item" data-tab="search"><span class="tab-icon" data-feather="search"></span></button>
+      <button class="tab-item" data-tab="messages"><span class="tab-icon" data-feather="message-circle"></span></button>
+      <button class="tab-item" data-tab="profile"><span class="tab-icon" data-feather="user"></span></button>
+      <button class="tab-item" data-tab="admin" id="adminTabBtn"><span class="tab-icon" data-feather="settings"></span></button>
     </div>
   </div>
 
   <!-- Chat View -->
-  <div id="chatView" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000;">
-    <div style="height: 100%; display: flex; flex-direction: column;">
-      <div style="padding: 16px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 16px; flex-shrink: 0;">
-        <span class="back-btn" id="backToConversations" style="font-size: 24px; cursor: pointer; padding: 8px; color: white;">←</span>
-        <img id="chatPartnerImg" src="" alt="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-        <h3 id="chatPartnerName" style="flex: 1; color: white;"></h3>
-      </div>
-      <div id="messagesContainer" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 4px; -webkit-overflow-scrolling: touch; background: #0f172a;"></div>
-      <div style="padding: 12px 16px; background: #1e293b; border-top: 1px solid #334155; display: flex; gap: 12px; align-items: center; flex-shrink: 0;">
-        <input type="text" id="messageInput" class="chat-input" placeholder="Type a message...">
-        <button class="send-btn" id="sendMessageBtn">➤</button>
-      </div>
+  <div id="chatView" class="hidden chat-view">
+    <div class="chat-header">
+      <span class="back-btn" id="backToConversations">←</span>
+      <img id="chatPartnerImg" src="" alt="">
+      <h3 id="chatPartnerName"></h3>
+    </div>
+    <div id="messagesContainer" class="messages-container"></div>
+    <div class="chat-footer">
+      <input type="text" id="messageInput" class="chat-input" placeholder="Type a message...">
+      <button class="send-btn" id="sendMessageBtn">➤</button>
     </div>
   </div>
 
-  <!-- Edit Profile Screen - Instagram Minimalist Style -->
-  <div id="editProfileScreen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto;">
-    
-    <!-- Header -->
-    <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid #efefef; padding: 12px 16px; display: flex; align-items: center; z-index: 10;">
-      <button id="backFromEditBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
-      <h2 style="margin: 0; flex: 1; text-align: center; font-size: 18px; font-weight: 600; color: #262626;">Edit Profile</h2>
-      <button id="saveEditProfileBtn" style="background: none; border: none; color: #0095f6; font-weight: 600; font-size: 16px; cursor: pointer; padding: 8px;">Save</button>
+  <!-- Edit Profile -->
+  <div id="editProfileScreen" class="hidden edit-profile-screen">
+    <div class="edit-header">
+      <button id="backFromEditBtn">←</button>
+      <h2>Edit Profile</h2>
+      <button id="saveEditProfileBtn">Save</button>
     </div>
 
-    <!-- Profile Picture Section -->
-    <div style="padding: 20px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #efefef;">
-      <div style="width: 60px; height: 60px; position: relative;">
-        <img id="editProfileImage" src="" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+    <div class="edit-photo-section">
+      <div class="edit-photo">
+        <img id="editProfileImage" src="" alt="">
       </div>
       <div>
-        <div style="font-weight: 600; color: #262626;">Change Profile Photo</div>
-        <div style="font-size: 12px; color: #8e8e8e;">Tap to change from main profile</div>
+        <div class="edit-photo-label">Change Profile Photo</div>
+        <div class="edit-photo-hint">Tap to change from main profile</div>
       </div>
     </div>
 
-    <!-- Form Fields - Instagram Style -->
-    <div style="padding: 8px 16px;">
-      
-      <!-- Business Name -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Business name</div>
-          <input type="text" id="editBusinessName" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your business name">
-        </div>
-        <div id="businessNameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
+    <div class="edit-form">
+      <div class="edit-field">
+        <span class="field-label">Business name</span>
+        <input type="text" id="editBusinessName" placeholder="Your business name">
+        <div id="businessNameTimer" class="field-timer"></div>
       </div>
 
-      <!-- Username -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Username</div>
-          <input type="text" id="editUsername" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="username">
-        </div>
-        <div id="usernameTimer" style="font-size: 12px; color: #ed4956; margin-left: 100px;"></div>
+      <div class="edit-field">
+        <span class="field-label">Username</span>
+        <input type="text" id="editUsername" placeholder="username">
+        <div id="usernameTimer" class="field-timer"></div>
       </div>
 
-      <!-- Bio -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Bio</div>
-          <textarea id="editBio" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent; min-height: 60px; resize: vertical;" placeholder="Tell us about your services..."></textarea>
-        </div>
+      <div class="edit-field">
+        <span class="field-label">Bio</span>
+        <textarea id="editBio" placeholder="Tell us about your services..."></textarea>
       </div>
 
-      <!-- Phone -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Phone</div>
-          <input type="tel" id="editPhone" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Phone number">
-        </div>
+      <div class="edit-field">
+        <span class="field-label">Phone</span>
+        <input type="tel" id="editPhone" placeholder="Phone number">
       </div>
 
-      <!-- Address -->
-      <div style="padding: 12px 0; border-bottom: 1px solid #efefef;">
-        <div style="display: flex; align-items: center;">
-          <div style="width: 100px; font-size: 14px; color: #262626;">Address</div>
-          <input type="text" id="editAddress" style="flex: 1; border: none; padding: 8px 0; font-size: 14px; color: #262626; background: transparent;" placeholder="Your address">
+      <div class="edit-field">
+        <span class="field-label">Address</span>
+        <input type="text" id="editAddress" placeholder="Your address">
+      </div>
+
+      <div class="edit-skills">
+        <div class="skills-label">Services</div>
+        <div id="editSkillsContainer" class="edit-skills-container"></div>
+        <div class="add-skill-row">
+          <input type="text" id="newSkillInput" placeholder="Add a new service">
+          <button id="addSkillBtn">Add</button>
         </div>
       </div>
 
-      <!-- Skills Section -->
-      <div style="padding: 16px 0;">
-        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px;">Services</div>
-        <div id="editSkillsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newSkillInput" style="flex: 1; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #262626; background: #fafafa;" placeholder="Add a new service">
-          <button id="addSkillBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;">Add</button>
-        </div>
-      </div>
-
-      <!-- Account Actions -->
-      <div style="margin-top: 24px; border-top: 1px solid #efefef; padding-top: 16px;">
-        <button id="editLogoutBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer; border-bottom: 1px solid #efefef;">Log Out</button>
-        <button id="editDeleteAccountBtn" style="width: 100%; background: none; border: none; color: #ed4956; font-size: 14px; font-weight: 600; padding: 12px; text-align: left; cursor: pointer;">Delete Account</button>
+      <div class="edit-actions">
+        <button id="editLogoutBtn">Log Out</button>
+        <button id="editDeleteAccountBtn">Delete Account</button>
       </div>
     </div>
   </div>
 
-  <!-- Delete Account Modal -->
+  <!-- Modals -->
   <div id="deleteModal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Delete Account</h3>
       <p>Are you sure? This cannot be undone. All your data will be permanently removed.</p>
       <div class="modal-actions">
-        <button class="btn-outline" id="cancelDeleteBtn" style="margin: 0;">Cancel</button>
-        <button class="btn-danger" id="confirmDeleteBtn" style="margin: 0;">Yes, Delete</button>
+        <button class="btn-outline" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- Start Chat Modal -->
   <div id="startChatModal" class="modal-overlay hidden">
     <div class="modal">
       <h3 id="startChatModalTitle">Start Chat</h3>
       <p id="startChatModalMessage">Would you like to start a conversation?</p>
       <div class="modal-actions">
-        <button class="btn-outline" id="cancelStartChatBtn" style="margin: 0;">Cancel</button>
-        <button class="btn" id="confirmStartChatBtn" style="margin: 0;">Start Chat</button>
+        <button class="btn-outline" id="cancelStartChatBtn">Cancel</button>
+        <button class="btn" id="confirmStartChatBtn">Start Chat</button>
       </div>
     </div>
   </div>
 
-  <!-- Upload Progress Indicator -->
-  <div id="uploadProgress" class="hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 3000; text-align: center;">
-    <div style="width: 40px; height: 40px; border: 3px solid #f0f3f8; border-top-color: #0066ff; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px;"></div>
+  <div id="uploadProgress" class="hidden upload-progress">
+    <div class="upload-spinner"></div>
     <p>Uploading...</p>
   </div>
 
-  <!-- Hidden file input -->
   <input type="file" id="fileInput" accept="image/*" multiple>
 
-  <!-- Quick-View Bottom Sheet -->
   <div class="sheet-overlay" id="sheetOverlay"></div>
   <div class="quick-view-sheet" id="quickViewSheet">
     <div class="sheet-handle"></div>
     <div id="sheetContent"></div>
   </div>
 
-  <!-- Profile Image Full-Screen Viewer -->
   <div class="profile-viewer" id="profileViewer">
     <span class="profile-viewer-close" id="closeProfileViewer">&times;</span>
     <img id="profileViewerImg" src="" alt="">
   </div>
 
-  <!-- Delete Portfolio Image Modal -->
   <div class="delete-modal-overlay" id="deletePortfolioOverlay"></div>
   <div class="delete-modal" id="deletePortfolioModal">
     <h3>Delete Image</h3>
@@ -383,19 +329,11 @@
   </div>
 </div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- PhotoSwipe - Alternative CDN -->
 <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.2/dist/umd/photoswipe-lightbox.umd.min.js"></script>
-<script>
-  window.PhotoSwipe = PhotoSwipe;
-  window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-</script>
-<!-- Our app code -->
+<script>window.PhotoSwipe = PhotoSwipe; window.PhotoSwipeLightbox = PhotoSwipeLightbox;</script>
 <script type="module" src="app.js" defer></script>
-<script>
-  feather.replace();
-</script>
+<script>feather.replace();</script>
 </body>
 </html>
