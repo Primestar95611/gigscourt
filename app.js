@@ -220,9 +220,128 @@ function openQuickView(providerId, providerData) {
   });
   
   document.getElementById('sheetViewProfileBtn')?.addEventListener('click', () => {
-    alert('Full profile coming in next phase');
-    closeQuickView();
-  });
+  closeQuickView();
+  
+  // Save the provider we're viewing
+  const viewedProvider = currentSheetProvider;
+  
+  // Switch to profile tab
+  switchTab('profile');
+  
+  setTimeout(async () => {
+    // Hide edit/profile buttons and camera
+    editProfileBtn.style.display = 'none';
+    addPortfolioBtn.style.display = 'none';
+    uploadProfilePicBtn.style.display = 'none';
+    
+    // Show this provider's info
+    profileBusinessName.textContent = viewedProvider.businessName || 'Business';
+    profileUsername.textContent = viewedProvider.username ? '@' + viewedProvider.username : '@user';
+    profileJobs.textContent = viewedProvider.jobsDone || 0;
+    profileRating.textContent = viewedProvider.rating || 0;
+    profileReviews.textContent = viewedProvider.reviewCount || 0;
+    profileBio.textContent = viewedProvider.bio || 'No bio yet.';
+    
+    const profileImageUrl = getThumbnailUrl(viewedProvider.profileImage, 200);
+    profileImage.src = profileImageUrl;
+    
+    // Contact info
+    if (viewedProvider.phoneNumber) {
+      profilePhone.textContent = viewedProvider.phoneNumber;
+      profilePhoneContainer.style.display = 'flex';
+    } else {
+      profilePhoneContainer.style.display = 'none';
+    }
+    
+    if (viewedProvider.address) {
+      profileAddress.textContent = viewedProvider.address;
+      profileAddressContainer.style.display = 'flex';
+    } else {
+      profileAddressContainer.style.display = 'none';
+    }
+    
+    // Skills
+    const skillsList = document.getElementById('profileSkillsList');
+    if (skillsList && viewedProvider.skills) {
+      skillsList.innerHTML = '';
+      viewedProvider.skills.forEach(skill => {
+        const skillTag = document.createElement('span');
+        skillTag.style.cssText = 'background: #f0f3f8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #1e1e2f;';
+        skillTag.textContent = skill;
+        skillsList.appendChild(skillTag);
+      });
+    }
+    
+    // Portfolio
+    const portfolio = viewedProvider.portfolioImages || [
+      'https://ik.imagekit.io/GigsCourt/sample1',
+      'https://ik.imagekit.io/GigsCourt/sample2',
+      'https://ik.imagekit.io/GigsCourt/sample3'
+    ];
+    
+    const portfolioCount = document.getElementById('portfolioCount');
+    if (portfolioCount) {
+      portfolioCount.textContent = `(${portfolio.length})`;
+    }
+    
+    portfolioGrid.innerHTML = '';
+    portfolio.forEach((url, index) => {
+      const item = document.createElement('div');
+      item.className = 'portfolio-item';
+      item.dataset.url = url;
+      
+      const img = document.createElement('img');
+      img.src = getThumbnailUrl(url, 300);
+      img.loading = 'lazy';
+      img.classList.add('lazy-load');
+      img.onload = () => img.classList.add('loaded');
+      
+      img.addEventListener('click', () => {
+        openGallery(portfolio, index);
+      });
+      
+      item.appendChild(img);
+      portfolioGrid.appendChild(item);
+    });
+    
+    // Add Instagram-style header with back arrow and message button
+    const existingHeader = document.querySelector('.profile-view-header');
+    if (existingHeader) existingHeader.remove();
+    
+    const header = document.createElement('div');
+    header.className = 'profile-view-header';
+    header.style.cssText = `
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #efefef;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      z-index: 100;
+    `;
+    
+    header.innerHTML = `
+      <button id="backFromProfileView" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626; margin-right: 8px;">←</button>
+      <h2 style="flex: 1; font-size: 18px; font-weight: 600;">${viewedProvider.businessName || 'Profile'}</h2>
+      <button id="messageFromProfileBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 600; cursor: pointer;">Message</button>
+    `;
+    
+    profileTab.insertBefore(header, profileTab.firstChild);
+    
+    // Back button functionality
+    document.getElementById('backFromProfileView').addEventListener('click', () => {
+      document.querySelector('.profile-view-header')?.remove();
+      loadProfileData(); // Reload current user's profile
+    });
+    
+    // Message button functionality
+    document.getElementById('messageFromProfileBtn').addEventListener('click', () => {
+      showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
+    });
+    
+  }, 100);
+});
 }
 
 function closeQuickView() {
