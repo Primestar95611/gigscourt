@@ -205,10 +205,13 @@ function openQuickView(providerId, providerData) {
     <div class="sheet-portfolio-grid">
       ${portfolioImages.slice(0, 3).map(url => `<img src="${getThumbnailUrl(url, 300)}">`).join('')}
     </div>
-    <div class="sheet-buttons">
-      <button class="sheet-btn-secondary" id="sheetViewProfileBtn">View Profile</button>
-      <button class="sheet-btn-primary" id="sheetMessageBtn">Message</button>
-    </div>
+    <div class="sheet-buttons" style="display: flex; flex-direction: column; gap: 8px;">
+  <div style="display: flex; gap: 10px;">
+    <button class="sheet-btn-secondary" id="sheetViewProfileBtn" style="flex: 1;">View Profile</button>
+    <button class="sheet-btn-primary" id="sheetMessageBtn" style="flex: 1;">Message</button>
+  </div>
+  <button class="sheet-btn-secondary" id="sheetDirectionsBtn" style="width: 100%;">🗺️ Directions</button>
+</div>
   `;
   
   quickViewSheet.classList.add('active');
