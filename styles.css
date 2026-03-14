@@ -1385,12 +1385,9 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 
 /* Directions toggle button */
 .directions-toggle-btn {
-  .directions-toggle-btn {
   position: absolute;
   top: 20px;
   left: 20px;
-  ...
-}
   background: #666666;
   color: white;
   border: none;
