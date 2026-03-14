@@ -2393,6 +2393,7 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   toggleBtn.id = 'directionsToggleBtn';
   toggleBtn.className = 'directions-toggle-btn active';
   toggleBtn.innerHTML = '📋 Hide Directions';
+  toggleBtn.style.display = 'block';
   
   toggleBtn.addEventListener('click', function() {
     const container = document.querySelector('.leaflet-routing-container');
