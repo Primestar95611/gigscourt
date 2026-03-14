@@ -224,135 +224,109 @@ function openQuickView(providerId, providerData) {
   
   // Save the provider we're viewing
   const viewedProvider = currentSheetProvider;
-    window.viewedProvider = viewedProvider;
   
-  // Switch to profile tab
-  switchTab('profile');
+  // Get the profile viewer elements
+  const profileViewerModal = document.getElementById('profileViewerModal');
+  const profileViewerContent = document.getElementById('profileViewerContent');
   
-  setTimeout(async () => {
-  // Remove any existing back buttons and message buttons from previous views
-  document.querySelectorAll('.profile-view-back-btn, .profile-view-message-btn, .dynamic-back-btn, .dynamic-message-btn').forEach(el => el.remove());
+  // Hide main app and show profile viewer
+  mainApp.classList.add('hidden');
+  profileViewerModal.classList.remove('hidden');
   
-  // Also remove any back buttons that might have been added to the profile header
-  const existingBackBtn = document.querySelector('.profile-header').parentNode.querySelector('div[style*="position: sticky"]');
-  if (existingBackBtn) existingBackBtn.remove();
-    // Hide edit/profile buttons and camera
-    editProfileBtn.style.display = 'none';
-    addPortfolioBtn.style.display = 'none';
-    uploadProfilePicBtn.style.display = 'none';
-    
-    // Show this provider's info
-    profileBusinessName.textContent = viewedProvider.businessName || 'Business';
-    profileUsername.textContent = viewedProvider.username ? '@' + viewedProvider.username : '@user';
-    profileJobs.textContent = viewedProvider.jobsDone || 0;
-    profileRating.textContent = viewedProvider.rating || 0;
-    profileReviews.textContent = viewedProvider.reviewCount || 0;
-    profileBio.textContent = viewedProvider.bio || 'No bio yet.';
-    
-    const profileImageUrl = getThumbnailUrl(viewedProvider.profileImage, 200);
-    profileImage.src = profileImageUrl;
-    
-    // Contact info
-    if (viewedProvider.phoneNumber) {
-      profilePhone.textContent = viewedProvider.phoneNumber;
-      profilePhoneContainer.style.display = 'flex';
-    } else {
-      profilePhoneContainer.style.display = 'none';
-    }
-    
-    if (viewedProvider.address) {
-      profileAddress.textContent = viewedProvider.address;
-      profileAddressContainer.style.display = 'flex';
-    } else {
-      profileAddressContainer.style.display = 'none';
-    }
-    
-    // Skills
-    const skillsList = document.getElementById('profileSkillsList');
-    if (skillsList && viewedProvider.skills) {
-      skillsList.innerHTML = '';
-      viewedProvider.skills.forEach(skill => {
-        const skillTag = document.createElement('span');
-        skillTag.style.cssText = 'background: #f0f3f8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #1e1e2f;';
-        skillTag.textContent = skill;
-        skillsList.appendChild(skillTag);
-      });
-    }
-    
-    // Portfolio
-    const portfolio = viewedProvider.portfolioImages || [
-      'https://ik.imagekit.io/GigsCourt/sample1',
-      'https://ik.imagekit.io/GigsCourt/sample2',
-      'https://ik.imagekit.io/GigsCourt/sample3'
-    ];
-    
-    const portfolioCount = document.getElementById('portfolioCount');
-    if (portfolioCount) {
-      portfolioCount.textContent = `(${portfolio.length})`;
-    }
-    
-    portfolioGrid.innerHTML = '';
-    portfolio.forEach((url, index) => {
-      const item = document.createElement('div');
-      item.className = 'portfolio-item';
-      item.dataset.url = url;
+  // Create profile HTML
+  const portfolioImages = viewedProvider.portfolioImages || [
+    'https://ik.imagekit.io/GigsCourt/sample1',
+    'https://ik.imagekit.io/GigsCourt/sample2',
+    'https://ik.imagekit.io/GigsCourt/sample3'
+  ];
+  
+  const skillsHTML = viewedProvider.skills ? viewedProvider.skills.map(skill => 
+    `<span style="background: #f0f3f8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #1e1e2f; margin-right: 8px; margin-bottom: 8px; display: inline-block;">${skill}</span>`
+  ).join('') : '';
+  
+  profileViewerContent.innerHTML = `
+    <div style="padding: 20px;">
+      <!-- Profile Header -->
+      <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
+        <img src="${getThumbnailUrl(viewedProvider.profileImage, 200)}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+        <div style="display: flex; gap: 24px;">
+          <div style="text-align: center;">
+            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.jobsDone || 0}</div>
+            <div style="font-size: 13px; color: #8e94a7;">jobs</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.rating || 0}</div>
+            <div style="font-size: 13px; color: #8e94a7;">★</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-weight: 700; font-size: 18px;">${viewedProvider.reviewCount || 0}</div>
+            <div style="font-size: 13px; color: #8e94a7;">reviews</div>
+          </div>
+        </div>
+      </div>
       
-      const img = document.createElement('img');
-      img.src = getThumbnailUrl(url, 300);
-      img.loading = 'lazy';
-      img.classList.add('lazy-load');
-      img.onload = () => img.classList.add('loaded');
+      <!-- Business Name -->
+      <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 2px;">${viewedProvider.businessName || 'Business'}</h2>
+      <p style="font-size: 14px; color: #8e94a7; margin-bottom: 12px;">${viewedProvider.username ? '@' + viewedProvider.username : '@user'}</p>
       
-      img.addEventListener('click', () => {
-        openGallery(portfolio, index);
-      });
+      <!-- Bio -->
+      <p style="font-size: 14px; line-height: 1.5; margin-bottom: 16px;">${viewedProvider.bio || 'No bio yet.'}</p>
       
-      item.appendChild(img);
-      portfolioGrid.appendChild(item);
-    });
-    
-    
-    // Add Message button next to Share (only if viewing someone else)
-if (viewedProvider.id !== currentUser?.uid) {
-  const shareBtn = document.querySelector('.profile-btn-secondary');
-  if (shareBtn) {
-    const messageBtn = document.createElement('button');
-    messageBtn.className = 'profile-btn profile-btn-primary';
-    messageBtn.classList.add('dynamic-message-btn');
-    messageBtn.textContent = 'Message';
-    messageBtn.id = 'messageFromProfileBtn';
-    messageBtn.style.marginLeft = '10px';
-    
-    messageBtn.addEventListener('click', () => {
+      <!-- Skills -->
+      ${skillsHTML ? `<div style="margin-bottom: 16px;">${skillsHTML}</div>` : ''}
+      
+      <!-- Contact -->
+      ${viewedProvider.phoneNumber ? `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <span style="font-size: 16px;">📞</span>
+          <span>${viewedProvider.phoneNumber}</span>
+        </div>
+      ` : ''}
+      
+      ${viewedProvider.address ? `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+          <span style="font-size: 16px;">📍</span>
+          <span>${viewedProvider.address}</span>
+        </div>
+      ` : ''}
+      
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        ${viewedProvider.id !== currentUser?.uid ? `
+          <button id="modalMessageBtn" style="flex: 1; background: #666666; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Message</button>
+        ` : ''}
+        <button id="modalShareBtn" style="flex: 1; background: transparent; border: 1px solid #dbdbdb; border-radius: 8px; padding: 10px; font-weight: 600; cursor: pointer;">Share</button>
+      </div>
+      
+      <!-- Portfolio Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4 style="font-size: 16px;">Portfolio <span style="font-size: 14px; color: #6b7280;">(${portfolioImages.length})</span></h4>
+      </div>
+      
+      <!-- Portfolio Grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+        ${portfolioImages.map((url, index) => `
+          <img src="${getThumbnailUrl(url, 300)}" style="width: 100%; aspect-ratio: 1; border-radius: 18px; object-fit: cover; cursor: pointer;" onclick="openGallery(${JSON.stringify(portfolioImages)}, ${index})">
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  // Add message button functionality
+  const modalMessageBtn = document.getElementById('modalMessageBtn');
+  if (modalMessageBtn) {
+    modalMessageBtn.addEventListener('click', () => {
+      profileViewerModal.classList.add('hidden');
+      mainApp.classList.remove('hidden');
       showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
     });
-    
-    shareBtn.parentNode.insertBefore(messageBtn, shareBtn);
   }
-}
-
-    // Add back button only if we came from a card
-if (window.viewedProvider) {
-    // Add back button at the top
-const profileHeader = document.querySelector('.profile-header');
-const backBtn = document.createElement('div');
-backBtn.classList.add('dynamic-back-btn');
-backBtn.innerHTML = '<button style="background:none; border:none; font-size:24px; padding:8px; margin-left:8px; cursor:pointer;">←</button>';
-backBtn.style.position = 'sticky';
-backBtn.style.top = '0';
-backBtn.style.zIndex = '100';
-backBtn.style.background = 'white';
-backBtn.firstChild.addEventListener('click', () => {
-  window.viewedProvider = null;
-  const previousTab = localStorage.getItem('lastNonMessagesTab') || 'home';
-switchTab(previousTab);
+  
+  // Add share button functionality
+  document.getElementById('modalShareBtn').addEventListener('click', () => {
+    alert('Share feature coming soon!');
+  });
 });
-profileHeader.parentNode.insertBefore(backBtn, profileHeader);
-}
-    
-  }, 100);
-});
-}
 
 function closeQuickView() {
   quickViewSheet.classList.remove('active');
