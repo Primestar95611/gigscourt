@@ -2151,11 +2151,16 @@ function renderSkills(skills) {
     const skillTag = document.createElement('span');
     skillTag.style.cssText = 'display: inline-flex; align-items: center; background: #f0f3f8; padding: 8px 12px; border-radius: 40px; font-size: 14px;';
     skillTag.innerHTML = `
-      ${skill}
-      <span style="margin-left: 8px; cursor: pointer; color: #dc2626; font-weight: bold;" onclick="removeSkill('${skill}')">×</span>
-    `;
-    editSkillsContainer.appendChild(skillTag);
-  });
+  ${skill}
+  <span style="margin-left:8px;cursor:pointer;color:#dc2626;font-weight:600;">×</span>
+`;
+
+skillTag.querySelector('span').onclick = () => {
+  skillTag.remove();
+};
+
+editSkillsContainer.appendChild(skillTag);
+});
 }
 
 window.removeSkill = async function(skill) {
