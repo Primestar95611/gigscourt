@@ -1605,8 +1605,7 @@ if (tabId !== 'messages') {
   document.getElementById(tabId + 'Tab').classList.remove('hidden');
   document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
-  saveCurrentTab(tabId);
-  if (tabId === 'home') loadProviders(true);
+  saveCurrentTab(tabId); 
   if (tabId === 'profile') loadProfileData();
   if (tabId === 'search') setTimeout(initMap, 100);
   if (tabId === 'messages') {
