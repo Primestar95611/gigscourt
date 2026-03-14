@@ -2362,7 +2362,8 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     ],
     routeWhileDragging: false,
     showAlternatives: false,
-    fitSelectedRoutes: true,
+    fitSelectedRoutes: false,
+    routeWhileDragging: false,
     lineOptions: {
       styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
     },
