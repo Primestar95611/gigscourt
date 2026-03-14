@@ -328,6 +328,7 @@ function openQuickView(providerId, providerData) {
   });
 });
 });
+}
 
 function closeQuickView() {
   quickViewSheet.classList.remove('active');
