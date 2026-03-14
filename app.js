@@ -2368,7 +2368,7 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
       styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
     },
     createMarker: function() { return null; }, // Hide markers
-    show: true, // Show directions panel initially
+    show: false, // Hide directions panel initially
     addWaypoints: false,
     draggableWaypoints: false
   }).addTo(map);
@@ -2392,8 +2392,8 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   // Add toggle button
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'directionsToggleBtn';
-  toggleBtn.className = 'directions-toggle-btn active';
-  toggleBtn.innerHTML = '📋 Hide Directions';
+  toggleBtn.className = 'directions-toggle-btn';
+  toggleBtn.innerHTML = '🗺️ Show Directions';
   toggleBtn.style.display = 'block';
   
   toggleBtn.addEventListener('click', function() {
