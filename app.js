@@ -2191,6 +2191,7 @@ onAuthStateChanged(auth, async (user) => {
     mainApp.classList.remove('hidden');
     switchTab(getSavedTab());
     await loadProfileData();
+    listenForNotifications();
     setTimeout(initPullToRefresh, 500);
     setTimeout(initProfilePullToRefresh, 1000);
   } else if (user && !user.emailVerified) {
