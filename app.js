@@ -867,6 +867,21 @@ if (skillsList && data.skills) {
 
 // ==================== PHOTOSWIPE GALLERY - INSTAGRAM STYLE ====================
 function openGallery(images, startIndex = 0) {
+  // Make sure images is an array
+  if (typeof images === 'string') {
+    try {
+      images = JSON.parse(images);
+    } catch (e) {
+      console.error('Invalid images array');
+      return;
+    }
+  }
+  
+  if (!Array.isArray(images)) {
+    console.error('Images is not an array');
+    return;
+  }
+  
   if (typeof PhotoSwipeLightbox === 'undefined' || typeof PhotoSwipe === 'undefined') {
     alert('Gallery viewer not ready');
     return;
