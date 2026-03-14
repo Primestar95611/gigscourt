@@ -922,19 +922,39 @@ async function loadProfileData() {
   if (profileRating) profileRating.textContent = data.rating || 0;
   if (profileReviews) profileReviews.textContent = data.reviewCount || 0;
 
-  // Load save count for your own profile
-getSaveCount(auth.currentUser.uid).then(count => {
-  const saveCountEl = document.getElementById('profileSaveCount');
-  if (saveCountEl) {
-    saveCountEl.textContent = count;
+  // Load counts for your own profile
+Promise.all([
+  // Count of profiles YOU saved (outgoing)
+  getUserSavesCount(),
+  // Count of people who saved YOU (incoming)
+  getSaveCount(auth.currentUser.uid)
+]).then(([savedCount, savesCount]) => {
+  // Update "saved" stat (profiles you saved)
+  const savedCountEl = document.getElementById('savedCount');
+  if (savedCountEl) {
+    savedCountEl.textContent = savedCount;
+  }
+  
+  // Update "saves" stat (people who saved you)
+  const savesCountEl = document.getElementById('savesCount');
+  if (savesCountEl) {
+    savesCountEl.textContent = savesCount;
   }
 });
 
-// Make saves stat clickable to open saved list
-const saveStat = document.getElementById('profileSaveStat');
-if (saveStat) {
-  saveStat.addEventListener('click', () => {
-    showSavedProfiles();
+// Make "saved" stat clickable (shows profiles you saved)
+const savedStat = document.getElementById('savedStat');
+if (savedStat) {
+  savedStat.addEventListener('click', () => {
+    showSavedProfiles(); // This will show profiles YOU saved
+  });
+}
+
+// Make "saves" stat clickable (shows people who saved you)
+const savesStat = document.getElementById('savesStat');
+if (savesStat) {
+  savesStat.addEventListener('click', () => {
+    showSavesProfiles(); // We'll create this function next
   });
 }
   
