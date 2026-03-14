@@ -1426,12 +1426,35 @@ async function sendMessage() {
 // ==================== INIT MAP ====================
 async function initMap() {
   if (map) return;
-  map = L.map('map').setView([7.0667, 6.2667], 12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap, © CartoDB',
-  subdomains: 'abcd',
-  maxZoom: 20
-}).addTo(map);
+  
+  // Create map with smoother zoom and better controls
+  map = L.map('map', {
+    zoomControl: false,  // We'll add custom zoom control
+    fadeAnimation: true,
+    zoomAnimation: true,
+    markerZoomAnimation: true
+  }).setView([7.0667, 6.2667], 12);
+  
+  // Add dark theme with better contrast
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 20,
+    opacity: 0.95
+  }).addTo(map);
+  
+  // Add custom zoom control (modern position)
+  L.control.zoom({
+    position: 'bottomright'
+  }).addTo(map);
+  
+  // Add scale bar
+  L.control.scale({
+    imperial: false,
+    metric: true,
+    position: 'bottomleft'
+  }).addTo(map);
+  
   await loadAllUsers();
   await updateMapAndList();
 }
