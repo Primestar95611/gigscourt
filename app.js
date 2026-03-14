@@ -327,7 +327,7 @@ function openQuickView(providerId, providerData) {
     alert('Share feature coming soon!');
   });
 });
-});
+}
 
 function closeQuickView() {
   quickViewSheet.classList.remove('active');
