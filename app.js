@@ -427,6 +427,14 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
       
       <!-- Bio -->
       <p style="font-size: 14px; line-height: 1.5; margin-bottom: 16px;">${viewedProvider.bio || 'No bio yet.'}</p>
+
+      // Load saves count for this profile (people who saved them)
+getSaveCount(viewedProvider.id).then(count => {
+  const savesCountEl = document.getElementById('profileSavesCount');
+  if (savesCountEl) {
+    savesCountEl.textContent = count;
+  }
+});
       
       <!-- Skills -->
       ${skillsHTML ? `<div style="margin-bottom: 16px;">${skillsHTML}</div>` : ''}
