@@ -2665,6 +2665,29 @@ async function showSavedByList(notificationIds) {
   alert('Show saved by list - coming soon');
 }
 
+// ==================== NOTIFICATION EVENT LISTENERS ====================
+
+// Set up notification listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  const bellIcon = document.getElementById('notificationBell');
+  const markAllBtn = document.getElementById('markAllReadBtn');
+  
+  if (bellIcon) {
+    bellIcon.addEventListener('click', toggleNotificationPanel);
+  }
+  
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', markAllNotificationsRead);
+  }
+});
+
+// Also set them up when auth state changes (user logs in)
+// Add this to your onAuthStateChanged function
+// Find the onAuthStateChanged function (around line 1600-1650) and add this line:
+// listenForNotifications();
+
+// We'll modify the onAuthStateChanged in the next step
+
   // Close profile viewer modal
 document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
   document.getElementById('profileViewerModal').classList.add('hidden');
