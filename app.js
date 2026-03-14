@@ -362,7 +362,40 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
       showStartChatModal(viewedProvider.id, viewedProvider.businessName, viewedProvider.profileImage);
     });
   }
+
+    // Add save button functionality
+const modalSaveBtn = document.getElementById('modalSaveBtn');
+if (modalSaveBtn) {
+  // Check initial save status
+  checkIfSaved(viewedProvider.id).then(isSaved => {
+    if (isSaved) {
+      modalSaveBtn.textContent = 'Saved';
+      modalSaveBtn.style.background = '#666666';
+      modalSaveBtn.style.color = 'white';
+      modalSaveBtn.style.border = 'none';
+    }
+  });
   
+  modalSaveBtn.addEventListener('click', async () => {
+    const isNowSaved = await toggleSave(viewedProvider.id);
+    
+    if (isNowSaved) {
+      modalSaveBtn.textContent = 'Saved';
+      modalSaveBtn.style.background = '#666666';
+      modalSaveBtn.style.color = 'white';
+      modalSaveBtn.style.border = 'none';
+    } else {
+      modalSaveBtn.textContent = 'Save';
+      modalSaveBtn.style.background = 'transparent';
+      modalSaveBtn.style.color = '#1e1e2f';
+      modalSaveBtn.style.border = '1px solid #dbdbdb';
+    }
+    
+    // Update the save count in the profile header
+    updateProfileSaveCount(viewedProvider.id);
+  });
+}
+    
   // Add share button functionality
   document.getElementById('modalShareBtn').addEventListener('click', () => {
     alert('Share feature coming soon!');
@@ -2689,6 +2722,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // listenForNotifications();
 
 // We'll modify the onAuthStateChanged in the next step
+
+// Update save count in profile header
+async function updateProfileSaveCount(userId) {
+  const count = await getSaveCount(userId);
+  const saveCountElement = document.getElementById('profileSaveCount');
+  if (saveCountElement) {
+    saveCountElement.textContent = count;
+  }
+}
 
   // Close profile viewer modal
 document.getElementById('closeProfileViewerModal').addEventListener('click', () => {
