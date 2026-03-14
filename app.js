@@ -327,7 +327,6 @@ function openQuickView(providerId, providerData) {
     alert('Share feature coming soon!');
   });
 });
-});
 }
 
 function closeQuickView() {
