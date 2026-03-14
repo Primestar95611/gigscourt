@@ -1143,9 +1143,8 @@ function showStartChatModal(userId, userName, userImage) {
   pendingChatUserId = userId;
   pendingChatUserName = userName;
   pendingChatUserImage = userImage;
-  startChatModalTitle.textContent = `Start chat with ${userName}?`;
-  startChatModalMessage.textContent = `Send a message to ${userName}`;
-  startChatModal.classList.remove('hidden');
+  // Skip the modal and go straight to chat
+  startChat();
 }
 
 // ==================== START CHAT ====================
