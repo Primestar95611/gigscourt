@@ -141,6 +141,107 @@ let savesList = [];
 let notificationListener = null;
 const portfolioBatchSize = 9;
 
+// ==================== SAVES FUNCTIONS ====================
+
+// Toggle save on a profile
+async function toggleSave(providerId) {
+  if (!currentUser) {
+    alert('Please log in to save profiles');
+    return false;
+  }
+  
+  const saveId = `${currentUser.uid}_${providerId}`;
+  const saveRef = doc(db, 'saves', saveId);
+  const saveDoc = await getDoc(saveRef);
+  
+  try {
+    if (saveDoc.exists()) {
+      // Remove save
+      await deleteDoc(saveRef);
+      return false; // Return false = not saved
+    } else {
+      // Add save
+      await setDoc(saveRef, {
+        saverId: currentUser.uid,
+        savedUserId: providerId,
+        timestamp: Timestamp.now()
+      });
+      
+      // Create notification for the provider
+      await createSaveNotification(providerId);
+      return true; // Return true = saved
+    }
+  } catch (error) {
+    console.error('Error toggling save:', error);
+    return false;
+  }
+}
+
+// Create notification when someone saves your profile
+async function createSaveNotification(savedUserId) {
+  if (!currentUser) return;
+  
+  try {
+    const notificationRef = collection(db, 'notifications');
+    await addDoc(notificationRef, {
+      userId: savedUserId,           // The person who was saved
+      fromUserId: currentUser.uid,   // The person who did the saving
+      type: 'save',
+      timestamp: Timestamp.now(),
+      read: false
+    });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+  }
+}
+
+// Check if current user has saved a specific profile
+async function checkIfSaved(providerId) {
+  if (!currentUser) return false;
+  
+  const saveId = `${currentUser.uid}_${providerId}`;
+  const saveRef = doc(db, 'saves', saveId);
+  const saveDoc = await getDoc(saveRef);
+  
+  return saveDoc.exists();
+}
+
+// Get save count for a profile
+async function getSaveCount(userId) {
+  const savesQuery = query(
+    collection(db, 'saves'),
+    where('savedUserId', '==', userId)
+  );
+  
+  const snapshot = await getDocs(savesQuery);
+  return snapshot.size;
+}
+
+// Get user's saved profiles list
+async function getUserSaves() {
+  if (!currentUser) return [];
+  
+  const savesQuery = query(
+    collection(db, 'saves'),
+    where('saverId', '==', currentUser.uid),
+    orderBy('timestamp', 'desc')
+  );
+  
+  const snapshot = await getDocs(savesQuery);
+  const savedUserIds = [];
+  
+  snapshot.forEach(doc => {
+    savedUserIds.push(doc.data().savedUserId);
+  });
+  
+  // Get the actual user data for these IDs
+  if (savedUserIds.length > 0) {
+    const users = await getUsersBatch(savedUserIds);
+    return users;
+  }
+  
+  return [];
+}
 // ==================== IMAGE COMPRESSION ====================
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
