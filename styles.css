@@ -1301,3 +1301,84 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     border-color: #333 !important;
   }
 }
+
+/* Modern Map Styling */
+#map {
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom marker pulse animation - makes your provider markers stand out */
+@keyframes marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 102, 102, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 102, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 102, 102, 0);
+  }
+}
+
+.custom-marker {
+  animation: marker-pulse 2s infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Modern popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  color: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.leaflet-popup-tip {
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+  margin: 12px 16px;
+}
+
+.leaflet-popup-content strong {
+  color: #ffffff;
+  font-size: 16px;
+}
+
+/* Modern zoom controls */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(30, 30, 30, 0.9) !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(5px);
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(102, 102, 102, 0.9) !important;
+}
+
+/* Modern scale bar */
+.leaflet-control-scale {
+  background: rgba(30, 30, 30, 0.8) !important;
+  backdrop-filter: blur(5px);
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.leaflet-control-scale-line {
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+}
