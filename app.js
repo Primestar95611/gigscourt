@@ -3157,9 +3157,6 @@ function initLocationPickerMap() {
       }
     );
   }
-  // Update pin when map moves
-locationPickerMap?.on('moveend', updatePinPosition);
-}
 
 // Search for locations with caching
 let searchTimeout = null;
