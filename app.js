@@ -3157,6 +3157,8 @@ function initLocationPickerMap() {
       }
     );
   }
+  // Update pin when map moves
+locationPickerMap?.on('moveend', updatePinPosition);
 }
 
 // Search for locations with caching
@@ -3272,8 +3274,6 @@ function updatePinPosition() {
   selectedLng = center.lng;
 }
 
-// Update pin when map moves
-locationPickerMap?.on('moveend', updatePinPosition);
 
 // Confirm location button
 document.getElementById('confirmLocationBtn')?.addEventListener('click', function() {
