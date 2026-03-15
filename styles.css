@@ -1758,3 +1758,28 @@ h2 { margin-bottom: 24px; font-weight: 600; }
     background: #2a2a2a !important;
   }
 }
+
+/* ==================== LOCATION PICKER MAP FIX ==================== */
+#locationPickerMap {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 300px;
+}
+
+/* Fix leaflet controls in dark mode */
+@media (prefers-color-scheme: dark) {
+  .leaflet-control-zoom a {
+    background: #2a2a2a !important;
+    color: white !important;
+    border-color: #444 !important;
+  }
+  
+  .leaflet-control-attribution {
+    background: rgba(0,0,0,0.7) !important;
+    color: #999 !important;
+  }
+  
+  .leaflet-control-attribution a {
+    color: #ccc !important;
+  }
+}
