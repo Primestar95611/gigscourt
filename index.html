@@ -426,20 +426,20 @@
 
   <!-- Location Picker Modal -->
 <div id="locationPickerModal" class="modal-overlay hidden">
-  <div class="modal" style="max-width: 100%; width: 100%; height: 100vh; margin: 0; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
+  <div class="modal" style="max-width: 100%; width: 100%; height: 90vh; margin: 0; border-radius: 0; padding: 0; display: flex; flex-direction: column;">
     
-    <!-- Header -->
-    <div style="padding: 16px; border-bottom: 1px solid #efefef; display: flex; align-items: center; background: white; z-index: 10;">
-      <button id="closeLocationPicker" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 8px; color: #262626;">←</button>
-      <h3 style="margin: 0; flex: 1; text-align: center; font-size: 18px;">Set Your Location</h3>
-      <button id="confirmLocationBtn" style="background: #0095f6; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 600; cursor: pointer;">Confirm</button>
-    </div>
+    <!-- Header - Instagram Minimalist -->
+<div style="padding: 12px 16px; border-bottom: 1px solid #efefef; display: flex; align-items: center; background: white; z-index: 10;">
+  <button id="closeLocationPicker" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; color: #262626; width: 40px;">←</button>
+  <h3 style="margin: 0; flex: 1; text-align: center; font-size: 16px; font-weight: 500;">Location</h3>
+  <button id="confirmLocationBtn" style="background: #666666; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: 500; cursor: pointer;">Done</button>
+</div>
 
-    <!-- Search Box -->
-    <div style="padding: 12px 16px; border-bottom: 1px solid #efefef;">
-      <input type="text" id="locationSearch" placeholder="Search for area (e.g., Wuse Market, Mararaba)" style="width: 100%; padding: 12px; border: 1px solid #dbdbdb; border-radius: 8px; font-size: 14px;">
-      <div id="searchSuggestions" style="background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; display: none;"></div>
-    </div>
+    <!-- Search Box - Instagram Minimalist -->
+<div style="padding: 16px 16px 8px;">
+  <input type="text" id="locationSearch" placeholder="Search area" style="width: 100%; padding: 12px 16px; border: 1px solid #dbdbdb; border-radius: 30px; font-size: 14px; background: #fafafa; outline: none;">
+  <div id="searchSuggestions" style="background: white; border: 1px solid #dbdbdb; border-radius: 16px; margin-top: 4px; max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+</div>
 
     <!-- Map Container -->
     <div style="flex: 1; position: relative; background: #e5e9f0;">
@@ -452,10 +452,11 @@
       </div>
     </div>
 
-    <!-- Description Input -->
-    <div style="padding: 16px; border-top: 1px solid #efefef; background: white;">
-      <textarea id="locationDescriptionInput" rows="2" placeholder="Describe your location in your own words (e.g., Beside the blue church, after the mechanic village)" style="width: 100%; padding: 12px; border: 1px solid #dbdbdb; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
-    </div>
+    <!-- Description Input - Instagram Minimalist -->
+<div style="padding: 16px; border-top: 1px solid #efefef; background: white;">
+  <textarea id="locationDescriptionInput" rows="2" placeholder="Describe your location..." style="width: 100%; padding: 12px 16px; border: 1px solid #dbdbdb; border-radius: 20px; font-size: 14px; resize: vertical; background: #fafafa; outline: none;"></textarea>
+  <p style="font-size: 12px; color: #999; margin-top: 8px; margin-left: 4px;">Example: "Beside the blue church, after the mechanic village"</p>
+</div>
 
   </div>
 </div>
