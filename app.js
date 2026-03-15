@@ -3133,7 +3133,7 @@ function initLocationPickerMap() {
     console.log('Map container not found!');
     return;
   }
-  console.log('Map container found:', mapContainer);
+  console.log('Map container found');
   
   try {
     // Create map
@@ -3148,7 +3148,7 @@ function initLocationPickerMap() {
     }).addTo(locationPickerMap);
     console.log('Tile layer added');
     
-    // Force map to resize after a moment
+    // Force map to resize
     setTimeout(() => {
       if (locationPickerMap) {
         locationPickerMap.invalidateSize();
@@ -3172,27 +3172,20 @@ function initLocationPickerMap() {
             fillOpacity: 0.8,
             radius: 6
           }).addTo(locationPickerMap).bindPopup('You are here');
-          
-          console.log('User location added');
         },
         function(error) {
-          console.log('Could not get location:', error);
+          console.log('Could not get location');
         }
       );
     }
     
     // Update pin when map moves
     locationPickerMap.on('moveend', updatePinPosition);
-    console.log('Event listener added');
     
   } catch (error) {
     console.log('Error creating map:', error);
   }
 }
-
-    // Update pin when map moves
-  locationPickerMap.on('moveend', updatePinPosition);
-  }
 
 // Search for locations with caching
 let searchTimeout = null;
