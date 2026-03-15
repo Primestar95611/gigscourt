@@ -980,6 +980,20 @@ if (savesStat) {
     profileBio.textContent = data.bio || 'No bio yet.';
   }
 
+  if (profileBio) {
+  profileBio.textContent = data.bio || 'No bio yet.';
+}
+
+// Load location description
+if (data.locationDescription) {
+  const addressContainer = document.getElementById('profileAddressContainer');
+  const addressEl = document.getElementById('profileAddress');
+  if (addressContainer && addressEl) {
+    addressEl.textContent = data.locationDescription;
+    addressContainer.style.display = 'flex';
+  }
+}
+  
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
   if (profileImage) profileImage.src = profileImageUrl;
   
