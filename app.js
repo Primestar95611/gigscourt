@@ -3156,6 +3156,8 @@ function initLocationPickerMap() {
         console.log('Could not get location');
       }
     );
+    // Update pin when map moves
+  locationPickerMap.on('moveend', updatePinPosition);
   }
 
 // Search for locations with caching
