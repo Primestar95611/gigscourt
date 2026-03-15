@@ -2427,6 +2427,18 @@ if (editProfileBtn) {
   });
 }
 
+// Load existing location data
+if (data.location) {
+  selectedLat = data.location.latitude;
+  selectedLng = data.location.longitude;
+  
+  if (data.locationDescription) {
+    document.getElementById('locationDisplay').style.display = 'block';
+    document.getElementById('locationDescription').textContent = data.locationDescription;
+    document.getElementById('setLocationBtn').style.display = 'none';
+  }
+}
+
 if (backFromEditBtn) {
   backFromEditBtn.addEventListener('click', () => {
     editProfileScreen.classList.add('hidden');
