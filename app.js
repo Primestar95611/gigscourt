@@ -520,6 +520,18 @@ if (modalSaveBtn) {
     updateProfileSaveCount(viewedProvider.id);
   });
 }
+
+    // Make location clickable in profile viewer
+const locationDiv = document.getElementById('profileViewerLocation');
+if (locationDiv) {
+  const lat = locationDiv.dataset.lat;
+  const lng = locationDiv.dataset.lng;
+  if (lat && lng) {
+    locationDiv.addEventListener('click', () => {
+      window.open(`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`, '_blank');
+    });
+  }
+}
     
   // Add share button functionality
   document.getElementById('modalShareBtn').addEventListener('click', () => {
