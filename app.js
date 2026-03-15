@@ -3040,6 +3040,7 @@ async function showSavesProfiles() {
   });
   
   list.innerHTML = html;
+}
 
   // Close saved modal
 document.getElementById('closeSavedModal')?.addEventListener('click', () => {
