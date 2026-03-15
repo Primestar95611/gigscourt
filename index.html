@@ -166,77 +166,77 @@
       </div>
       
       <!-- Profile Tab -->
-      <div id="profileTab" class="tab-pane hidden">
-        <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
-        
-        <!-- Profile Header with Picture and Stats -->
-        <div class="profile-header">
-          <div class="profile-image-container">
-            <img id="profileImage" src="" alt="Profile">
-            <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
-          </div>
-          <div class="profile-stats">
-  <div class="stat-item">
-    <span class="stat-number" id="profileJobs">0</span>
-    <span class="stat-label">jobs</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number" id="profileRating">0</span>
-    <span class="stat-label">★</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number" id="profileReviews">0</span>
-    <span class="stat-label">reviews</span>
-  </div>
-  <!-- Saved = Profiles I saved (private, clickable only by me) -->
-  <div class="stat-item" id="savedStat" style="cursor: pointer;">
-    <span class="stat-number" id="savedCount">0</span>
-    <span class="stat-label">saved</span>
-  </div>
-  <!-- Saves = People who saved me (public count, clickable only by me) -->
-  <div class="stat-item" id="savesStat" style="cursor: pointer;">
-    <span class="stat-number" id="savesCount">0</span>
-    <span class="stat-label">saves</span>
-  </div>
-</div>          
-          
-
-        <!-- Business Name and Username -->
-        <div class="profile-name-section">
-          <h2 class="profile-business-name" id="profileBusinessName"></h2>
-          <p class="profile-username" id="profileUsername">@username</p>
-        </div>
-
-        <!-- Bio Section -->
-        <div class="profile-bio" id="profileBio"></div>
-
-        <!-- Contact Information -->
-        <div class="profile-contact">
-          <div class="contact-item" id="profilePhoneContainer" style="display: none;">
-            <span class="contact-icon">📞</span>
-            <span class="contact-text" id="profilePhone"></span>
-          </div>
-          <div class="contact-item" id="profileAddressContainer" style="display: none;">
-            <span class="contact-icon">📍</span>
-            <span class="contact-text" id="profileAddress"></span>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="profile-actions">
-          <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
-          <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
-        </div>
-
-        <!-- Portfolio Header -->
-        <div class="portfolio-header">
-          <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
-          <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
-        </div>
-
-        <!-- Portfolio Grid -->
-        <div class="portfolio-grid" id="portfolioGrid"></div>
+<div id="profileTab" class="tab-pane hidden">
+  <div id="uploadError" class="error-banner hidden" style="margin-top: 0;"></div>
+  
+  <!-- Profile Header with Picture and Stats -->
+  <div class="profile-header">
+    <div class="profile-image-container">
+      <img id="profileImage" src="" alt="Profile">
+      <div class="camera-icon" id="uploadProfilePicBtn">📷</div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-item">
+        <span class="stat-number" id="profileJobs">0</span>
+        <span class="stat-label">jobs</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-number" id="profileRating">0</span>
+        <span class="stat-label">★</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="profileReviews">0</span>
+        <span class="stat-label">reviews</span>
+      </div>
+      <!-- Saved = Profiles I saved (private, clickable only by me) -->
+      <div class="stat-item" id="savedStat" style="cursor: pointer;">
+        <span class="stat-number" id="savedCount">0</span>
+        <span class="stat-label">saved</span>
+      </div>
+      <!-- Saves = People who saved me (public count, clickable only by me) -->
+      <div class="stat-item" id="savesStat" style="cursor: pointer;">
+        <span class="stat-number" id="savesCount">0</span>
+        <span class="stat-label">saves</span>
+      </div>
+    </div> <!-- Close profile-stats -->
+  </div> <!-- Close profile-header -->
+
+  <!-- Business Name and Username -->
+  <div class="profile-name-section">
+    <h2 class="profile-business-name" id="profileBusinessName"></h2>
+    <p class="profile-username" id="profileUsername">@username</p>
+  </div>
+
+  <!-- Bio Section -->
+  <div class="profile-bio" id="profileBio"></div>
+
+  <!-- Contact Information -->
+  <div class="profile-contact">
+    <div class="contact-item" id="profilePhoneContainer" style="display: none;">
+      <span class="contact-icon">📞</span>
+      <span class="contact-text" id="profilePhone"></span>
+    </div>
+    <div class="contact-item" id="profileAddressContainer" style="display: none;">
+      <span class="contact-icon">📍</span>
+      <span class="contact-text" id="profileAddress"></span>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="profile-actions">
+    <button class="profile-btn profile-btn-primary" id="editProfileBtn">Edit Profile</button>
+    <button class="profile-btn profile-btn-secondary" id="shareProfileBtn">Share</button>
+  </div>
+
+  <!-- Portfolio Header -->
+  <div class="portfolio-header">
+    <h4>Portfolio <span id="portfolioCount" style="font-size: 14px; color: #6b7280; margin-left: 8px;"></span></h4>
+    <button class="add-portfolio-btn" id="addPortfolioBtn">+ Add</button>
+  </div>
+
+  <!-- Portfolio Grid -->
+  <div class="portfolio-grid" id="portfolioGrid"></div>
+</div> <!-- Close profileTab -->
 
       <!-- Admin Tab -->
       <div id="adminTab" class="tab-pane hidden">
