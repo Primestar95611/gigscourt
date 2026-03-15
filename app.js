@@ -428,19 +428,24 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
       ${skillsHTML ? `<div style="margin-bottom: 16px;">${skillsHTML}</div>` : ''}
       
       <!-- Contact -->
-      ${viewedProvider.phoneNumber ? `
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-          <span style="font-size: 16px;">📞</span>
-          <span>${viewedProvider.phoneNumber}</span>
-        </div>
-      ` : ''}
-      
-      ${viewedProvider.address ? `
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-          <span style="font-size: 16px;">📍</span>
-          <span>${viewedProvider.address}</span>
-        </div>
-      ` : ''}
+${viewedProvider.phoneNumber ? `
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+    <span style="font-size: 16px;">📞</span>
+    <span>${viewedProvider.phoneNumber}</span>
+  </div>
+` : ''}
+
+${viewedProvider.locationDescription ? `
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; cursor: pointer;" id="profileViewerLocation" data-lat="${viewedProvider.location?.latitude}" data-lng="${viewedProvider.location?.longitude}">
+    <span style="font-size: 16px;">📍</span>
+    <span>${viewedProvider.locationDescription}</span>
+  </div>
+` : viewedProvider.address ? `
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+    <span style="font-size: 16px;">📍</span>
+    <span>${viewedProvider.address}</span>
+  </div>
+` : ''}
       
       <!-- Action Buttons -->
 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
