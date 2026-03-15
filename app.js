@@ -2481,7 +2481,6 @@ async function loadEditProfileData() {
   editUsername.value = data.username || '';
   editBio.value = data.bio || '';
   editPhone.value = data.phoneNumber || '';
-  editAddress.value = data.address || '';
   
   renderSkills(data.skills || []);
   checkNameTimers(data);
