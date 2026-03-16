@@ -3218,6 +3218,15 @@ function initLocationPickerMap() {
   } catch (error) {
     console.log('Error creating map:', error);
   }
+  // Force recalculate when dragging starts
+  locationPickerMap.on('dragstart', function() {
+    setTimeout(() => {
+      if (locationPickerMap) {
+        locationPickerMap.invalidateSize();
+        console.log('Map resized on drag');
+      }
+    }, 50);
+  });
 }
 
 // Search for locations with caching
