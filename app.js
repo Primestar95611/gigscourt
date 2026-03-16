@@ -2678,20 +2678,22 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
       toggleBtn.innerHTML = '📋'; // Menu icon
       toggleBtn.style.cssText = `
         position: absolute;
-        top: 60px;
-        right: 10px;
-        z-index: 1000;
+        top: 80px;
+        right: 20px;
+        z-index: 10000;
         background: white;
-        border: 1px solid #ccc;
+        border: 2px solid #4287f5;
         border-radius: 8px;
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
         cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
+        color: #4287f5;
+        font-weight: bold;
       `;
       
       // Variable to track panel visibility
