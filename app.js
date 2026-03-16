@@ -3342,13 +3342,27 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Get pin position (center of map)
+// Get pin position (center of map) and get address
 function updatePinPosition() {
   if (!locationPickerMap) return;
   
   const center = locationPickerMap.getCenter();
   selectedLat = center.lat;
   selectedLng = center.lng;
+  
+  // Get address from coordinates using Nominatim API
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${selectedLat}&lon=${selectedLng}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.display_name) {
+        // Update the search input with the address
+        const searchInput = document.getElementById('locationSearch');
+        if (searchInput) {
+          searchInput.value = data.display_name;
+        }
+      }
+    })
+    .catch(error => console.log('Could not get address:', error));
 }
 
 
