@@ -2668,6 +2668,15 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   // Force route to calculate
   window.currentRoute.route();
 
+   // Add event listener to see if route is calculated
+  window.currentRoute.on('routeselected', function(e) {
+    alert('Route calculated successfully!');
+  });
+  
+  window.currentRoute.on('routingerror', function(e) {
+    alert('Routing error: ' + e.error.message);
+  });
+  
   // Force map to update after adding route
   setTimeout(() => {
     if (map) {
