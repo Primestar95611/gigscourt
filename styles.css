@@ -1810,3 +1810,13 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .leaflet-popup-pane {
   z-index: 500 !important;
 }
+
+/* Make routing panel transparent to touch events */
+.leaflet-routing-container {
+  pointer-events: none;
+}
+
+/* But make the text and buttons inside still clickable */
+.leaflet-routing-container * {
+  pointer-events: auto;
+}
