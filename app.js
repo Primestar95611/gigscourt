@@ -2640,6 +2640,12 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   alert('Trying to draw route');
   
   try {
+    // Check if map exists
+    if (!map) {
+      alert('Map not initialized yet. Please try again.');
+      return;
+    }
+    
     // Clear any existing routes
     if (window.currentRoute) {
       map.removeControl(window.currentRoute);
