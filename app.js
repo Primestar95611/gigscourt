@@ -2652,51 +2652,20 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
         map.removeControl(window.currentRoute);
       }
       
-      // Remove existing hide button
-      const oldHideBtn = document.getElementById('hideDirectionsBtn');
-      if (oldHideBtn) oldHideBtn.remove();
-      
-      // Create routing control
+      // Create routing control with NO panel - just the blue line
       window.currentRoute = L.Routing.control({
         waypoints: [
           L.latLng(userLat, userLng),
           L.latLng(providerLat, providerLng)
         ],
-        show: true,
+        show: false, // Hides the text panel completely
         addWaypoints: false,
         draggableWaypoints: false,
         lineOptions: {
           styles: [{ color: '#4287f5', weight: 5, opacity: 0.7 }]
-        }
+        },
+        createMarker: function() { return null; } // Hide markers
       }).addTo(map);
-      
-      // Add a hide button
-      const hideBtn = document.createElement('button');
-      hideBtn.id = 'hideDirectionsBtn';
-      hideBtn.innerHTML = '✕';
-      hideBtn.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        font-size: 16px;
-        cursor: pointer;
-      `;
-      
-      hideBtn.onclick = function() {
-        const container = document.querySelector('.leaflet-routing-container');
-        if (container) {
-          container.style.display = 'none';
-        }
-        hideBtn.style.display = 'none';
-      };
-      
-      document.getElementById('map').appendChild(hideBtn);
       
     } catch (error) {
       alert('Error drawing route: ' + error.message);
