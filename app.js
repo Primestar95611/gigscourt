@@ -1710,10 +1710,9 @@ async function initMap() {
   shiftKeyRotate: true    // Enable shift+click drag rotation
 }).setView([7.0667, 6.2667], 12);
   
-  // Add detailed street map
-L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors, Humanitarian OSM',
-  subdomains: 'abc',
+  // Add standard OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
   maxZoom: 20
 }).addTo(map);
   
@@ -3184,13 +3183,11 @@ function initLocationPickerMap() {
     locationPickerMap = L.map('locationPickerMap').setView([7.0667, 6.2667], 13);
     console.log('Map created');
     
-    // Add detailed street map
-L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors, Humanitarian OSM',
-  subdomains: 'abc',
+    // Add standard OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
   maxZoom: 20
 }).addTo(locationPickerMap);
-    console.log('Tile layer added');
     
     // Force map to resize multiple times
     setTimeout(() => {
