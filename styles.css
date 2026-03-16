@@ -1819,3 +1819,25 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 .leaflet-routing-container * {
   pointer-events: auto !important;
 }
+
+/* Directions panel text color */
+.leaflet-routing-container {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: #333333 !important;
+}
+
+.leaflet-routing-container * {
+  color: #333333 !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .leaflet-routing-container {
+    background-color: rgba(30, 30, 30, 0.9) !important;
+    color: #ffffff !important;
+  }
+  
+  .leaflet-routing-container * {
+    color: #ffffff !important;
+  }
+}
