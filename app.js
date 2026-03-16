@@ -1708,13 +1708,12 @@ async function initMap() {
   shiftKeyRotate: true    // Enable shift+click drag rotation
 }).setView([7.0667, 6.2667], 12);
   
-  // Add dark theme with better contrast
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CartoDB',
-    subdomains: 'abcd',
-    maxZoom: 20,
-    opacity: 0.95
-  }).addTo(map);
+  // Add detailed street map
+L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors, Humanitarian OSM',
+  subdomains: 'abc',
+  maxZoom: 20
+}).addTo(map);
   
   // Add custom zoom control (modern position)
   L.control.zoom({
@@ -3166,12 +3165,12 @@ function initLocationPickerMap() {
     locationPickerMap = L.map('locationPickerMap').setView([7.0667, 6.2667], 13);
     console.log('Map created');
     
-    // Add tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap, © CartoDB',
-      subdomains: 'abcd',
-      maxZoom: 20
-    }).addTo(locationPickerMap);
+    // Add detailed street map
+L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors, Humanitarian OSM',
+  subdomains: 'abc',
+  maxZoom: 20
+}).addTo(locationPickerMap);
     console.log('Tile layer added');
     
     // Force map to resize multiple times
