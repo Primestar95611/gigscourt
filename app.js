@@ -561,125 +561,51 @@ function createRefreshIndicator() {
 
 function initPullToRefresh() {
   const tabContent = document.querySelector('.tab-content');
-  const tabs = ['homeTab', 'messagesTab', 'profileTab']; // Tabs that support pull to refresh
+  const tabs = ['homeTab', 'messagesTab', 'profileTab'];
   
   tabContent.addEventListener('touchstart', (e) => {
-    console.log('Touch started');
-    // Don't trigger on map
+    alert('Touch started');
+    
     const mapElement = document.getElementById('map');
     if (mapElement && mapElement.contains(e.target)) {
+      alert('Touching map');
       isTouchingMap = true;
       return;
     }
     isTouchingMap = false;
     
-    // Only enable on supported tabs
     const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    console.log('Active tab:', activeTab);
-    if (!tabs.includes(activeTab)) {
-      isPulling = false;
-      return;
-    }
+    alert('Active tab: ' + activeTab);
     
-    // Check if we're at the top of the content
-    console.log('Scroll top:', tabContent.scrollTop);
-    if (tabContent.scrollTop <= 5) { // Allow small threshold
+    alert('Scroll top: ' + tabContent.scrollTop);
+    
+    if (tabContent.scrollTop <= 5) {
       pullStartY = e.touches[0].clientY;
       isPulling = true;
+      alert('Pull started at Y: ' + pullStartY);
+    } else {
+      alert('Not at top');
     }
   }, { passive: true });
 
   tabContent.addEventListener('touchmove', (e) => {
-    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    if (!tabs.includes(activeTab)) {
-      isPulling = false;
-      return;
-    }
-    
-    if (isTouchingMap) return;
-    if (!isPulling || tabContent.scrollTop > 0) return;
+    if (!isPulling) return;
     
     const currentY = e.touches[0].clientY;
-    let diff = currentY - pullStartY;
+    const diff = currentY - pullStartY;
+    alert('Pulling: ' + diff);
     
-    // Only handle downward pull
     if (diff > 0) {
       e.preventDefault();
-      
-      // Instagram-like resistance: harder to pull as you go further
-      let resistance = 0.4;
-      if (diff < 50) resistance = 0.6;
-      if (diff < 30) resistance = 0.8;
-      if (diff < 15) resistance = 1;
-      
-      const pullDistance = Math.min(diff * resistance, 80);
-      
-      // Create indicator if needed
-      if (!refreshIndicator) {
-        refreshIndicator = createRefreshIndicator();
-      }
-      
-      // Move indicator with the pull
-      refreshIndicator.style.transform = `translateY(${pullDistance}px)`;
-      
-      // Update text based on pull distance
-      if (pullDistance > 60) {
-        refreshIndicator.querySelector('span').textContent = 'Release to refresh';
-      } else {
-        refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
-      }
     }
   }, { passive: false });
 
-  tabContent.addEventListener('touchend', async (e) => {
-    const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-    if (!tabs.includes(activeTab)) {
-      isPulling = false;
-      return;
-    }
-    
-    if (isTouchingMap) {
-      isTouchingMap = false;
-      return;
-    }
-    
-    if (!isPulling || !refreshIndicator) return;
+  tabContent.addEventListener('touchend', (e) => {
+    if (!isPulling) return;
     
     const endY = e.changedTouches[0].clientY;
     const diff = endY - pullStartY;
-    const pullDistance = Math.min(diff * 0.4, 80);
-    
-    // If pulled far enough, refresh
-    if (pullDistance > 60 && tabContent.scrollTop === 0) {
-      refreshIndicator.querySelector('span').textContent = 'Refreshing...';
-      
-      // Refresh based on active tab
-      if (activeTab === 'homeTab') {
-        await loadProviders(true);
-      } else if (activeTab === 'messagesTab') {
-        await loadConversations();
-      } else if (activeTab === 'profileTab' && currentUser) {
-        await loadProfileData();
-      }
-      
-      // Animate indicator back up
-      refreshIndicator.style.transform = 'translateY(-60px)';
-      setTimeout(() => {
-        if (refreshIndicator) {
-          refreshIndicator.remove();
-          refreshIndicator = null;
-        }
-      }, 300);
-    } else {
-      // Not pulled far enough - just animate back
-      refreshIndicator.style.transform = 'translateY(-60px)';
-      setTimeout(() => {
-        if (refreshIndicator) {
-          refreshIndicator.remove();
-          refreshIndicator = null;
-        }
-      }, 200);
-    }
+    alert('Pull ended: ' + diff);
     
     isPulling = false;
   }, { passive: true });
