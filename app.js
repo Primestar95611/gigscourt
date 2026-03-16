@@ -2661,6 +2661,7 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     show: false, // Hide directions panel initially
     addWaypoints: false,
     draggableWaypoints: false
+    autoRoute: true
   }).addTo(map);
 
   // Force map to update after adding route
