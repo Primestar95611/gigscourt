@@ -1811,12 +1811,11 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   z-index: 500 !important;
 }
 
-/* Make routing panel transparent to touch events */
+/* Directions panel - allow map interaction through it */
 .leaflet-routing-container {
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
-/* But make the text and buttons inside still clickable */
 .leaflet-routing-container * {
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
