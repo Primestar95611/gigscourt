@@ -564,6 +564,7 @@ function initPullToRefresh() {
   const tabs = ['homeTab', 'messagesTab', 'profileTab']; // Tabs that support pull to refresh
   
   tabContent.addEventListener('touchstart', (e) => {
+    console.log('Touch started');
     // Don't trigger on map
     const mapElement = document.getElementById('map');
     if (mapElement && mapElement.contains(e.target)) {
@@ -574,12 +575,14 @@ function initPullToRefresh() {
     
     // Only enable on supported tabs
     const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+    console.log('Active tab:', activeTab);
     if (!tabs.includes(activeTab)) {
       isPulling = false;
       return;
     }
     
     // Check if we're at the top of the content
+    console.log('Scroll top:', tabContent.scrollTop);
     if (tabContent.scrollTop === 0) {
       pullStartY = e.touches[0].clientY;
       isPulling = true;
