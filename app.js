@@ -2660,7 +2660,7 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
     createMarker: function() { return null; }, // Hide markers
     show: false, // Hide directions panel initially
     addWaypoints: false,
-    draggableWaypoints: false
+    draggableWaypoints: false,
     autoRoute: true
   }).addTo(map);
 
