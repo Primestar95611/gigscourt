@@ -1614,7 +1614,7 @@ h2 { margin-bottom: 24px; font-weight: 600; }
 #locationPickerMap {
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: #ffffff;
 }
 
 #searchSuggestions {
