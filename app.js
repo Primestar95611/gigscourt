@@ -2638,6 +2638,15 @@ if (editDeleteAccountBtn) {
 // ==================== DRAW ROUTE ON MAP ====================
 function drawRoute(userLat, userLng, providerLat, providerLng) {
   alert('drawRoute function is running!');
+   
+  // Check if routing library exists
+  if (typeof L.Routing === 'undefined') {
+    alert('Routing library not loaded!');
+    return;
+  } else {
+    alert('Routing library loaded!');
+  }
+  
   // Clear any existing routes
   if (window.currentRoute) {
     map.removeControl(window.currentRoute);
