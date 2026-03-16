@@ -1754,9 +1754,9 @@ h2 { margin-bottom: 24px; font-weight: 600; }
   }
   
   /* Map container background */
-  #locationPickerMap {
-    background: #2a2a2a !important;
-  }
+#locationPickerMap {
+  background: #1a1a1a !important;
+}
 }
 
 /* ==================== LOCATION PICKER MAP FIX ==================== */
