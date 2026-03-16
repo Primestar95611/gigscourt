@@ -2655,7 +2655,6 @@ function drawRoute(userLat, userLng, providerLat, providerLng) {
   
   alert('Route control added - check if panel appears');
 }
-}
 
 let unreadNotifications = 0;
 let notifications = [];
