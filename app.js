@@ -1709,7 +1709,7 @@ async function initMap() {
 }).setView([7.0667, 6.2667], 12);
   
   // Add dark theme with better contrast
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap, © CartoDB',
     subdomains: 'abcd',
     maxZoom: 20,
