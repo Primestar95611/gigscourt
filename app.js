@@ -356,6 +356,7 @@ document.getElementById('sheetDirectionsBtn')?.addEventListener('click', () => {
       const providerLat = providerData.location?.latitude;
       const providerLng = providerData.location?.longitude;
       alert('Provider coordinates: ' + providerLat + ', ' + providerLng);
+      alert('Provider name: ' + providerData.businessName);
       
       if (providerLat && providerLng) {
         // Draw route between user and provider
