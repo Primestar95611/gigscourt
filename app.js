@@ -1890,12 +1890,18 @@ document.querySelectorAll('.tab-item').forEach(btn => {
   });
 });
 
-// ==================== EDGE SWIPE ====================
+// ==================== INSTAGRAM-STYLE SWIPE ====================
 let touchStartX = 0, touchStartY = 0;
+let touchStartTime = 0;
+let isSwiping = false;
+let swipeThreshold = 80; // Minimum distance to trigger swipe
+let velocityThreshold = 0.3; // Minimum velocity (px/ms)
 
 document.addEventListener('touchstart', (e) => {
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+  isSwiping = false;
   
   const mapElement = document.getElementById('map');
   if (mapElement && mapElement.contains(e.target)) {
@@ -1905,17 +1911,36 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { passive: true });
 
-document.addEventListener('touchend', (e) => {
+document.addEventListener('touchmove', (e) => {
   if (touchOnMap) return;
+  
+  const currentX = e.touches[0].clientX;
+  const currentY = e.touches[0].clientY;
+  const dx = currentX - touchStartX;
+  const dy = currentY - touchStartY;
+  
+  // If horizontal movement is greater than vertical, it's likely a tab swipe
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+    isSwiping = true;
+    // Optional: Add visual feedback here (like slightly moving the tab content)
+    e.preventDefault(); // Prevent scrolling while swiping horizontally
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  if (touchOnMap || !isSwiping) return;
   
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
-  const width = window.innerWidth;
+  const timeElapsed = Date.now() - touchStartTime;
+  const velocity = Math.abs(dx) / timeElapsed; // pixels per millisecond
   
-  if (Math.abs(dx) > 50 && Math.abs(dy) < 70 && (touchStartX < width * 0.15 || touchStartX > width * 0.85)) {
+  // Check if swipe meets criteria: enough distance, mostly horizontal, and fast enough
+  if (Math.abs(dx) > swipeThreshold && Math.abs(dy) < Math.abs(dx) * 0.5 && velocity > velocityThreshold) {
+    
     const tabs = ['home', 'search', 'messages', 'profile', 'admin'];
     
-    // Find current tab safely
+    // Find current tab
     let current = null;
     for (let t of tabs) {
       const tabElement = document.getElementById(t + 'Tab');
@@ -1928,12 +1953,18 @@ document.addEventListener('touchend', (e) => {
     if (!current) return;
     
     const idx = tabs.indexOf(current);
-    if (dx > 0 && idx > 0) {
-      switchTab(tabs[idx - 1]);
-    } else if (dx < 0 && idx < tabs.length - 1) {
+    
+    // Swipe right to left (dx < 0) goes to next tab
+    if (dx < 0 && idx < tabs.length - 1) {
       switchTab(tabs[idx + 1]);
     }
+    // Swipe left to right (dx > 0) goes to previous tab
+    else if (dx > 0 && idx > 0) {
+      switchTab(tabs[idx - 1]);
+    }
   }
+  
+  isSwiping = false;
 }, { passive: true });
 
 // ==================== DISTANCE CLICK HANDLER ====================
