@@ -3117,19 +3117,10 @@ function openLocationPicker() {
   
   modal.classList.remove('hidden');
   
-  // If map already exists, just resize it
-  if (locationPickerMap) {
-    setTimeout(() => {
-      locationPickerMap.invalidateSize();
-      console.log('Map resized');
-    }, 500);
-    return;
-  }
-  
-  // Wait longer for modal to fully open and animate
+  // Initialize map if not already done
   setTimeout(() => {
     initLocationPickerMap();
-  }, 500);
+  }, 100);
 }
 
 // Initialize location picker map
@@ -3163,27 +3154,13 @@ function initLocationPickerMap() {
     }).addTo(locationPickerMap);
     console.log('Tile layer added');
     
-    // Force map to resize multiple times to ensure it gets the right dimensions
+    // Force map to resize
     setTimeout(() => {
       if (locationPickerMap) {
         locationPickerMap.invalidateSize();
-        console.log('Map resized (1st attempt)');
+        console.log('Map resized');
       }
-    }, 500);
-    
-    setTimeout(() => {
-      if (locationPickerMap) {
-        locationPickerMap.invalidateSize();
-        console.log('Map resized (2nd attempt)');
-      }
-    }, 800);
-    
-    setTimeout(() => {
-      if (locationPickerMap) {
-        locationPickerMap.invalidateSize();
-        console.log('Map resized (3rd attempt)');
-      }
-    }, 1200);
+    }, 300);
     
     // Get user's current location
     if (navigator.geolocation) {
