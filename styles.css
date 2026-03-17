@@ -1920,3 +1920,13 @@ html, body {
   color: black !important;
   font-size: 16px !important;
 }
+
+/* Bring address to front */
+#profileAddress {
+  position: relative !important;
+  z-index: 9999 !important;
+  background-color: yellow !important;
+  color: black !important;
+  font-size: 18px !important;
+  padding: 5px !important;
+}
