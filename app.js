@@ -576,6 +576,212 @@ function loadMainApp() {
     loadHomeTab();
 }
 
+// ========== PROFILE TAB ==========
+async function loadProfileTab(profileUserId = null) {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
+    
+    const targetUserId = profileUserId || firebase.auth().currentUser.uid;
+    const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
+    
+    try {
+        // Get profile data
+        const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
+        if (!profileDoc.exists) {
+            container.innerHTML = '<div class="error-state">Profile not found</div>';
+            return;
+        }
+        
+        const profile = profileDoc.data();
+        profile.id = targetUserId;
+        
+        // Get stats counts
+        const savedCount = await getSavedCount(targetUserId);
+        const savesCount = await getSavesCount(targetUserId);
+        
+        // Render profile
+        container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile);
+        
+        // Add event listeners
+        if (isOwnProfile) {
+            setupOwnProfileListeners(profile);
+        } else {
+            setupOtherProfileListeners(profile);
+        }
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        container.innerHTML = '<div class="error-state">Error loading profile</div>';
+    }
+}
+
+function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
+    const jobsCount = profile.jobsDone || 0;
+    const rating = profile.rating || 0;
+    
+    return `
+        <div class="profile-container">
+            <!-- Business Name -->
+            <div class="profile-header">
+                <h1 class="profile-business-name">${profile.businessName || 'Business Name'}</h1>
+            </div>
+            
+            <!-- Profile Picture + Stats Row -->
+            <div class="profile-stats-row">
+                <div class="profile-picture">
+                    <img src="${profile.profileImage || 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+                    ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">${jobsCount}</span>
+                        <span class="stat-label">Jobs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${rating}</span>
+                        <span class="stat-label">★ Rating</span>
+                    </div>
+                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavedModal()' : 'void(0)'}">
+                        <span class="stat-number">${savedCount}</span>
+                        <span class="stat-label">Saved</span>
+                    </div>
+                    <div class="stat-item clickable" onclick="${isOwnProfile ? 'openSavesModal()' : 'void(0)'}">
+                        <span class="stat-number">${savesCount}</span>
+                        <span class="stat-label">Saves</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bio -->
+            <div class="profile-bio">
+                ${profile.bio || 'No bio yet.'}
+            </div>
+            
+            <!-- Contact Info (only show if exists) -->
+            ${profile.phoneNumber ? `
+                <div class="profile-contact">
+                    <span class="contact-icon">📞</span>
+                    <span class="contact-text">${profile.phoneNumber}</span>
+                </div>
+            ` : ''}
+            
+            ${profile.location ? `
+                <div class="profile-contact">
+                    <span class="contact-icon">📍</span>
+                    <span class="contact-text">${profile.location}</span>
+                </div>
+            ` : ''}
+            
+            <!-- Services Section -->
+            <div class="profile-section">
+                <h3 class="section-title">Services</h3>
+                <div class="services-horizontal">
+                    ${(profile.services || []).map(service => 
+                        `<span class="service-pill-static">${service}</span>`
+                    ).join('')}
+                    ${(profile.pendingServices || []).map(service => 
+                        `<span class="service-pill-static pending">${service} (pending)</span>`
+                    ).join('')}
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="profile-actions">
+                ${isOwnProfile ? `
+                    <button class="btn" onclick="openEditProfile()">Edit Profile</button>
+                    <button class="btn btn-outline" onclick="shareProfile()">Share</button>
+                ` : `
+                    <button class="btn" onclick="startChat('${profile.id}')">Message</button>
+                    <button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button>
+                    <button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>
+                `}
+            </div>
+            
+            <!-- Portfolio Section -->
+            <div class="profile-section">
+                <div class="section-header">
+                    <h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>
+                    ${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}
+                </div>
+                <div class="portfolio-grid">
+                    ${(profile.portfolioImages || []).map((img, index) => `
+                        <div class="portfolio-item" onclick="openPhotoSwipe(${index})">
+                            <img src="${img}" loading="lazy">
+                            ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
+                        </div>
+                    `).join('')}
+                    ${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Helper functions for stats
+async function getSavedCount(userId) {
+    try {
+        const snapshot = await firebase.firestore()
+            .collection('saves')
+            .where('saverId', '==', userId)
+            .count()
+            .get();
+        return snapshot.data().count;
+    } catch (error) {
+        console.error('Error getting saved count:', error);
+        return 0;
+    }
+}
+
+async function getSavesCount(userId) {
+    try {
+        const snapshot = await firebase.firestore()
+            .collection('saves')
+            .where('savedUserId', '==', userId)
+            .count()
+            .get();
+        return snapshot.data().count;
+    } catch (error) {
+        console.error('Error getting saves count:', error);
+        return 0;
+    }
+}
+
+// Placeholder functions (to be implemented)
+window.openImageUpload = () => alert('Image upload coming soon');
+window.openSavedModal = () => alert('Saved profiles modal coming soon');
+window.openSavesModal = () => alert('Saves modal coming soon');
+window.openEditProfile = () => alert('Edit profile coming soon');
+window.shareProfile = (id) => alert('Share coming soon');
+window.startChat = (id) => alert('Chat coming soon');
+window.toggleSaveProfile = (id) => alert('Save feature coming soon');
+window.addPortfolioImages = () => alert('Add portfolio coming soon');
+window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
+window.deleteImage = (event, url) => {
+    event.stopPropagation();
+    if (confirm('Delete this image?')) {
+        alert('Delete coming soon');
+    }
+};
+
+// Setup functions
+function setupOwnProfileListeners(profile) {
+    // Add any own-profile specific listeners
+}
+
+function setupOtherProfileListeners(profile) {
+    // Check if already saved and update button text
+    checkIfSaved(profile.id);
+}
+
+async function checkIfSaved(profileId) {
+    // Will implement in save feature phase
+    const btn = document.getElementById(`save-btn-${profileId}`);
+    if (btn) {
+        btn.textContent = 'Saved';
+    }
+}
+
 window.switchTab = (tab) => {
     // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -595,8 +801,8 @@ window.switchTab = (tab) => {
             document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
             break;
         case 'profile':
-            document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Profile tab coming soon</div>';
-            break;
+    loadProfileTab();
+    break;
     }
 };
 
