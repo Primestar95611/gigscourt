@@ -869,39 +869,6 @@ if (addressContainer && addressEl && viewedProvider.location) {
 }
   }
 
-  // Display skills on profile page (non-editable)
-const profileSkillsContainer = document.getElementById('profileSkillsContainer');
-if (!profileSkillsContainer) {
-  // Create skills container if it doesn't exist
-  const skillsSection = document.createElement('div');
-  skillsSection.className = 'profile-skills';
-  skillsSection.id = 'profileSkillsContainer';
-  skillsSection.innerHTML = `
-    <div style="padding: 0 16px 16px;">
-      <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666;">Services</div>
-      <div id="profileSkillsList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-    </div>
-  `;
-  
-  // Find the contact section to insert after
-  const contactSection = document.querySelector('.profile-contact');
-  if (contactSection) {
-    contactSection.insertAdjacentElement('afterend', skillsSection);
-  } else {
-    // If no contact section, insert after bio
-    const bioSection = document.querySelector('.profile-bio');
-    if (bioSection) {
-      bioSection.insertAdjacentElement('afterend', skillsSection);
-    } else {
-      // If no bio, insert before the action buttons
-      const actionsSection = document.querySelector('.profile-actions');
-      if (actionsSection) {
-        actionsSection.insertAdjacentElement('beforebegin', skillsSection);
-      }
-    }
-  }
-}
-
 // Populate skills
   alert('Skills count: ' + (data.skills ? data.skills.length : 0));
 const skillsList = document.getElementById('profileSkillsList');
