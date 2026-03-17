@@ -549,40 +549,73 @@ function closeQuickView() {
 
 // ==================== SIMPLE PULL TO REFRESH ====================
 function initPullToRefresh() {
-  const tabContent = document.querySelector('.tab-content');
+  // Get all tabs that should support pull to refresh
+  const tabs = ['homeTab', 'messagesTab', 'profileTab'];
   
-  let startY = 0;
-  let pulling = false;
-  
-  tabContent.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY;
-    pulling = true;
-  }, { passive: true });
-  
-  tabContent.addEventListener('touchmove', (e) => {
-    if (!pulling) return;
+  tabs.forEach(tabId => {
+    const tab = document.getElementById(tabId);
+    if (!tab) return;
     
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY;
+    let startY = 0;
+    let pulling = false;
     
-    // If pulling down and at the top
-    if (diff > 50 && tabContent.scrollTop <= 5) {
-      e.preventDefault();
-      alert('Pull down detected - refresh!');
+    tab.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+    
+    tab.addEventListener('touchmove', (e) => {
+      if (!pulling) return;
       
-      // Refresh based on current tab
-      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
-      if (activeTab === 'homeTab') loadProviders(true);
-      if (activeTab === 'messagesTab') loadConversations();
-      if (activeTab === 'profileTab') loadProfileData();
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
       
+      // If pulling down and at the top of THIS tab
+      if (diff > 50 && tab.scrollTop <= 5) {
+        e.preventDefault();
+        
+        // Show visual feedback
+        if (!refreshIndicator) {
+          refreshIndicator = document.createElement('div');
+          refreshIndicator.className = 'refresh-indicator';
+          refreshIndicator.innerHTML = `
+            <div class="spinner-small"></div>
+            <span>Refreshing...</span>
+          `;
+          document.body.appendChild(refreshIndicator);
+          refreshIndicator.style.transform = 'translateY(60px)';
+        }
+        
+        // Refresh based on current tab
+        if (tabId === 'homeTab') {
+          loadProviders(true);
+        } else if (tabId === 'messagesTab') {
+          loadConversations();
+        } else if (tabId === 'profileTab') {
+          loadProfileData();
+        }
+        
+        // Hide indicator after refresh
+        setTimeout(() => {
+          if (refreshIndicator) {
+            refreshIndicator.style.transform = 'translateY(-60px)';
+            setTimeout(() => {
+              if (refreshIndicator) {
+                refreshIndicator.remove();
+                refreshIndicator = null;
+              }
+            }, 300);
+          }
+        }, 1000);
+        
+        pulling = false;
+      }
+    }, { passive: false });
+    
+    tab.addEventListener('touchend', () => {
       pulling = false;
-    }
-  }, { passive: false });
-  
-  tabContent.addEventListener('touchend', () => {
-    pulling = false;
-  }, { passive: true });
+    }, { passive: true });
+  });
 }
 
 // ==================== IMAGEKIT UPLOAD ====================
