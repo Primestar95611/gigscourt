@@ -1884,3 +1884,18 @@ html, body {
   background-color: #f0f0f0 !important;
   min-height: 50px !important;
 }
+
+/* Test for overlapping */
+.contact-item {
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid green !important;
+  min-height: 30px !important;
+}
+
+#profileAddress {
+  background-color: yellow !important;
+}
+
+#profilePhone {
+  background-color: pink !important;
+}
