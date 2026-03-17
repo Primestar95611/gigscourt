@@ -801,8 +801,8 @@ window.switchTab = (tab) => {
             document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
             break;
         case 'profile':
-    loadProfileTab();
-    break;
+            loadProfileTab();
+            break;
     }
 };
 
