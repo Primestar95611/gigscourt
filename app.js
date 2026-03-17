@@ -547,75 +547,28 @@ function closeQuickView() {
   sheetOverlay.classList.remove('active');
 }
 
-// ==================== SIMPLE PULL TO REFRESH ====================
+// ==================== TEST PULL TO REFRESH ====================
 function initPullToRefresh() {
-  // Get all tabs that should support pull to refresh
-  const tabs = ['homeTab', 'messagesTab', 'profileTab'];
+  const homeTab = document.getElementById('homeTab');
   
-  tabs.forEach(tabId => {
-    const tab = document.getElementById(tabId);
-    if (!tab) return;
+  homeTab.addEventListener('touchstart', (e) => {
+    window.lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
+  
+  homeTab.addEventListener('touchmove', (e) => {
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - window.lastTouchY;
     
-    let startY = 0;
-    let pulling = false;
-    
-    tab.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].clientY;
-      pulling = true;
-    }, { passive: true });
-    
-    tab.addEventListener('touchmove', (e) => {
-      if (!pulling) return;
-      
-      const currentY = e.touches[0].clientY;
-      const diff = currentY - startY;
-      
-      // If pulling down and at the top of THIS tab
-      if (diff > 50 && tab.scrollTop <= 5) {
-        e.preventDefault();
-        
-        // Show visual feedback
-        if (!refreshIndicator) {
-          refreshIndicator = document.createElement('div');
-          refreshIndicator.className = 'refresh-indicator';
-          refreshIndicator.innerHTML = `
-            <div class="spinner-small"></div>
-            <span>Refreshing...</span>
-          `;
-          document.body.appendChild(refreshIndicator);
-          refreshIndicator.style.transform = 'translateY(60px)';
-        }
-        
-        // Refresh based on current tab
-        if (tabId === 'homeTab') {
-          loadProviders(true);
-        } else if (tabId === 'messagesTab') {
-          loadConversations();
-        } else if (tabId === 'profileTab') {
-          loadProfileData();
-        }
-        
-        // Hide indicator after refresh
-        setTimeout(() => {
-          if (refreshIndicator) {
-            refreshIndicator.style.transform = 'translateY(-60px)';
-            setTimeout(() => {
-              if (refreshIndicator) {
-                refreshIndicator.remove();
-                refreshIndicator = null;
-              }
-            }, 300);
-          }
-        }, 1000);
-        
-        pulling = false;
-      }
-    }, { passive: false });
-    
-    tab.addEventListener('touchend', () => {
-      pulling = false;
-    }, { passive: true });
-  });
+    if (diff > 30 && homeTab.scrollTop === 0) {
+      e.preventDefault();
+      alert('Pull to refresh would trigger!');
+      window.lastTouchY = currentY;
+    }
+  }, { passive: false });
+  
+  homeTab.addEventListener('touchend', () => {
+    // Do nothing
+  }, { passive: true });
 }
 
 // ==================== IMAGEKIT UPLOAD ====================
