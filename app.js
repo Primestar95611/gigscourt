@@ -781,29 +781,7 @@ async function checkIfSaved(profileId) {
     }
 }
 
-window.switchTab = (tab) => {
-    // Update active tab
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
-    
-    // Load tab content
-    switch(tab) {
-        case 'home':
-            loadHomeTab();
-            break;
-        case 'search':
-    loadSearchTab();
-    break;
-        case 'messages':
-            document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
-            break;
-        case 'profile':
-            loadProfileTab();
-            break;
-
-            // ========== SEARCH TAB ==========
+// ========== SEARCH TAB ==========
 let map = null;
 let userMarker = null;
 let providerMarkers = [];
@@ -1185,6 +1163,30 @@ window.viewProfile = (id) => {
     switchTab('profile');
     loadProfileTab(id);
 };
+
+window.switchTab = (tab) => {
+    // Update active tab
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    // Load tab content
+    switch(tab) {
+        case 'home':
+            loadHomeTab();
+            break;
+        case 'search':
+    loadSearchTab();
+    break;
+        case 'messages':
+            document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
+            break;
+        case 'profile':
+            loadProfileTab();
+            break;
+
+            
     }
 };
 
