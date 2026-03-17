@@ -834,9 +834,10 @@ if (data.locationDescription) {
   if (addressContainer && addressEl) {
     addressEl.textContent = data.locationDescription;
     addressContainer.style.display = 'flex';
+    alert('Address should now show: ' + data.locationDescription);
   }
 }
-  alert('Location data: ' + (data.locationDescription || 'none'));
+alert('Location data: ' + (data.locationDescription || 'none'));
   alert('Address container exists: ' + (document.getElementById('profileAddressContainer') ? 'yes' : 'no'));
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
