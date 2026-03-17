@@ -1164,6 +1164,298 @@ window.viewProfile = (id) => {
     loadProfileTab(id);
 };
 
+// ========== MESSAGES TAB ==========
+let conversationsListener = null;
+let currentChatId = null;
+let messagesListener = null;
+
+function loadMessagesTab() {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="messages-container">
+            <div class="messages-header">
+                <h1 class="messages-title">Messages</h1>
+            </div>
+            
+            <div id="conversations-list" class="conversations-list">
+                <!-- Conversations will load here -->
+            </div>
+            
+            <div id="conversations-loading" class="conversations-loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    `;
+    
+    loadConversations();
+}
+
+function loadConversations() {
+    const userId = firebase.auth().currentUser.uid;
+    const conversationsList = document.getElementById('conversations-list');
+    const loadingEl = document.getElementById('conversations-loading');
+    
+    // Clear existing listener
+    if (conversationsListener) {
+        conversationsListener();
+    }
+    
+    // Set up real-time listener
+    conversationsListener = firebase.firestore()
+        .collection('chats')
+        .where('participants', 'array-contains', userId)
+        .orderBy('lastMessageTimestamp', 'desc')
+        .onSnapshot((snapshot) => {
+            loadingEl.style.display = 'none';
+            
+            if (snapshot.empty) {
+                // Empty state - no conversations
+                conversationsList.innerHTML = `
+                    <div class="empty-state-messages">
+                        <div class="empty-icon">💬</div>
+                        <h3>No Messages Yet</h3>
+                        <p>When you message a provider, they'll appear here</p>
+                        <button class="btn" onclick="switchTab('search')">Find Providers</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Build conversations list
+            let html = '';
+            snapshot.forEach(doc => {
+                const chat = doc.data();
+                chat.id = doc.id;
+                html += renderConversationItem(chat, userId);
+            });
+            
+            conversationsList.innerHTML = html;
+            
+            // Add click handlers
+            snapshot.forEach(doc => {
+                const chatId = doc.id;
+                const otherUserId = doc.data().participants.find(id => id !== userId);
+                document.getElementById(`chat-${chatId}`)?.addEventListener('click', () => {
+                    openChat(chatId, otherUserId, doc.data());
+                });
+            });
+        });
+}
+
+function renderConversationItem(chat, currentUserId) {
+    const otherUserId = chat.participants.find(id => id !== currentUserId);
+    const lastMessage = chat.lastMessage || '';
+    const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
+    const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
+    
+    // Get other user's info (simplified - will fetch properly later)
+    const otherUserName = otherUserId === 'mock' ? 'John\'s Barbershop' : 'Loading...';
+    const otherUserImage = 'https://via.placeholder.com/40';
+    
+    return `
+        <div id="chat-${chat.id}" class="conversation-item ${unread ? 'unread' : ''}">
+            <img src="${otherUserImage}" class="conversation-image">
+            <div class="conversation-info">
+                <div class="conversation-header">
+                    <span class="conversation-name">${otherUserName}</span>
+                    <span class="conversation-time">${lastMessageTime}</span>
+                </div>
+                <div class="conversation-preview">
+                    <span class="preview-text">${lastMessage || 'No messages yet'}</span>
+                    ${chat.lastMessageSender === currentUserId ? '<span class="message-status">✓✓</span>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function formatMessageTime(date) {
+    const now = new Date();
+    const diff = now - date;
+    const diffMinutes = Math.floor(diff / (1000 * 60));
+    const diffHours = Math.floor(diff / (1000 * 60 * 60));
+    const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (diffMinutes < 1) return 'Now';
+    if (diffMinutes < 60) return `${diffMinutes}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return 'Yesterday';
+    return `${diffDays}d`;
+}
+
+function openChat(chatId, otherUserId, chatData) {
+    currentChatId = chatId;
+    
+    const container = document.getElementById('tab-content');
+    
+    container.innerHTML = `
+        <div class="chat-container">
+            <div class="chat-header">
+                <button class="chat-back-btn" onclick="loadMessagesTab()">←</button>
+                <img src="https://via.placeholder.com/32" class="chat-header-image">
+                <span class="chat-header-name">${chatData.otherUserName || 'Loading...'}</span>
+            </div>
+            
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages will load here -->
+            </div>
+            
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
+                <button class="chat-send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    `;
+    
+    loadMessages(chatId);
+}
+
+function loadMessages(chatId) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    // Clear existing listener
+    if (messagesListener) {
+        messagesListener();
+    }
+    
+    // Set up real-time listener
+    messagesListener = firebase.firestore()
+        .collection('chats').doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot((snapshot) => {
+            if (snapshot.empty) {
+                // Empty state - no messages
+                messagesContainer.innerHTML = `
+                    <div class="empty-state-chat">
+                        <div class="empty-icon">💭</div>
+                        <p>No messages yet</p>
+                        <p class="empty-hint">Send a message to start the conversation</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            let lastDate = null;
+            
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                msg.id = doc.id;
+                
+                // Add date separator if needed
+                const msgDate = msg.timestamp?.toDate().toLocaleDateString();
+                if (msgDate !== lastDate) {
+                    html += `<div class="chat-date-separator">${msg.timestamp?.toDate().toLocaleDateString()}</div>`;
+                    lastDate = msgDate;
+                }
+                
+                // Add message
+                html += renderMessage(msg, currentUserId);
+                
+                // Mark as read if this message was sent to current user
+                if (msg.senderId !== currentUserId && !msg.read) {
+                    markMessageAsRead(chatId, msg.id);
+                }
+            });
+            
+            messagesContainer.innerHTML = html;
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+}
+
+function renderMessage(msg, currentUserId) {
+    const isMine = msg.senderId === currentUserId;
+    const time = msg.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const status = isMine ? (msg.read ? '✓✓' : '✓') : '';
+    
+    return `
+        <div class="message-row ${isMine ? 'mine' : 'theirs'}">
+            <div class="message-bubble ${isMine ? 'mine' : 'theirs'}">
+                <div class="message-text">${msg.text}</div>
+                <div class="message-meta">
+                    <span class="message-time">${time}</span>
+                    ${isMine ? `<span class="message-status ${msg.read ? 'read' : ''}">${status}</span>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.sendMessage = async function() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    
+    if (!text || !currentChatId) return;
+    
+    input.value = '';
+    
+    const currentUserId = firebase.auth().currentUser.uid;
+    const chatRef = firebase.firestore().collection('chats').doc(currentChatId);
+    const messagesRef = chatRef.collection('messages');
+    
+    try {
+        // Add message
+        await messagesRef.add({
+            senderId: currentUserId,
+            text: text,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            read: false
+        });
+        
+        // Update chat last message
+        await chatRef.update({
+            lastMessage: text,
+            lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageSender: currentUserId,
+            lastMessageRead: false
+        });
+        
+    } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message');
+    }
+};
+
+async function markMessageAsRead(chatId, messageId) {
+    try {
+        await firebase.firestore()
+            .collection('chats').doc(chatId)
+            .collection('messages').doc(messageId)
+            .update({ read: true });
+        
+        // Check if all messages are read to update chat status
+        const chatRef = firebase.firestore().collection('chats').doc(chatId);
+        const messagesSnapshot = await chatRef.collection('messages')
+            .where('senderId', '!=', firebase.auth().currentUser.uid)
+            .where('read', '==', false)
+            .get();
+        
+        if (messagesSnapshot.empty) {
+            await chatRef.update({ lastMessageRead: true });
+        }
+    } catch (error) {
+        console.error('Error marking message as read:', error);
+    }
+}
+
+// Clean up listeners when switching tabs
+window.addEventListener('tabChange', () => {
+    if (conversationsListener) {
+        conversationsListener();
+        conversationsListener = null;
+    }
+    if (messagesListener) {
+        messagesListener();
+        messagesListener = null;
+    }
+});
+
 window.switchTab = (tab) => {
     // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1180,8 +1472,8 @@ window.switchTab = (tab) => {
     loadSearchTab();
     break;
         case 'messages':
-            document.getElementById('tab-content').innerHTML = '<div style="padding:20px">Messages tab coming soon</div>';
-            break;
+    loadMessagesTab();
+    break;
         case 'profile':
             loadProfileTab();
             break;
