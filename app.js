@@ -64,6 +64,80 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }
 });
 
+function loadProfileCompletion() {
+    document.getElementById('app').innerHTML = `
+        <div class="profile-completion-container">
+            <div class="completion-header">
+                <h1>Complete Your Profile</h1>
+                <p>We noticed your profile needs setup</p>
+            </div>
+            
+            <div class="completion-form">
+                <div class="form-group">
+                    <label>Business Name</label>
+                    <input type="text" id="complete-business" value="${firebase.auth().currentUser?.displayName || ''}" placeholder="Your business name">
+                </div>
+                
+                <div class="form-group">
+                    <label>Services Offered</label>
+                    <div class="service-presets">
+                        <button type="button" class="service-pill" onclick="toggleService('Barber')">Barber</button>
+                        <button type="button" class="service-pill" onclick="toggleService('Tech')">Tech</button>
+                        <button type="button" class="service-pill" onclick="toggleService('Design')">Design</button>
+                        <button type="button" class="service-pill" onclick="toggleService('Marketing')">Marketing</button>
+                    </div>
+                    
+                    <div id="selected-services" class="selected-services"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Bio (optional)</label>
+                    <textarea id="complete-bio" rows="3" placeholder="Tell customers about yourself"></textarea>
+                </div>
+                
+                <button class="btn btn-full" onclick="saveProfile()">Save Profile</button>
+                <button class="btn btn-outline btn-full" onclick="firebase.auth().signOut()">Sign Out</button>
+            </div>
+        </div>
+    `;
+}
+
+// Add save profile function
+window.saveProfile = async function() {
+    const businessName = document.getElementById('complete-business').value;
+    const bio = document.getElementById('complete-bio').value;
+    
+    if (!businessName) {
+        alert('Business name is required');
+        return;
+    }
+    
+    try {
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).set({
+            businessName: businessName,
+            email: firebase.auth().currentUser.email,
+            services: window.selectedServices || [],
+            pendingServices: [],
+            bio: bio,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            emailVerified: true,
+            phoneVerified: false,
+            signupMethod: 'email',
+            rating: 0,
+            reviewCount: 0,
+            jobsDone: 0,
+            profileImage: '',
+            portfolioImages: [],
+            location: null
+        });
+        
+        // Reload the app
+        loadMainApp();
+    } catch (error) {
+        alert('Error saving profile: ' + error.message);
+    }
+};
+
 // ========== HOME TAB ==========
 function loadHomeTab() {
     const container = document.getElementById('tab-content');
