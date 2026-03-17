@@ -837,6 +837,7 @@ if (data.locationDescription) {
   }
 }
   alert('Location data: ' + (data.locationDescription || 'none'));
+  alert('Address container exists: ' + (document.getElementById('profileAddressContainer') ? 'yes' : 'no'));
   
   const profileImageUrl = getThumbnailUrl(data.profileImage, 200);
   if (profileImage) profileImage.src = profileImageUrl;
