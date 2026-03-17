@@ -669,7 +669,7 @@ body {
     display: flex;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
-    padding: 8px 0;
+    padding: 8px 0 12px;
     z-index: 100;
 }
 
@@ -680,7 +680,7 @@ body {
     align-items: center;
     background: none;
     border: none;
-    padding: 8px 0;
+    padding: 4px 0;
     cursor: pointer;
     color: var(--tab-inactive);
     transition: color 0.2s;
@@ -691,13 +691,35 @@ body {
 }
 
 .tab-icon {
-    font-size: 20px;
+    width: 24px;
+    height: 24px;
     margin-bottom: 4px;
-    filter: grayscale(100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-icon svg {
+    width: 24px;
+    height: 24px;
 }
 
 .tab-label {
     font-size: 11px;
+    font-weight: 500;
+}
+
+/* Dark mode variables - ensure these exist */
+:root {
+    --tab-inactive: #999999;
+    --tab-active: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --tab-inactive: #666666;
+        --tab-active: #ffffff;
+    }
 }
 
 .tab-content {
