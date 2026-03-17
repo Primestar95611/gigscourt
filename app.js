@@ -547,27 +547,9 @@ function closeQuickView() {
   sheetOverlay.classList.remove('active');
 }
 
-// ==================== TEST PULL TO REFRESH ====================
+// ==================== SIMPLE PULL TEST ====================
 function initPullToRefresh() {
   const homeTab = document.getElementById('homeTab');
-  
-  // Create a visible test indicator
-  const testDiv = document.createElement('div');
-  testDiv.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    background: red;
-    color: white;
-    text-align: center;
-    line-height: 40px;
-    z-index: 10000;
-    display: none;
-  `;
-  testDiv.textContent = 'PULL DETECTED';
-  document.body.appendChild(testDiv);
   
   homeTab.addEventListener('touchstart', (e) => {
     window.startY = e.touches[0].clientY;
@@ -579,10 +561,7 @@ function initPullToRefresh() {
     
     if (diff > 30 && homeTab.scrollTop <= 5) {
       e.preventDefault();
-      testDiv.style.display = 'block';
-      setTimeout(() => {
-        testDiv.style.display = 'none';
-      }, 500);
+      alert('Pull detected! Firestore error is separate issue');
       window.startY = currentY;
     }
   }, { passive: false });
