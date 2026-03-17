@@ -1930,3 +1930,20 @@ html, body {
   font-size: 18px !important;
   padding: 5px !important;
 }
+
+/* Ultimate visibility test */
+#profileAddress {
+  color: black !important;
+  font-size: 30px !important;
+  font-weight: bold !important;
+  background-color: limegreen !important;
+  padding: 20px !important;
+  margin: 20px !important;
+  border: 10px solid purple !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100px !important;
+  position: relative !important;
+  z-index: 999999 !important;
+}
