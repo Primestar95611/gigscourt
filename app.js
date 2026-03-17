@@ -566,7 +566,7 @@ function initPullToRefresh() {
     const diff = currentY - startY;
     
     // If pulling down and at the top
-    if (diff > 50 && tabContent.scrollTop === 0) {
+    if (diff > 50 && tabContent.scrollTop <= 5) {
       e.preventDefault();
       alert('Pull down detected - refresh!');
       
@@ -582,87 +582,6 @@ function initPullToRefresh() {
   
   tabContent.addEventListener('touchend', () => {
     pulling = false;
-  }, { passive: true });
-}
-
-// ==================== PROFILE TAB PULL TO REFRESH ====================
-function initProfilePullToRefresh() {
-  const profileTab = document.getElementById('profileTab');
-  
-  profileTab.addEventListener('touchstart', (e) => {
-    const touchY = e.touches[0].clientY;
-if (profileTab.scrollTop === 0 && touchY < 60) {
-  profilePullStartY = touchY;
-  isPullingProfile = true;
-}
-  }, { passive: true });
-
-  profileTab.addEventListener('touchmove', (e) => {
-    if (!isPullingProfile || profileTab.scrollTop > 0) return;
-    
-    const currentY = e.touches[0].clientY;
-    let diff = currentY - profilePullStartY;
-    
-    if (diff > 0) {
-      e.preventDefault();
-      
-      let resistance = 1;
-      if (diff > 30) resistance = 0.7;
-      if (diff > 60) resistance = 0.4;
-      if (diff > 90) resistance = 0.25;
-      
-      const pullDistance = Math.min(diff * resistance, 100);
-      
-      if (!refreshIndicator) {
-        refreshIndicator = createRefreshIndicator();
-      }
-      
-      refreshIndicator.style.transform = `translateY(${pullDistance + 60}px)`;
-      
-      if (diff > 90) {
-        refreshIndicator.querySelector('span').textContent = 'Release to refresh';
-      } else {
-        refreshIndicator.querySelector('span').textContent = 'Pull to refresh';
-      }
-    }
-  }, { passive: false });
-
-  profileTab.addEventListener('touchend', async (e) => {
-    if (!isPullingProfile || !refreshIndicator) return;
-    
-    const endY = e.changedTouches[0].clientY;
-    const diff = endY - profilePullStartY;
-    
-    if (diff > 100 && profileTab.scrollTop === 0) {
-      refreshIndicator.querySelector('span').textContent = 'Refreshing...';
-      
-      if (currentUser) {
-        await loadProfileData();
-      }
-      
-      refreshIndicator.style.transform = 'translateY(60px)';
-      setTimeout(() => {
-        refreshIndicator.style.transform = 'translateY(-60px)';
-        setTimeout(() => {
-          if (refreshIndicator) {
-            refreshIndicator.remove();
-            refreshIndicator = null;
-          }
-        }, 200);
-      }, 500);
-    } else {
-      if (refreshIndicator) {
-        refreshIndicator.style.transform = 'translateY(-60px)';
-        setTimeout(() => {
-          if (refreshIndicator) {
-            refreshIndicator.remove();
-            refreshIndicator = null;
-          }
-        }, 200);
-      }
-    }
-    
-    isPullingProfile = false;
   }, { passive: true });
 }
 
