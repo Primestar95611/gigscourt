@@ -1056,20 +1056,20 @@ body {
 }
 
 .search-controls {
-    height: 10vh;
-    padding: 10px;
+    height: auto;  /* Changed from fixed height */
+    padding: 8px 15px;  /* Reduced padding */
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
     z-index: 2;
 }
 
 .search-input-container {
-    margin-bottom: 10px;
+    margin-bottom: 8px;  /* Reduced margin */
 }
 
 .search-input {
     width: 100%;
-    padding: 10px 15px;
+    padding: 8px 12px;  /* Reduced padding */
     border: 1px solid var(--border-color);
     border-radius: 20px;
     background: var(--input-bg);
@@ -1085,23 +1085,23 @@ body {
 .radius-control {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;  /* Reduced gap */
 }
 
 .radius-icon {
-    font-size: 16px;
+    font-size: 14px;  /* Smaller icon */
     filter: grayscale(100%);
 }
 
 .radius-value {
-    font-size: 14px;
+    font-size: 13px;  /* Smaller text */
     color: var(--text-primary);
-    min-width: 50px;
+    min-width: 45px;  /* Slightly smaller */
 }
 
 .radius-slider {
     flex: 1;
-    height: 4px;
+    height: 3px;  /* Thinner slider */
     -webkit-appearance: none;
     background: var(--border-color);
     border-radius: 2px;
@@ -1109,8 +1109,8 @@ body {
 
 .radius-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 16px;  /* Smaller thumb */
+    height: 16px;  /* Smaller thumb */
     background: var(--text-primary);
     border-radius: 50%;
     cursor: pointer;
