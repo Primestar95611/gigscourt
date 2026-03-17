@@ -802,6 +802,389 @@ window.switchTab = (tab) => {
         case 'profile':
             loadProfileTab();
             break;
+
+            // ========== SEARCH TAB ==========
+let map = null;
+let userMarker = null;
+let providerMarkers = [];
+let routingControl = null;
+let searchProviders = [];
+let radiusCircle = null;
+let currentRadius = 10; // Default 10km
+let userLocation = null;
+
+function loadSearchTab() {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="search-container">
+            <!-- Map Container (45%) -->
+            <div id="search-map" class="search-map"></div>
+            
+            <!-- Search Controls (10%) -->
+            <div class="search-controls">
+                <div class="search-input-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
+                </div>
+                
+                <div class="radius-control">
+                    <span class="radius-icon">📍</span>
+                    <span class="radius-value" id="radius-value">${currentRadius} km</span>
+                    <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
+                </div>
+            </div>
+            
+            <!-- Provider List Drawer (45%) -->
+            <div class="provider-drawer">
+                <div class="drawer-handle"></div>
+                <div id="provider-list" class="provider-list">
+                    <!-- Providers will load here -->
+                </div>
+                <div id="drawer-loading" class="drawer-loading hidden">
+                    <div class="spinner-small"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Get user location
+    getUserLocation();
+    
+    // Setup event listeners
+    setupSearchListeners();
+}
+
+function getUserLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                initializeMap();
+                loadNearbyProviders();
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                // Default to Lagos if geolocation fails
+                userLocation = { lat: 6.5244, lng: 3.3792 };
+                initializeMap();
+                loadNearbyProviders();
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        // Default to Lagos if geolocation not supported
+        userLocation = { lat: 6.5244, lng: 3.3792 };
+        initializeMap();
+        loadNearbyProviders();
+    }
+}
+
+function initializeMap() {
+    // Wait for container to be visible
+    setTimeout(() => {
+        const mapContainer = document.getElementById('search-map');
+        if (!mapContainer) return;
+        
+        // Check if map already initialized
+        if (map) {
+            map.remove();
+            map = null;
+        }
+        
+        // Initialize map with Humanitarian OSM tiles
+        map = L.map('search-map', {
+            center: [userLocation.lat, userLocation.lng],
+            zoom: 13,
+            zoomControl: false,
+            attributionControl: false
+        });
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        // Add zoom control to bottom right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        // Add user location marker (blue dot)
+        const userIcon = L.divIcon({
+            className: 'user-location-marker',
+            html: '<div class="user-dot"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
+        
+        userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
+        
+        // Draw initial radius circle
+        updateRadiusCircle();
+        
+        // Handle map movement for location picker (will be used later)
+        map.on('moveend', onMapMoved);
+        
+    }, 300);
+}
+
+function updateRadiusCircle() {
+    if (!map || !userLocation) return;
+    
+    // Remove existing circle
+    if (radiusCircle) {
+        map.removeLayer(radiusCircle);
+    }
+    
+    // Draw new circle
+    radiusCircle = L.circle([userLocation.lat, userLocation.lng], {
+        radius: currentRadius * 1000, // Convert km to meters
+        color: '#000000',
+        weight: 1,
+        fillColor: '#000000',
+        fillOpacity: 0.1,
+        lineCap: 'round'
+    }).addTo(map);
+    
+    // Fit map to circle bounds
+    map.fitBounds(radiusCircle.getBounds(), { padding: [20, 20] });
+}
+
+async function loadNearbyProviders() {
+    if (!userLocation) return;
+    
+    const listContainer = document.getElementById('provider-list');
+    const loadingEl = document.getElementById('drawer-loading');
+    
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    
+    try {
+        // Get all providers
+        const snapshot = await firebase.firestore().collection('users')
+            .where('emailVerified', '==', true)
+            .get();
+        
+        searchProviders = [];
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // Calculate distance (simplified - replace with proper geo calculation later)
+            const distance = (Math.random() * 200 + 1).toFixed(1);
+            
+            // Only include if within radius
+            if (parseFloat(distance) <= currentRadius) {
+                searchProviders.push({
+                    id: doc.id,
+                    ...data,
+                    distance: distance,
+                    location: data.location || { lat: userLocation.lat + (Math.random() - 0.5) * 0.1, lng: userLocation.lng + (Math.random() - 0.5) * 0.1 }
+                });
+            }
+        });
+        
+        // Sort by distance
+        searchProviders.sort((a, b) => a.distance - b.distance);
+        
+        // Update map markers
+        updateMapMarkers();
+        
+        // Update list
+        renderProviderList();
+        
+    } catch (error) {
+        console.error('Error loading providers:', error);
+    }
+    
+    if (loadingEl) loadingEl.classList.add('hidden');
+}
+
+function updateMapMarkers() {
+    // Clear existing markers
+    providerMarkers.forEach(marker => map.removeLayer(marker));
+    providerMarkers = [];
+    
+    // Add new markers
+    searchProviders.forEach(provider => {
+        // Create custom marker with rating badge
+        const markerHtml = `
+            <div class="provider-marker">
+                <div class="marker-pin"></div>
+                <div class="rating-badge">⭐ ${provider.rating || '0.0'}</div>
+            </div>
+        `;
+        
+        const markerIcon = L.divIcon({
+            className: 'provider-marker-container',
+            html: markerHtml,
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
+            popupAnchor: [0, -40]
+        });
+        
+        // Use provider location or random nearby point
+        const lat = provider.location?.lat || userLocation.lat + (Math.random() - 0.5) * 0.1;
+        const lng = provider.location?.lng || userLocation.lng + (Math.random() - 0.5) * 0.1;
+        
+        const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+        
+        // Add popup
+        marker.bindPopup(`
+            <div class="map-popup">
+                <strong>${provider.businessName}</strong><br>
+                ⭐ ${provider.rating || '0.0'} (${provider.reviewCount || 0})<br>
+                📍 ${provider.distance} km<br>
+                <button class="popup-btn" onclick="viewProviderFromMap('${provider.id}')">View</button>
+            </div>
+        `);
+        
+        providerMarkers.push(marker);
+    });
+}
+
+function renderProviderList() {
+    const listContainer = document.getElementById('provider-list');
+    if (!listContainer) return;
+    
+    if (searchProviders.length === 0) {
+        listContainer.innerHTML = '<div class="empty-list">No providers found within radius</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = searchProviders.map(provider => `
+        <div class="provider-list-item" onclick="openQuickViewFromSearch('${provider.id}')">
+            <img src="${provider.profileImage || 'https://via.placeholder.com/40'}" class="list-item-image">
+            <div class="list-item-info">
+                <div class="list-item-name">${provider.businessName}</div>
+                <div class="list-item-details">
+                    <span>⭐ ${provider.rating || '0.0'}</span>
+                    <span>(${provider.reviewCount || 0})</span>
+                    <span>• ${provider.distance} km</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setupSearchListeners() {
+    // Search input
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterProviders(searchTerm);
+        });
+    }
+    
+    // Radius slider
+    const radiusSlider = document.getElementById('radius-slider');
+    const radiusValue = document.getElementById('radius-value');
+    
+    if (radiusSlider && radiusValue) {
+        radiusSlider.addEventListener('input', (e) => {
+            currentRadius = parseInt(e.target.value);
+            radiusValue.textContent = `${currentRadius} km`;
+        });
+        
+        radiusSlider.addEventListener('change', () => {
+            updateRadiusCircle();
+            loadNearbyProviders();
+        });
+    }
+}
+
+function filterProviders(searchTerm) {
+    const items = document.querySelectorAll('.provider-list-item');
+    
+    items.forEach(item => {
+        const name = item.querySelector('.list-item-name')?.textContent.toLowerCase() || '';
+        if (name.includes(searchTerm) || searchTerm === '') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Directions feature
+window.getDirections = function(providerId) {
+    const provider = searchProviders.find(p => p.id === providerId);
+    if (!provider || !userLocation) return;
+    
+    // Switch to search tab
+    switchTab('search');
+    
+    // Wait for map to be ready
+    setTimeout(() => {
+        if (!map) return;
+        
+        // Remove existing routing
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
+        
+        // Create routing control
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(userLocation.lat, userLocation.lng),
+                L.latLng(provider.location?.lat || userLocation.lat + 0.01, provider.location?.lng || userLocation.lng + 0.01)
+            ],
+            routeWhileDragging: false,
+            showAlternatives: false,
+            fitSelectedRoutes: true,
+            lineOptions: {
+                styles: [{ color: '#000000', opacity: 0.8, weight: 4 }]
+            },
+            createMarker: function() { return null; } // Don't create markers
+        }).addTo(map);
+        
+        // Add show/hide button
+        const directionsBtn = document.createElement('button');
+        directionsBtn.className = 'directions-toggle-btn';
+        directionsBtn.textContent = 'Hide';
+        directionsBtn.onclick = toggleDirections;
+        document.querySelector('.search-container').appendChild(directionsBtn);
+    }, 500);
+};
+
+window.toggleDirections = function() {
+    if (routingControl) {
+        const container = routingControl.getContainer();
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            event.target.textContent = 'Hide';
+        } else {
+            container.style.display = 'none';
+            event.target.textContent = 'Show';
+        }
+    }
+};
+
+window.viewProviderFromMap = function(providerId) {
+    const provider = searchProviders.find(p => p.id === providerId);
+    if (provider) {
+        openQuickView(provider);
+    }
+};
+
+window.openQuickViewFromSearch = function(providerId) {
+    const provider = searchProviders.find(p => p.id === providerId);
+    if (provider) {
+        openQuickView(provider);
+    }
+};
+
+function onMapMoved() {
+    // Used for location picker later
+}
+
+// Add to placeholders
+window.viewProfile = (id) => {
+    switchTab('profile');
+    loadProfileTab(id);
+};
     }
 };
 
