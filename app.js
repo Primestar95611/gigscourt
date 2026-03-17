@@ -533,23 +533,42 @@ function loadMainApp() {
             <div id="tab-content" class="tab-content"></div>
             
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('home')">
-                    <span class="tab-icon">🏠</span>
-                    <span class="tab-label">Home</span>
-                </button>
-                <button class="tab-btn" onclick="switchTab('search')">
-                    <span class="tab-icon">🔍</span>
-                    <span class="tab-label">Search</span>
-                </button>
-                <button class="tab-btn" onclick="switchTab('messages')">
-                    <span class="tab-icon">💬</span>
-                    <span class="tab-label">Messages</span>
-                </button>
-                <button class="tab-btn" onclick="switchTab('profile')">
-                    <span class="tab-icon">👤</span>
-                    <span class="tab-label">Profile</span>
-                </button>
-            </div>
+    <button class="tab-btn active" onclick="switchTab('home')">
+        <span class="tab-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
+            </svg>
+        </span>
+        <span class="tab-label">Home</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('search')">
+        <span class="tab-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="tab-label">Search</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('messages')">
+        <span class="tab-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>
+        <span class="tab-label">Messages</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('profile')">
+        <span class="tab-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="tab-label">Profile</span>
+    </button>
+</div>
         </div>
     `;
     
