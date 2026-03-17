@@ -569,11 +569,7 @@ const newChatRef = await firebase.firestore().collection('chats').add({
     lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
     lastMessageSender: '',
     lastMessageRead: true
-});
-            
-            // Get other user's info
-            const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
-            const otherUserData = otherUserDoc.data();
+});  
             
             // Open the new chat
             openChat(newChatRef.id, otherUserId, {
