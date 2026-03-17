@@ -1,7 +1,7 @@
 // js/app.js
 import { initializeAuth } from './auth/auth.js';
 
-// Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
   authDomain: "gigscourt.firebaseapp.com",
@@ -11,8 +11,6 @@ const firebaseConfig = {
   appId: "1:1055157379736:web:215763c63606c2c5a966ed",
   measurementId: "G-BY1YBSYJHV"
 };
-
-export default firebaseConfig;
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
