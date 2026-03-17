@@ -556,14 +556,20 @@ async function createNewChat(otherUserId) {
             openChat(existingChatId, otherUserId, chatData);
         } else {
             // Create new chat
-            const newChatRef = await firebase.firestore().collection('chats').add({
-                participants: [currentUserId, otherUserId],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastMessage: '',
-                lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                lastMessageSender: '',
-                lastMessageRead: true
-            });
+            // Get other user's info first
+const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
+const otherUserData = otherUserDoc.data();
+
+const newChatRef = await firebase.firestore().collection('chats').add({
+    participants: [currentUserId, otherUserId],
+    otherUserName: otherUserData.businessName || 'User',
+    otherUserImage: otherUserData.profileImage || 'https://via.placeholder.com/40',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    lastMessage: '',
+    lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    lastMessageSender: '',
+    lastMessageRead: true
+});
             
             // Get other user's info
             const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
@@ -1307,9 +1313,15 @@ function renderConversationItem(chat, currentUserId) {
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get other user's info (simplified - will fetch properly later)
-    const otherUserName = otherUserId === 'mock' ? 'John\'s Barbershop' : 'Loading...';
-    const otherUserImage = 'https://via.placeholder.com/40';
+    // Get other user's name from chat data or use placeholder
+    let otherUserName = chat.otherUserName || 'Loading...';
+    let otherUserImage = chat.otherUserImage || 'https://via.placeholder.com/40';
+    
+    // Determine tick status for list
+    let statusIcon = '';
+    if (chat.lastMessageSender === currentUserId) {
+        statusIcon = chat.lastMessageRead ? '✓✓' : '✓';
+    }
     
     return `
         <div id="chat-${chat.id}" class="conversation-item ${unread ? 'unread' : ''}">
@@ -1321,7 +1333,7 @@ function renderConversationItem(chat, currentUserId) {
                 </div>
                 <div class="conversation-preview">
                     <span class="preview-text">${lastMessage || 'No messages yet'}</span>
-                    ${chat.lastMessageSender === currentUserId ? '<span class="message-status">✓✓</span>' : ''}
+                    ${statusIcon ? `<span class="message-status ${chat.lastMessageRead ? 'read' : ''}">${statusIcon}</span>` : ''}
                 </div>
             </div>
         </div>
@@ -1345,6 +1357,23 @@ function formatMessageTime(date) {
 function openChat(chatId, otherUserId, chatData) {
     currentChatId = chatId;
     
+    // Get other user's info if not already in chatData
+    let otherUserName = 'Loading...';
+    if (chatData.businessName) {
+        otherUserName = chatData.businessName;
+    } else {
+        // Fetch user data
+        firebase.firestore().collection('users').doc(otherUserId).get().then(doc => {
+            if (doc.exists) {
+                const userData = doc.data();
+                otherUserName = userData.businessName || 'User';
+                // Update the header
+                const headerName = document.querySelector('.chat-header-name');
+                if (headerName) headerName.textContent = otherUserName;
+            }
+        });
+    }
+    
     const container = document.getElementById('tab-content');
     
     container.innerHTML = `
@@ -1352,7 +1381,7 @@ function openChat(chatId, otherUserId, chatData) {
             <div class="chat-header">
                 <button class="chat-back-btn" onclick="loadMessagesTab()">←</button>
                 <img src="https://via.placeholder.com/32" class="chat-header-image">
-                <span class="chat-header-name">${chatData.otherUserName || 'Loading...'}</span>
+                <span class="chat-header-name">${otherUserName}</span>
             </div>
             
             <div id="chat-messages" class="chat-messages">
