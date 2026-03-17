@@ -1692,24 +1692,37 @@ document.querySelectorAll('.tab-item').forEach(btn => {
     const isActive = !tabElement.classList.contains('hidden');
     
     if (isActive) {
-      // If already on this tab
-      if (tabId === 'home') {
-        // Single tap on Home tab refreshes
-        loadProviders(true);
-      } else if (tabId === 'search') {
-        // Single tap on Search tab refreshes map
-        loadAllUsers().then(() => updateMapAndList());
-      } else {
-        // For other tabs, just scroll to top
-        tabElement.scrollTop = 0;
-      }
-    } else {
-      // Switching to a different tab
-      switchTab(tabId);
-    }
-    
-    lastTapTime = now;
-    lastTapTab = tabId;
+  // If already on this tab
+  if (tabId === 'home') {
+    // Home tab - refresh providers
+    loadProviders(true);
+    document.getElementById('homeGrid').scrollTop = 0;
+  } else if (tabId === 'search') {
+    // Search tab - refresh map AND scroll list to top
+    loadAllUsers().then(() => updateMapAndList());
+    const drawerList = document.getElementById('providerListDrawer');
+    if (drawerList) drawerList.scrollTop = 0;
+  } else if (tabId === 'messages') {
+    // Messages tab - refresh conversations
+    loadConversations();
+    const conversationsList = document.getElementById('conversationsList');
+    if (conversationsList) conversationsList.scrollTop = 0;
+  } else if (tabId === 'profile') {
+    // Profile tab - refresh profile data
+    loadProfileData();
+    const profileTab = document.getElementById('profileTab');
+    if (profileTab) profileTab.scrollTop = 0;
+  } else {
+    // For other tabs (admin), just scroll to top
+    tabElement.scrollTop = 0;
+  }
+} else {
+  // Switching to a different tab
+  switchTab(tabId);
+}
+
+lastTapTime = now;
+lastTapTab = tabId;
   });
 });
 
