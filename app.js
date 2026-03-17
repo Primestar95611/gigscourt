@@ -547,49 +547,34 @@ function closeQuickView() {
   sheetOverlay.classList.remove('active');
 }
 
-// ==================== ULTIMATE PULL TEST ====================
+// ==================== PULL TO REFRESH ====================
 function initPullToRefresh() {
-  // Create a visible test element
-  const testDiv = document.createElement('div');
-  testDiv.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    background: #4287f5;
-    color: white;
-    text-align: center;
-    line-height: 50px;
-    z-index: 99999;
-    font-weight: bold;
-    display: none;
-  `;
-  testDiv.textContent = '✅ PULL DETECTED! ✅';
-  document.body.appendChild(testDiv);
+  const tabContent = document.querySelector('.tab-content');
   
-  // Track touches on the document
-  let touchStartY = 0;
-  let touchStartTime = 0;
-  
-  document.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
+  tabContent.addEventListener('touchstart', (e) => {
+    window.startY = e.touches[0].clientY;
   }, { passive: true });
   
-  document.addEventListener('touchmove', (e) => {
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY;
-    const timeDiff = Date.now() - touchStartTime;
+  tabContent.addEventListener('touchmove', (e) => {
+    const diff = e.touches[0].clientY - window.startY;
     
-    // If pulling down more than 30px in less than 300ms
-    if (diff > 30 && timeDiff < 300) {
+    if (diff > 40 && tabContent.scrollTop <= 5) {
       e.preventDefault();
-      testDiv.style.display = 'block';
-      setTimeout(() => {
-        testDiv.style.display = 'none';
-      }, 1000);
-      touchStartY = currentY;
+      
+      const activeTab = document.querySelector('.tab-pane:not(.hidden)').id;
+      
+      if (activeTab === 'homeTab') {
+        loadProviders(true);
+        alert('Home refreshed');
+      } else if (activeTab === 'messagesTab') {
+        loadConversations();
+        alert('Messages refreshed');
+      } else if (activeTab === 'profileTab') {
+        loadProfileData();
+        alert('Profile refreshed');
+      }
+      
+      window.startY = e.touches[0].clientY;
     }
   }, { passive: false });
 }
