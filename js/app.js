@@ -1,15 +1,18 @@
 // js/app.js
 import { initializeAuth } from './auth/auth.js';
 
-// Your Firebase config - REPLACE WITH YOUR ACTUAL CONFIG
+// Firebase configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD7dRYpXukVlyV6ipmCfbCXEJ4kp8t1Gmg",
+  authDomain: "gigscourt.firebaseapp.com",
+  projectId: "gigscourt",
+  storageBucket: "gigscourt.firebasestorage.app",
+  messagingSenderId: "1055157379736",
+  appId: "1:1055157379736:web:215763c63606c2c5a966ed",
+  measurementId: "G-BY1YBSYJHV"
 };
+
+export default firebaseConfig;
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
