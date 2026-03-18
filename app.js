@@ -1292,10 +1292,38 @@ function initializeLocationMap() {
             maxZoom: 19
         }).addTo(locationMap);
         
-        // Add draggable marker
+        // Create custom RED pin icon (draggable)
+        const redPinIcon = L.divIcon({
+            className: 'custom-pin',
+            html: '<div class="red-pin"></div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+        });
+        
+        // Add draggable RED pin
         locationMarker = L.marker([lat, lng], {
+            icon: redPinIcon,
             draggable: true
         }).addTo(locationMap);
+        
+        // Update address when pin is dragged
+        locationMarker.on('dragend', function(e) {
+            const position = e.target.getLatLng();
+            updateAddressFromCoords(position.lat, position.lng);
+        });
+        
+        // Update address when map is moved (pin stays centered)
+        locationMap.on('moveend', function() {
+            const center = locationMap.getCenter();
+            // Move the pin to the new center
+            locationMarker.setLatLng(center);
+            updateAddressFromCoords(center.lat, center.lng);
+        });
+        
+        // Get initial address
+        updateAddressFromCoords(lat, lng);
+    }
         
         // Update address when marker is dragged
         locationMarker.on('dragend', function(e) {
