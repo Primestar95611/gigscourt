@@ -1324,6 +1324,7 @@ function initializeLocationMap() {
         // Get initial address
         updateAddressFromCoords(lat, lng);
     }
+}
          
 async function updateAddressFromCoords(lat, lng) {
     const addressInput = document.getElementById('location-address');
