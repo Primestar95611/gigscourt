@@ -1196,8 +1196,203 @@ window.saveEditProfile = async function() {
 };
 
 window.openLocationPicker = function() {
-    alert('Location picker coming soon');
+    const container = document.getElementById('tab-content');
+    
+    container.innerHTML = `
+        <div class="location-picker-container">
+            <div class="location-picker-header">
+                <button class="back-btn" onclick="openEditProfile()">←</button>
+                <h1>Set Location</h1>
+                <button class="save-btn" onclick="saveLocation()">Done</button>
+            </div>
+            
+            <div id="location-map" class="location-map"></div>
+            
+            <div class="location-search">
+                <input type="text" id="location-search-input" class="location-search-input" placeholder="Search for a place...">
+            </div>
+            
+            <div class="location-details">
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="location-address" class="location-address" readonly placeholder="Drag the map to set location">
+                </div>
+                
+                <div class="form-group">
+                    <label>Description (optional)</label>
+                    <textarea id="location-description" rows="2" placeholder="e.g., Beside the blue church, after the mechanic village">${currentUserData?.locationDescription || ''}</textarea>
+                </div>
+            </div>
+            
+            <div class="location-pin">
+                <div class="pin"></div>
+            </div>
+        </div>
+    `;
+    
+    // Initialize map after container is visible
+    setTimeout(() => {
+        initializeLocationMap();
+    }, 300);
 };
+
+let locationMap = null;
+let locationMarker = null;
+let selectedLocation = null;
+
+function initializeLocationMap() {
+    const mapContainer = document.getElementById('location-map');
+    if (!mapContainer) return;
+    
+    // Get current user location or default
+    let initialLat = 6.5244; // Lagos default
+    let initialLng = 3.3792;
+    
+    if (currentUserData?.location) {
+        // Parse stored location (assuming it's stored as "lat,lng" string)
+        const parts = currentUserData.location.split(',');
+        if (parts.length === 2) {
+            initialLat = parseFloat(parts[0]);
+            initialLng = parseFloat(parts[1]);
+        }
+    }
+    
+    // Initialize map
+    locationMap = L.map('location-map', {
+        center: [initialLat, initialLng],
+        zoom: 15,
+        zoomControl: true,
+        attributionControl: false
+    });
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(locationMap);
+    
+    // Add draggable marker
+    locationMarker = L.marker([initialLat, initialLng], {
+        draggable: true
+    }).addTo(locationMap);
+    
+    // Update address when marker is dragged
+    locationMarker.on('dragend', function(e) {
+        const position = e.target.getLatLng();
+        updateAddressFromCoords(position.lat, position.lng);
+    });
+    
+    // Update address when map is moved (pin stays centered)
+    locationMap.on('moveend', function() {
+        const center = locationMap.getCenter();
+        updateAddressFromCoords(center.lat, center.lng);
+    });
+    
+    // Get initial address
+    updateAddressFromCoords(initialLat, initialLng);
+}
+
+async function updateAddressFromCoords(lat, lng) {
+    const addressInput = document.getElementById('location-address');
+    if (!addressInput) return;
+    
+    // Store selected location
+    selectedLocation = { lat, lng };
+    
+    // Show loading
+    addressInput.value = 'Getting address...';
+    
+    try {
+        // Use Nominatim for reverse geocoding
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            {
+                headers: {
+                    'User-Agent': 'GigsCourt/1.0'
+                }
+            }
+        );
+        
+        const data = await response.json();
+        
+        if (data.display_name) {
+            addressInput.value = data.display_name;
+        } else {
+            addressInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        addressInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+}
+
+window.saveLocation = function() {
+    if (!selectedLocation) {
+        alert('Please select a location');
+        return;
+    }
+    
+    const address = document.getElementById('location-address').value;
+    const description = document.getElementById('location-description').value;
+    
+    // Format location as string "lat,lng"
+    const locationString = `${selectedLocation.lat},${selectedLocation.lng}`;
+    
+    // Update Firestore
+    firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+        location: locationString,
+        locationDescription: description
+    }).then(() => {
+        alert('Location saved!');
+        // Refresh currentUserData
+        firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get().then(doc => {
+            currentUserData = doc.data();
+            openEditProfile();
+        });
+    }).catch(error => {
+        console.error('Error saving location:', error);
+        alert('Failed to save location');
+    });
+};
+
+// Add search functionality
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'location-search-input') {
+        searchLocation(e.target.value);
+    }
+});
+
+let searchTimeout;
+async function searchLocation(query) {
+    if (!query || query.length < 3) return;
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
+                {
+                    headers: {
+                        'User-Agent': 'GigsCourt/1.0'
+                    }
+                }
+            );
+            
+            const results = await response.json();
+            
+            if (results.length > 0) {
+                const first = results[0];
+                const lat = parseFloat(first.lat);
+                const lng = parseFloat(first.lon);
+                
+                // Move map to searched location
+                locationMap.setView([lat, lng], 15);
+                locationMarker.setLatLng([lat, lng]);
+                updateAddressFromCoords(lat, lng);
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }, 500);
+}
 
 window.removeService = function(service) {
     const services = currentUserData?.services || [];
