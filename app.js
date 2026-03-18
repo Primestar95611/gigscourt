@@ -827,9 +827,8 @@ async function getSavedCount(userId) {
         const snapshot = await firebase.firestore()
             .collection('saves')
             .where('saverId', '==', userId)
-            .count()
             .get();
-        return snapshot.data().count;
+        return snapshot.size; // Use .size instead of .count()
     } catch (error) {
         console.error('Error getting saved count:', error);
         return 0;
@@ -841,9 +840,8 @@ async function getSavesCount(userId) {
         const snapshot = await firebase.firestore()
             .collection('saves')
             .where('savedUserId', '==', userId)
-            .count()
             .get();
-        return snapshot.data().count;
+        return snapshot.size; // Use .size instead of .count()
     } catch (error) {
         console.error('Error getting saves count:', error);
         return 0;
