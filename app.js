@@ -1249,9 +1249,9 @@ function initializeLocationMap() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 // Use current location
-                const initialLat = position.coords.latitude;
-                const initialLng = position.coords.longitude;
-                setupMap(initialLat, initialLng);
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                setupMap(lat, lng);
             },
             (error) => {
                 console.log('Geolocation error:', error);
@@ -1266,17 +1266,17 @@ function initializeLocationMap() {
     }
     
     function useFallbackLocation() {
-        let initialLat = 6.5244; // Lagos default
-        let initialLng = 3.3792;
+        let lat = 6.5244; // Lagos default
+        let lng = 3.3792;
         
         if (currentUserData?.location) {
             const parts = currentUserData.location.split(',');
             if (parts.length === 2) {
-                initialLat = parseFloat(parts[0]);
-                initialLng = parseFloat(parts[1]);
+                lat = parseFloat(parts[0]);
+                lng = parseFloat(parts[1]);
             }
         }
-        setupMap(initialLat, initialLng);
+        setupMap(lat, lng);
     }
     
     function setupMap(lat, lng) {
@@ -1292,32 +1292,13 @@ function initializeLocationMap() {
             maxZoom: 19
         }).addTo(locationMap);
         
-        // Create custom RED pin icon (draggable)
-        const redPinIcon = L.divIcon({
-            className: 'custom-pin',
-            html: '<div class="red-pin"></div>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30]
-        });
+        // Store selected location
+        selectedLocation = { lat, lng };
         
-        // Add draggable RED pin
-        locationMarker = L.marker([lat, lng], {
-            icon: redPinIcon,
-            draggable: true
-        }).addTo(locationMap);
-        
-        // Update address when pin is dragged
-        locationMarker.on('dragend', function(e) {
-            const position = e.target.getLatLng();
-            updateAddressFromCoords(position.lat, position.lng);
-        });
-        
-        // Update address when map is moved (pin stays centered)
+        // Update address when map moves (pin stays centered)
         locationMap.on('moveend', function() {
             const center = locationMap.getCenter();
-            // Move the pin to the new center
-            locationMarker.setLatLng(center);
+            selectedLocation = { lat: center.lat, lng: center.lng };
             updateAddressFromCoords(center.lat, center.lng);
         });
         
