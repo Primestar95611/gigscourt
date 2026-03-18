@@ -1324,24 +1324,7 @@ function initializeLocationMap() {
         // Get initial address
         updateAddressFromCoords(lat, lng);
     }
-        
-        // Update address when marker is dragged
-        locationMarker.on('dragend', function(e) {
-            const position = e.target.getLatLng();
-            updateAddressFromCoords(position.lat, position.lng);
-        });
-        
-        // Update address when map is moved (pin stays centered)
-        locationMap.on('moveend', function() {
-            const center = locationMap.getCenter();
-            updateAddressFromCoords(center.lat, center.lng);
-        });
-        
-        // Get initial address
-        updateAddressFromCoords(lat, lng);
-    }
-}
-    
+         
 async function updateAddressFromCoords(lat, lng) {
     const addressInput = document.getElementById('location-address');
     if (!addressInput) return;
