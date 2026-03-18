@@ -18,8 +18,7 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 // Initialize ImageKit for client-side upload
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
-    urlEndpoint: "https://ik.imagekit.io/GigsCourt",
-    authenticationEndpoint: "https://your-project.vercel.app/api/imagekit-auth"
+    urlEndpoint: "https://ik.imagekit.io/GigsCourt"
 });
 
 // Global state
@@ -879,10 +878,19 @@ async function uploadProfileImage(event) {
             const base64 = reader.result.split(',')[1];
             
             // Upload to ImageKit
+            // Get authentication parameters from your backend
+            const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
+            const authData = await authResponse.json();
+            
+            // Upload to ImageKit with security parameters
             imagekit.upload({
                 file: base64,
                 fileName: `profile_${Date.now()}.jpg`,
-                folder: '/profiles'
+                folder: '/profiles',
+                signature: authData.signature,
+                token: authData.token,
+                expire: authData.expire,
+                useUniqueFileName: true
             }, function(err, result) {
                 if (err) {
                     console.error('ImageKit error:', err);
@@ -933,6 +941,10 @@ async function uploadPortfolioImages(event) {
     try {
         const uploadedUrls = [];
         
+        // Get authentication parameters once for all uploads
+        const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
+        const authData = await authResponse.json();
+        
         for (const file of files) {
             // Compress image
             const compressedFile = await compressImage(file);
@@ -940,12 +952,16 @@ async function uploadPortfolioImages(event) {
             // Read as base64
             const base64 = await readFileAsBase64(compressedFile);
             
-            // Upload to ImageKit - use Promise wrapper to handle callback
+            // Upload to ImageKit with security parameters
             await new Promise((resolve, reject) => {
                 imagekit.upload({
                     file: base64,
                     fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
-                    folder: '/portfolios'
+                    folder: '/portfolios',
+                    signature: authData.signature,
+                    token: authData.token,
+                    expire: authData.expire,
+                    useUniqueFileName: true
                 }, function(err, result) {
                     if (err) {
                         reject(err);
