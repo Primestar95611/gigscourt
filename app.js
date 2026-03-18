@@ -1402,7 +1402,6 @@ async function searchLocation(query) {
                 
                 // Move map to searched location
                 locationMap.setView([lat, lng], 15);
-                locationMarker.setLatLng([lat, lng]);
                 updateAddressFromCoords(lat, lng);
             }
         } catch (error) {
