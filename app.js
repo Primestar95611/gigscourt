@@ -15,15 +15,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-// Initialize ImageKit
+// Initialize ImageKit for client-side upload
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
-    urlEndpoint: "https://ik.imagekit.io/GigsCourt",
-    authenticationEndpoint: null // We'll use client-side upload for now
+    urlEndpoint: "https://ik.imagekit.io/GigsCourt"
 });
 
 // Global state
 let currentUser = null;
+let currentUserData = null;
 let providers = [];
 let lastDoc = null;
 let loading = false;
@@ -276,7 +276,7 @@ function renderProviders() {
         
         card.innerHTML = `
             <div class="provider-image">
-                <img src="${provider.profileImage || 'https://via.placeholder.com/150'}" alt="${provider.businessName}">
+                <img src="${provider.profileImage ? provider.profileImage + '?tr=w-150,h-150' : 'https://via.placeholder.com/150'}" alt="${provider.businessName}">
             </div>
             <div class="provider-info">
                 <h3 class="provider-name">${provider.businessName}</h3>
@@ -406,7 +406,7 @@ function openQuickView(provider) {
         <div class="sheet-handle"></div>
         <div class="sheet-content">
             <div class="quick-view-header">
-                <img src="${provider.profileImage || 'https://via.placeholder.com/100'}" class="quick-view-image">
+                <img src="${provider.profileImage ? provider.profileImage + '?tr=w-100,h-100' : 'https://via.placeholder.com/100'}" class="quick-view-image">
                 <div class="quick-view-info">
                     <h2>${provider.businessName}</h2>
                     <div class="quick-view-rating">⭐ ${provider.rating || '0.0'} (${provider.reviewCount || 0} reviews)</div>
@@ -424,7 +424,7 @@ function openQuickView(provider) {
             
             <div class="quick-view-portfolio">
                 ${(provider.portfolioImages || []).slice(0, 3).map(img => 
-                    `<div class="portfolio-thumb"><img src="${img}"></div>`
+                    `<div class="portfolio-thumb"><img src="${img}?tr=w-100,h-100"></div>`
                 ).join('')}
             </div>
             
@@ -527,8 +527,12 @@ window.markAllRead = function() {
     });
 };
 
-// Placeholders for other functions
-window.viewProfile = (id) => alert('Profile view coming soon');
+// ========== MESSAGE FUNCTIONS ==========
+window.viewProfile = (id) => {
+    switchTab('profile');
+    loadProfileTab(id);
+};
+
 window.messageUser = (id) => {
     // Switch to messages tab and open chat with this user
     switchTab('messages');
@@ -564,19 +568,19 @@ async function createNewChat(otherUserId) {
         } else {
             // Create new chat
             // Get other user's info first
-const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
-const otherUserData = otherUserDoc.data();
+            const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
+            const otherUserData = otherUserDoc.data();
 
-const newChatRef = await firebase.firestore().collection('chats').add({
-    participants: [currentUserId, otherUserId],
-    otherUserName: otherUserData.businessName || 'User',
-    otherUserImage: otherUserData.profileImage || 'https://via.placeholder.com/40',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    lastMessage: '',
-    lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    lastMessageSender: '',
-    lastMessageRead: true
-});  
+            const newChatRef = await firebase.firestore().collection('chats').add({
+                participants: [currentUserId, otherUserId],
+                otherUserName: otherUserData.businessName || 'User',
+                otherUserImage: otherUserData.profileImage || 'https://via.placeholder.com/40',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: '',
+                lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessageSender: '',
+                lastMessageRead: true
+            });  
             
             // Open the new chat
             openChat(newChatRef.id, otherUserId, {
@@ -633,42 +637,42 @@ function loadMainApp() {
             <div id="tab-content" class="tab-content"></div>
             
             <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('home')">
-        <span class="tab-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
-            </svg>
-        </span>
-        <span class="tab-label">Home</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('search')">
-        <span class="tab-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </span>
-        <span class="tab-label">Search</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('messages')">
-        <span class="tab-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </span>
-        <span class="tab-label">Messages</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('profile')">
-        <span class="tab-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
-                <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </span>
-        <span class="tab-label">Profile</span>
-    </button>
-</div>
+                <button class="tab-btn active" onclick="switchTab('home')">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Home</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('search')">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                            <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Search</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('messages')">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Messages</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('profile')">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                            <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Profile</span>
+                </button>
+            </div>
         </div>
     `;
     
@@ -724,7 +728,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
         <!-- Profile Picture + Business Name + Stats Row (Instagram style) -->
         <div class="profile-stats-row">
             <div class="profile-picture">
-            <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+                <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
             </div>
             
@@ -751,69 +755,69 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                 </div>
             </div>
         </div>
-                
-            <!-- Bio -->
-            <div class="profile-bio">
-                ${profile.bio || 'No bio yet.'}
+        
+        <!-- Bio -->
+        <div class="profile-bio">
+            ${profile.bio || 'No bio yet.'}
+        </div>
+        
+        <!-- Contact Info (only show if exists) -->
+        ${profile.phoneNumber ? `
+            <div class="profile-contact">
+                <span class="contact-icon">📞</span>
+                <span class="contact-text">${profile.phoneNumber}</span>
             </div>
-            
-            <!-- Contact Info (only show if exists) -->
-            ${profile.phoneNumber ? `
-                <div class="profile-contact">
-                    <span class="contact-icon">📞</span>
-                    <span class="contact-text">${profile.phoneNumber}</span>
-                </div>
-            ` : ''}
-            
-            ${profile.location ? `
-                <div class="profile-contact">
-                    <span class="contact-icon">📍</span>
-                    <span class="contact-text">${profile.location}</span>
-                </div>
-            ` : ''}
-            
-            <!-- Services Section -->
-            <div class="profile-section">
-                <h3 class="section-title">Services</h3>
-                <div class="services-horizontal">
-                    ${(profile.services || []).map(service => 
-                        `<span class="service-pill-static">${service}</span>`
-                    ).join('')}
-                    ${(profile.pendingServices || []).map(service => 
-                        `<span class="service-pill-static pending">${service} (pending)</span>`
-                    ).join('')}
-                </div>
+        ` : ''}
+        
+        ${profile.location ? `
+            <div class="profile-contact">
+                <span class="contact-icon">📍</span>
+                <span class="contact-text">${profile.location}</span>
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="profile-actions">
-                ${isOwnProfile ? `
-                    <button class="btn" onclick="openEditProfile()">Edit Profile</button>
-                    <button class="btn btn-outline" onclick="shareProfile()">Share</button>
-                ` : `
-                    <button class="btn" onclick="startChat('${profile.id}')">Message</button>
-                    <button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button>
-                    <button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>
-                `}
-            </div>
-            
-            <!-- Portfolio Section -->
-            <div class="profile-section">
-                <div class="section-header">
-                    <h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>
-                    ${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}
-                </div>
-                <div class="portfolio-grid">
-                    ${(profile.portfolioImages || []).map((img, index) => `
-                        <div class="portfolio-item" onclick="openPhotoSwipe(${index})">
-                            <img src="${img}?tr=w-150,h-150" loading="lazy">
-                            ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
-                        </div>
-                    `).join('')}
-                    ${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}
-                </div>
+        ` : ''}
+        
+        <!-- Services Section -->
+        <div class="profile-section">
+            <h3 class="section-title">Services</h3>
+            <div class="services-horizontal">
+                ${(profile.services || []).map(service => 
+                    `<span class="service-pill-static">${service}</span>`
+                ).join('')}
+                ${(profile.pendingServices || []).map(service => 
+                    `<span class="service-pill-static pending">${service} (pending)</span>`
+                ).join('')}
             </div>
         </div>
+        
+        <!-- Action Buttons -->
+        <div class="profile-actions">
+            ${isOwnProfile ? `
+                <button class="btn" onclick="openEditProfile()">Edit Profile</button>
+                <button class="btn btn-outline" onclick="shareProfile()">Share</button>
+            ` : `
+                <button class="btn" onclick="startChat('${profile.id}')">Message</button>
+                <button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button>
+                <button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>
+            `}
+        </div>
+        
+        <!-- Portfolio Section -->
+        <div class="profile-section">
+            <div class="section-header">
+                <h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>
+                ${isOwnProfile ? '<button class="btn-small" onclick="addPortfolioImages()">+ Add</button>' : ''}
+            </div>
+            <div class="portfolio-grid">
+                ${(profile.portfolioImages || []).map((img, index) => `
+                    <div class="portfolio-item" onclick="openPhotoSwipe(${index})">
+                        <img src="${img}?tr=w-150,h-150" loading="lazy">
+                        ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
+                    </div>
+                `).join('')}
+                ${!profile.portfolioImages?.length ? '<p class="empty-portfolio">No portfolio images yet</p>' : ''}
+            </div>
+        </div>
+    </div>
     `;
 }
 
@@ -846,7 +850,7 @@ async function getSavesCount(userId) {
     }
 }
 
-// Placeholder functions (to be implemented)
+// ========== IMAGE UPLOAD FUNCTIONS ==========
 window.openImageUpload = function() {
     // Create file input
     const input = document.createElement('input');
@@ -855,8 +859,221 @@ window.openImageUpload = function() {
     input.onchange = uploadProfileImage;
     input.click();
 };
-window.openSavedModal = () => alert('Saved profiles modal coming soon');
-window.openSavesModal = () => alert('Saves modal coming soon');
+
+async function uploadProfileImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Show loading
+    alert('Uploading image...');
+    
+    try {
+        // Compress image
+        const compressedFile = await compressImage(file);
+        
+        // Read as base64
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onload = async () => {
+            const base64 = reader.result.split(',')[1];
+            
+            // Upload to ImageKit
+            imagekit.upload({
+                file: base64,
+                fileName: `profile_${Date.now()}.jpg`,
+                folder: '/profiles'
+            }, function(err, result) {
+                if (err) {
+                    console.error('ImageKit error:', err);
+                    alert('Upload failed: ' + err.message);
+                    return;
+                }
+                
+                // Update user profile with new image URL
+                firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+                    profileImage: result.url
+                }).then(() => {
+                    alert('Profile picture updated!');
+                    
+                    // Refresh current view
+                    if (document.querySelector('.profile-container')) {
+                        loadProfileTab();
+                    } else if (document.querySelector('.edit-profile-container')) {
+                        window.openEditProfile();
+                    }
+                }).catch(error => {
+                    console.error('Firestore error:', error);
+                    alert('Failed to save image URL');
+                });
+            });
+        };
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload image: ' + error.message);
+    }
+}
+
+window.addPortfolioImages = function() {
+    // Create file input that accepts multiple files
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = uploadPortfolioImages;
+    input.click();
+};
+
+async function uploadPortfolioImages(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    alert(`Uploading ${files.length} images...`);
+    
+    try {
+        const uploadedUrls = [];
+        
+        for (const file of files) {
+            // Compress image
+            const compressedFile = await compressImage(file);
+            
+            // Read as base64
+            const base64 = await readFileAsBase64(compressedFile);
+            
+            // Upload to ImageKit - use Promise wrapper to handle callback
+            await new Promise((resolve, reject) => {
+                imagekit.upload({
+                    file: base64,
+                    fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
+                    folder: '/portfolios'
+                }, function(err, result) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    uploadedUrls.push(result.url);
+                    resolve();
+                });
+            });
+        }
+        
+        // After all uploads complete, update Firestore
+        await updateFirestoreWithPortfolio(uploadedUrls);
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload images: ' + error.message);
+    }
+}
+
+async function updateFirestoreWithPortfolio(uploadedUrls) {
+    try {
+        // Get current user data
+        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+        const userData = userDoc.data();
+        const existingImages = userData.portfolioImages || [];
+        
+        // Update with new images
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+            portfolioImages: [...existingImages, ...uploadedUrls]
+        });
+        
+        alert(`${uploadedUrls.length} images uploaded successfully!`);
+        
+        // Refresh profile
+        loadProfileTab();
+    } catch (error) {
+        console.error('Firestore error:', error);
+        alert('Failed to save image URLs');
+    }
+}
+
+// Helper function to compress images
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Max dimensions
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, file.type, 0.8); // 80% quality
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+}
+
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+    });
+}
+
+window.deleteImage = async (event, imageUrl) => {
+    event.stopPropagation();
+    
+    if (!confirm('Delete this image?')) return;
+    
+    try {
+        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+        const userData = userDoc.data();
+        
+        // Filter out the deleted image
+        const updatedImages = (userData.portfolioImages || []).filter(url => url !== imageUrl);
+        
+        // Update Firestore
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+            portfolioImages: updatedImages
+        });
+        
+        alert('Image deleted');
+        
+        // Refresh profile
+        loadProfileTab();
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete image');
+    }
+};
+
+// ========== EDIT PROFILE FUNCTIONS ==========
 window.openEditProfile = function() {
     const container = document.getElementById('tab-content');
     
@@ -872,8 +1089,8 @@ window.openEditProfile = function() {
                 <!-- Profile Picture -->
                 <div class="edit-picture-section">
                     <div class="edit-picture">
-                        <img src="${currentUserData?.profileImage || 'https://via.placeholder.com/80'}" alt="Profile">
-                        <div class="change-picture-btn" onclick="changeProfilePicture()">Change</div>
+                        <img src="${currentUserData?.profileImage ? currentUserData.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="Profile">
+                        <div class="change-picture-btn" onclick="openImageUpload()">Change</div>
                     </div>
                 </div>
                 
@@ -962,12 +1179,8 @@ window.saveEditProfile = async function() {
     }
 };
 
-window.changeProfilePicture = function() {
-    alert('Profile picture upload coming soon');
-};
-
 window.openLocationPicker = function() {
-    alert('Location picker coming soon (Phase 4)');
+    alert('Location picker coming soon');
 };
 
 window.removeService = function(service) {
@@ -1011,218 +1224,13 @@ window.addService = function() {
         }
     }
 };
+
 window.shareProfile = (id) => alert('Share coming soon');
 window.startChat = (id) => alert('Chat coming soon');
 window.toggleSaveProfile = (id) => alert('Save feature coming soon');
-window.addPortfolioImages = function() {
-    // Create file input that accepts multiple files
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.onchange = uploadPortfolioImages;
-    input.click();
-};
-
-async function uploadProfileImage(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Show loading
-    alert('Uploading image...');
-    
-    try {
-        // Compress image
-        const compressedFile = await compressImage(file);
-        
-        // Read as base64
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
-        reader.onload = async () => {
-            const base64 = reader.result.split(',')[1];
-            
-            // Upload to ImageKit
-imagekit.upload({
-    file: base64,
-    fileName: `profile_${Date.now()}.jpg`,
-    folder: '/profiles'
-}, function(err, result) {
-    if (err) {
-        console.error('ImageKit error:', err);
-        alert('Upload failed: ' + err.message);
-        return;
-    }
-    
-    // Update user profile with new image URL
-    firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
-        profileImage: result.url
-    }).then(() => {
-        alert('Profile picture updated!');
-        
-        // Refresh current view
-        if (document.querySelector('.profile-container')) {
-            loadProfileTab();
-        } else if (document.querySelector('.edit-profile-container')) {
-            window.openEditProfile();
-        }
-    }).catch(error => {
-        console.error('Firestore error:', error);
-        alert('Failed to save image URL');
-    });
-});
-            
-            alert('Profile picture updated!');
-            
-            // Refresh current view
-            if (document.querySelector('.profile-container')) {
-                loadProfileTab();
-            } else if (document.querySelector('.edit-profile-container')) {
-                window.openEditProfile();
-            }
-        };
-    } catch (error) {
-        console.error('Upload error:', error);
-        alert('Failed to upload image: ' + error.message);
-    }
-}
-
-async function uploadPortfolioImages(event) {
-    const files = Array.from(event.target.files);
-    if (files.length === 0) return;
-    
-    alert(`Uploading ${files.length} images...`);
-    
-    try {
-        const uploadedUrls = [];
-        
-        for (const file of files) {
-            // Compress image
-            const compressedFile = await compressImage(file);
-            
-            // Read as base64
-            const base64 = await readFileAsBase64(compressedFile);
-            
-            // Upload to ImageKit
-            const result = await imagekit.upload({
-                file: base64,
-                fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
-                folder: '/portfolios'
-            });
-            
-            uploadedUrls.push(result.url);
-        }
-        
-        // Get current user data
-        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
-        const userData = userDoc.data();
-        const existingImages = userData.portfolioImages || [];
-        
-        // Update with new images
-        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
-            portfolioImages: [...existingImages, ...uploadedUrls]
-        });
-        
-        alert(`${uploadedUrls.length} images uploaded successfully!`);
-        
-        // Refresh profile
-        loadProfileTab();
-    } catch (error) {
-        console.error('Upload error:', error);
-        alert('Failed to upload images: ' + error.message);
-    }
-}
-
-// Helper function to compress images
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (e) => {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Max dimensions
-                const MAX_WIDTH = 1600;
-                const MAX_HEIGHT = 1600;
-                
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                canvas.toBlob((blob) => {
-                    resolve(blob);
-                }, file.type, 0.8); // 80% quality
-            };
-            img.onerror = reject;
-        };
-        reader.onerror = reject;
-    });
-}
-
-function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
-        };
-        reader.onerror = reject;
-    });
-}
-
-window.deleteImage = async (event, imageUrl) => {
-    event.stopPropagation();
-    
-    if (!confirm('Delete this image?')) return;
-    
-    try {
-        const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
-        const userData = userDoc.data();
-        
-        // Filter out the deleted image
-        const updatedImages = (userData.portfolioImages || []).filter(url => url !== imageUrl);
-        
-        // Update Firestore
-        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
-            portfolioImages: updatedImages
-        });
-        
-        alert('Image deleted');
-        
-        // Refresh profile
-        loadProfileTab();
-    } catch (error) {
-        console.error('Delete error:', error);
-        alert('Failed to delete image');
-    }
-};
 window.openPhotoSwipe = (index) => alert('Photo gallery coming soon');
-window.deleteImage = (event, url) => {
-    event.stopPropagation();
-    if (confirm('Delete this image?')) {
-        alert('Delete coming soon');
-    }
-};
+window.openSavedModal = () => alert('Saved profiles modal coming soon');
+window.openSavesModal = () => alert('Saves modal coming soon');
 
 // Setup functions
 function setupOwnProfileListeners(profile) {
@@ -1494,7 +1502,7 @@ function renderProviderList() {
     
     listContainer.innerHTML = searchProviders.map(provider => `
         <div class="provider-list-item" onclick="openQuickViewFromSearch('${provider.id}')">
-            <img src="${provider.profileImage || 'https://via.placeholder.com/40'}" class="list-item-image">
+            <img src="${provider.profileImage ? provider.profileImage + '?tr=w-40,h-40' : 'https://via.placeholder.com/40'}" class="list-item-image">
             <div class="list-item-info">
                 <div class="list-item-name">${provider.businessName}</div>
                 <div class="list-item-details">
@@ -1618,12 +1626,6 @@ window.openQuickViewFromSearch = function(providerId) {
 function onMapMoved() {
     // Used for location picker later
 }
-
-// Add to placeholders
-window.viewProfile = (id) => {
-    switchTab('profile');
-    loadProfileTab(id);
-};
 
 // ========== MESSAGES TAB ==========
 let conversationsListener = null;
@@ -1954,16 +1956,14 @@ window.switchTab = (tab) => {
             loadHomeTab();
             break;
         case 'search':
-    loadSearchTab();
-    break;
+            loadSearchTab();
+            break;
         case 'messages':
-    loadMessagesTab();
-    break;
+            loadMessagesTab();
+            break;
         case 'profile':
             loadProfileTab();
             break;
-
-            
     }
 };
 
@@ -2188,4 +2188,19 @@ window.resendVerification = function() {
     firebase.auth().currentUser?.sendEmailVerification()
         .then(() => alert('Verification email sent!'))
         .catch(error => alert('Error: ' + error.message));
+};
+
+// Logout function
+window.logout = function() {
+    firebase.auth().signOut();
+};
+
+// Delete account function
+window.deleteAccount = function() {
+    if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+        const user = firebase.auth().currentUser;
+        user.delete().catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
 };
