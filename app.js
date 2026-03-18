@@ -1244,18 +1244,75 @@ function initializeLocationMap() {
     const mapContainer = document.getElementById('location-map');
     if (!mapContainer) return;
     
-    // Get current user location or default
-    let initialLat = 6.5244; // Lagos default
-    let initialLng = 3.3792;
-    
-    if (currentUserData?.location) {
-        // Parse stored location (assuming it's stored as "lat,lng" string)
-        const parts = currentUserData.location.split(',');
-        if (parts.length === 2) {
-            initialLat = parseFloat(parts[0]);
-            initialLng = parseFloat(parts[1]);
-        }
+    // Try to get user's current location first
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // Use current location
+                const initialLat = position.coords.latitude;
+                const initialLng = position.coords.longitude;
+                setupMap(initialLat, initialLng);
+            },
+            (error) => {
+                console.log('Geolocation error:', error);
+                // Fallback to stored location or Lagos default
+                useFallbackLocation();
+            },
+            { timeout: 5000 }
+        );
+    } else {
+        // Geolocation not supported, use fallback
+        useFallbackLocation();
     }
+    
+    function useFallbackLocation() {
+        let initialLat = 6.5244; // Lagos default
+        let initialLng = 3.3792;
+        
+        if (currentUserData?.location) {
+            const parts = currentUserData.location.split(',');
+            if (parts.length === 2) {
+                initialLat = parseFloat(parts[0]);
+                initialLng = parseFloat(parts[1]);
+            }
+        }
+        setupMap(initialLat, initialLng);
+    }
+    
+    function setupMap(lat, lng) {
+        // Initialize map
+        locationMap = L.map('location-map', {
+            center: [lat, lng],
+            zoom: 15,
+            zoomControl: true,
+            attributionControl: false
+        });
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(locationMap);
+        
+        // Add draggable marker
+        locationMarker = L.marker([lat, lng], {
+            draggable: true
+        }).addTo(locationMap);
+        
+        // Update address when marker is dragged
+        locationMarker.on('dragend', function(e) {
+            const position = e.target.getLatLng();
+            updateAddressFromCoords(position.lat, position.lng);
+        });
+        
+        // Update address when map is moved (pin stays centered)
+        locationMap.on('moveend', function() {
+            const center = locationMap.getCenter();
+            updateAddressFromCoords(center.lat, center.lng);
+        });
+        
+        // Get initial address
+        updateAddressFromCoords(lat, lng);
+    }
+}
     
     // Initialize map
     locationMap = L.map('location-map', {
