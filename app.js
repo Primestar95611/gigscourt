@@ -1314,39 +1314,6 @@ function initializeLocationMap() {
     }
 }
     
-    // Initialize map
-    locationMap = L.map('location-map', {
-        center: [initialLat, initialLng],
-        zoom: 15,
-        zoomControl: true,
-        attributionControl: false
-    });
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        maxZoom: 19
-    }).addTo(locationMap);
-    
-    // Add draggable marker
-    locationMarker = L.marker([initialLat, initialLng], {
-        draggable: true
-    }).addTo(locationMap);
-    
-    // Update address when marker is dragged
-    locationMarker.on('dragend', function(e) {
-        const position = e.target.getLatLng();
-        updateAddressFromCoords(position.lat, position.lng);
-    });
-    
-    // Update address when map is moved (pin stays centered)
-    locationMap.on('moveend', function() {
-        const center = locationMap.getCenter();
-        updateAddressFromCoords(center.lat, center.lng);
-    });
-    
-    // Get initial address
-    updateAddressFromCoords(initialLat, initialLng);
-}
-
 async function updateAddressFromCoords(lat, lng) {
     const addressInput = document.getElementById('location-address');
     if (!addressInput) return;
