@@ -1584,7 +1584,7 @@ window.openPhotoSwipe = function(index) {
         }
     };
     
-    const gallery = new PhotoSwipe(pswpElement, PhotoSwipeLightbox, images, options);
+    const gallery = new PhotoSwipe(pswpElement, PhotoSwipe, images, options);
     gallery.init();
     
     // Remove pswp element when gallery closes
