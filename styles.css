@@ -1925,3 +1925,36 @@ body {
     padding: 2px 5px;
     border-radius: 3px;
 }
+
+/* Custom Red Pin for Location Picker */
+.custom-pin {
+    background: transparent;
+    border: none;
+}
+
+.red-pin {
+    width: 30px;
+    height: 30px;
+    background: #FF0000;
+    border: 3px solid white;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    animation: bounce 0.5s;
+}
+
+.red-pin::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 7px;
+    left: 7px;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: rotate(-45deg) translateY(0); }
+    50% { transform: rotate(-45deg) translateY(-10px); }
+}
