@@ -941,11 +941,38 @@ async function uploadPortfolioImages(event) {
     try {
         const uploadedUrls = [];
         
-        // Get authentication parameters once for all uploads
-        const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
-        const authData = await authResponse.json();
-        
         for (const file of files) {
+            // Get fresh authentication parameters for EACH image
+            const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
+            const authData = await authResponse.json();
+            
+            // Compress image
+            const compressedFile = await compressImage(file);
+            
+            // Read as base64
+            const base64 = await readFileAsBase64(compressedFile);
+            
+            // Upload to ImageKit with security parameters
+            await new Promise((resolve, reject) => {
+                imagekit.upload({
+                    file: base64,
+                    fileName: `portfolio_${Date.now()}_${Math.random()}.jpg`,
+                    folder: '/portfolios',
+                    signature: authData.signature,
+                    token: authData.token,
+                    expire: authData.expire,
+                    useUniqueFileName: true
+                }, function(err, result) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    uploadedUrls.push(result.url);
+                    resolve();
+                });
+            });
+        }
             // Compress image
             const compressedFile = await compressImage(file);
             
