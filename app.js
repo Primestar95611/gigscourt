@@ -1042,16 +1042,34 @@ async function uploadProfileImage(event) {
             const base64 = reader.result.split(',')[1];
             
             // Upload to ImageKit
-            const result = await imagekit.upload({
-                file: base64,
-                fileName: `profile_${Date.now()}.jpg`,
-                folder: '/profiles'
-            });
-            
-            // Update user profile with new image URL
-            await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
-                profileImage: result.url
-            });
+imagekit.upload({
+    file: base64,
+    fileName: `profile_${Date.now()}.jpg`,
+    folder: '/profiles'
+}, function(err, result) {
+    if (err) {
+        console.error('ImageKit error:', err);
+        alert('Upload failed: ' + err.message);
+        return;
+    }
+    
+    // Update user profile with new image URL
+    firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+        profileImage: result.url
+    }).then(() => {
+        alert('Profile picture updated!');
+        
+        // Refresh current view
+        if (document.querySelector('.profile-container')) {
+            loadProfileTab();
+        } else if (document.querySelector('.edit-profile-container')) {
+            window.openEditProfile();
+        }
+    }).catch(error => {
+        console.error('Firestore error:', error);
+        alert('Failed to save image URL');
+    });
+});
             
             alert('Profile picture updated!');
             
