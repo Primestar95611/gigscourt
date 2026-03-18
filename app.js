@@ -1554,10 +1554,10 @@ window.openPhotoSwipe = function(index) {
     pswpElement.className = 'pswp';
     document.body.appendChild(pswpElement);
     
-    const gallery = new PhotoSwipe({
+    const gallery = new photoswipe({
         dataSource: images,
         index: index,
-        pswpModule: PhotoSwipe,
+        pswpModule: photoswipe,
         bgOpacity: 0.95,
         showHideAnimationType: 'fade',
         loop: true,
