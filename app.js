@@ -223,14 +223,6 @@ function loadHomeTab() {
             </div>
         </div>
     `;
-
-    // Check for pending gigs after chat loads
-setTimeout(() => {
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        checkPendingGigs(otherUserId, chatMessages);
-    }
-}, 500);
     
     // Load initial providers
     loadProviders();
