@@ -683,43 +683,61 @@ window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
 window.getDirectionsToProvider = async function(providerId) {
-    // Get provider's location from Firestore
-    const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
-    const provider = providerDoc.data();
+    alert('Step 1: Function started');
     
-    if (!provider.locationGeo) {
-        alert('This provider has not set their location');
-        return;
-    }
-    
-    // Store the target provider for directions
-    window.directionsTarget = {
-        id: providerId,
-        location: {
-            lat: provider.locationGeo.latitude,
-            lng: provider.locationGeo.longitude
-        },
-        name: provider.businessName
-    };
-    
-    // Switch to search tab
-    switchTab('search');
-    
-    // Wait for search tab to fully load
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const checkMapReady = setInterval(() => {
-        attempts++;
+    try {
+        alert('Step 2: Fetching provider data');
+        // Get provider's location from Firestore
+        const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+        const provider = providerDoc.data();
         
-        if (map && userLocation) {
-            clearInterval(checkMapReady);
-            showDirectionsToTarget();
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkMapReady);
-            alert('Map not ready. Please try again.');
+        alert('Step 3: Provider data received');
+        
+        if (!provider.locationGeo) {
+            alert('Step 3a: No locationGeo found');
+            return;
         }
-    }, 500);
+        
+        alert('Step 4: LocationGeo exists: ' + JSON.stringify(provider.locationGeo));
+        
+        // Store the target provider for directions
+        window.directionsTarget = {
+            id: providerId,
+            location: {
+                lat: provider.locationGeo.latitude,
+                lng: provider.locationGeo.longitude
+            },
+            name: provider.businessName
+        };
+        
+        alert('Step 5: Switching to search tab');
+        
+        // Switch to search tab
+        switchTab('search');
+        
+        alert('Step 6: Waiting for map...');
+        
+        // Wait for search tab to fully load
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        const checkMapReady = setInterval(() => {
+            attempts++;
+            alert('Attempt ' + attempts + ': map=' + (!!map) + ' userLocation=' + (!!userLocation));
+            
+            if (map && userLocation) {
+                alert('Step 7: Map ready! Showing directions');
+                clearInterval(checkMapReady);
+                showDirectionsToTarget();
+            } else if (attempts >= maxAttempts) {
+                alert('Step 8: Map not ready after ' + maxAttempts + ' attempts');
+                clearInterval(checkMapReady);
+            }
+        }, 500);
+        
+    } catch (error) {
+        alert('ERROR: ' + error.message);
+    }
 };
 
 function showDirectionsToTarget() {
