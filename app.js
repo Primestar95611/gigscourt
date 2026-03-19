@@ -1452,7 +1452,76 @@ window.addService = function() {
     }
 };
 
-window.shareProfile = (id) => alert('Share coming soon');
+// ========== SHARE PROFILE ==========
+window.shareProfile = async function(profileId) {
+    // Get the profile data
+    const profileDoc = await firebase.firestore().collection('users').doc(profileId).get();
+    if (!profileDoc.exists) return;
+    
+    const profile = profileDoc.data();
+    const businessName = profile.businessName || 'GigsCourt Profile';
+    const bio = profile.bio ? profile.bio.substring(0, 100) : 'Check out my profile on GigsCourt';
+    
+    // Create the profile URL using document ID
+    const profileUrl = `https://gigscourt.com/user/${profileId}`;
+    
+    const shareData = {
+        title: businessName,
+        text: bio,
+        url: profileUrl
+    };
+    
+    // Try native share first (mobile)
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            // User cancelled share - do nothing
+            if (err.name !== 'AbortError') {
+                // Other error - fallback to clipboard
+                copyProfileLink(profileUrl);
+            }
+        }
+    } else {
+        // Desktop fallback - copy to clipboard
+        copyProfileLink(profileUrl);
+    }
+};
+
+// Helper function to copy link and show toast
+async function copyProfileLink(url) {
+    try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied!');
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Could not copy link. Please copy manually: ' + url);
+    }
+}
+
+// Toast notification function
+function showToast(message) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    
+    // Add to body
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
 window.startChat = (id) => alert('Chat coming soon');
 window.toggleSaveProfile = async function(profileId) {
     const currentUserId = firebase.auth().currentUser.uid;
