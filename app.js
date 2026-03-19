@@ -919,11 +919,12 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
         ` : ''}
         
         ${profile.location ? `
-            <div class="profile-contact">
-                <span class="contact-icon">📍</span>
-                <span class="contact-text">${profile.location}</span>
-            </div>
-        ` : ''}
+    <div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" 
+         ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}>
+        <span class="contact-icon">📍</span>
+        <span class="contact-text">${profile.locationDescription || profile.location}</span>
+    </div>
+` : ''}
         
         <!-- Services Section -->
         <div class="profile-section">
