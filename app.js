@@ -212,6 +212,14 @@ function loadHomeTab() {
             </div>
         </div>
     `;
+
+    // Check for pending gigs after chat loads
+setTimeout(() => {
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        checkPendingGigs(otherUserId, chatMessages);
+    }
+}, 500);
     
     // Load initial providers
     loadProviders();
@@ -945,21 +953,24 @@ window.showRegisterJobModal = async function() {
     }
 };
 
-// Select client and register job
+// Select client and register gig
 window.selectClient = async function(clientId, clientName) {
-    if (!confirm(`Register job with ${clientName} for 3 points?`)) return;
+    if (!confirm(`Register gig with ${clientName} for 3 points?`)) return;
     
     const providerId = firebase.auth().currentUser.uid;
+    const providerData = currentUserData;
     
     try {
-        // Create job document
-        const jobRef = await firebase.firestore().collection('jobs').add({
+        // Create gig document
+        const gigRef = await firebase.firestore().collection('jobs').add({
             providerId: providerId,
+            providerName: providerData.businessName,
             clientId: clientId,
             status: 'pending',
             pointsSpent: 3,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            completedAt: null
+            completedAt: null,
+            notifiedClient: false
         });
         
         // Deduct points from provider
@@ -970,13 +981,11 @@ window.selectClient = async function(clientId, clientName) {
         // Close modal
         document.querySelector('.register-job-modal').remove();
         
-        alert('Job registered! Waiting for client confirmation.');
-        
-        // TODO: Send notification to client
+        alert('Gig registered! Waiting for client confirmation.');
         
     } catch (error) {
-        console.error('Error registering job:', error);
-        alert('Failed to register job');
+        console.error('Error registering gig:', error);
+        alert('Failed to register gig');
     }
 };
 
@@ -2948,6 +2957,68 @@ function loadMessagesTab() {
     loadConversations();
     fixChatUserNames();
 }
+
+// Check for pending gigs when opening chat
+async function checkPendingGigs(otherUserId, chatContainer) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        // Check if there's a pending gig where current user is the client
+        const pendingGigsSnapshot = await firebase.firestore()
+            .collection('jobs')
+            .where('providerId', '==', otherUserId)
+            .where('clientId', '==', currentUserId)
+            .where('status', '==', 'pending')
+            .where('notifiedClient', '==', false)
+            .limit(1)
+            .get();
+        
+        if (!pendingGigsSnapshot.empty) {
+            const gig = pendingGigsSnapshot.docs[0].data();
+            const gigId = pendingGigsSnapshot.docs[0].id;
+            
+            // Add confirmation button to chat
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'gig-confirmation';
+            confirmDiv.innerHTML = `
+                <div class="gig-message">
+                    <strong>${gig.providerName || 'Provider'}</strong> registered a gig with you.
+                </div>
+                <button class="btn confirm-gig-btn" onclick="confirmGig('${gigId}', '${otherUserId}')">Confirm Gig</button>
+            `;
+            
+            chatContainer.appendChild(confirmDiv);
+            
+            // Mark as notified
+            await pendingGigsSnapshot.docs[0].ref.update({
+                notifiedClient: true
+            });
+        }
+    } catch (error) {
+        console.error('Error checking pending gigs:', error);
+    }
+}
+
+// Confirm gig and show review modal
+window.confirmGig = async function(gigId, providerId) {
+    try {
+        // Update gig status
+        await firebase.firestore().collection('jobs').doc(gigId).update({
+            status: 'completed',
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Show review modal immediately
+        showReviewModal(providerId, gigId);
+        
+        // Remove the confirmation button
+        document.querySelector('.gig-confirmation')?.remove();
+        
+    } catch (error) {
+        console.error('Error confirming gig:', error);
+        alert('Failed to confirm gig');
+    }
+};
 
 function loadConversations() {
     const userId = firebase.auth().currentUser.uid;
