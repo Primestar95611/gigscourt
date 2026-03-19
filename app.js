@@ -681,6 +681,41 @@ async function fixChatUserNames() {
 }
 
 window.getDirections = (id) => alert('Directions coming soon');
+
+window.getDirectionsToProvider = async function(providerId) {
+    // Get provider's location from Firestore
+    const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+    const provider = providerDoc.data();
+    
+    if (!provider.locationGeo) {
+        alert('This provider has not set their location');
+        return;
+    }
+    
+    // Store the target provider for directions
+    window.directionsTarget = {
+        id: providerId,
+        location: {
+            lat: provider.locationGeo.latitude,
+            lng: provider.locationGeo.longitude
+        },
+        name: provider.businessName
+    };
+    
+    // Switch to search tab
+    switchTab('search');
+    
+    // Small delay to let search tab load
+    setTimeout(() => {
+        if (typeof showDirectionsToTarget === 'function') {
+            showDirectionsToTarget();
+        } else {
+            // If function not ready yet, wait a bit more
+            setTimeout(showDirectionsToTarget, 1000);
+        }
+    }, 500);
+};
+
 window.showOnMap = (id) => alert('Map view coming soon');
 
 // ========== MAIN APP LOADER ==========
@@ -835,11 +870,12 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
         ` : ''}
         
         ${profile.location ? `
-            <div class="profile-contact">
-                <span class="contact-icon">📍</span>
-                <span class="contact-text">${profile.location}</span>
-            </div>
-        ` : ''}
+    <div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" 
+         ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}>
+        <span class="contact-icon">📍</span>
+        <span class="contact-text">${profile.locationDescription || profile.location}</span>
+    </div>
+` : ''}
         
         <!-- Services Section -->
         <div class="profile-section">
@@ -2014,6 +2050,46 @@ function loadSearchTab() {
     
     // Setup event listeners
     setupSearchListeners();
+}
+
+function showDirectionsToTarget() {
+    if (!window.directionsTarget || !userLocation) {
+        alert('Cannot get directions');
+        return;
+    }
+    
+    const target = window.directionsTarget;
+    
+    // Remove existing routing
+    if (routingControl) {
+        map.removeControl(routingControl);
+    }
+    
+    // Create routing control with directions
+    routingControl = L.Routing.control({
+        waypoints: [
+            L.latLng(userLocation.lat, userLocation.lng),
+            L.latLng(target.location.lat, target.location.lng)
+        ],
+        routeWhileDragging: false,
+        showAlternatives: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+            styles: [{ color: '#0000FF', opacity: 0.8, weight: 5 }] // Blue line
+        },
+        createMarker: function() { return null; } // Don't create duplicate markers
+    }).addTo(map);
+    
+    // Center map on the route
+    setTimeout(() => {
+        map.fitBounds([
+            [userLocation.lat, userLocation.lng],
+            [target.location.lat, target.location.lng]
+        ], { padding: [50, 50] });
+    }, 200);
+    
+    // Clear the target
+    window.directionsTarget = null;
 }
 
 function getUserLocation() {
