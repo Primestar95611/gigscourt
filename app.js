@@ -11,6 +11,17 @@ const firebaseConfig = {
     measurementId: "G-BY1YBSYJHV"
 };
 
+// Force load Eruda
+(function() {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    script.onload = function() {
+        eruda.init();
+        console.log('Eruda loaded');
+    };
+    document.head.appendChild(script);
+})();
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -46,15 +57,6 @@ let pullToRefresh = {
     currentY: 0,
     refreshing: false,
     pulling: false
-};
-
-// Force Eruda to show
-window.showEruda = function() {
-    if (window.eruda) {
-        eruda.show();
-    } else {
-        alert('Eruda not loaded');
-    }
 };
 
 // Helper function to calculate distance between two coordinates (Haversine formula)
