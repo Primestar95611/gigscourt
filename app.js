@@ -890,6 +890,90 @@ async function updateProviderAverageRating(providerId) {
     }
 }
 
+// ========== REVIEWS DISPLAY ==========
+
+// Show all reviews for a provider (called when clicking rating)
+window.showProviderReviews = async function(providerId) {
+    try {
+        // Get provider info
+        const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+        const provider = providerDoc.data();
+        
+        // Get all reviews for this provider
+        const reviewsSnapshot = await firebase.firestore()
+            .collection('reviews')
+            .where('providerId', '==', providerId)
+            .orderBy('updatedAt', 'desc')
+            .get();
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'reviews-modal';
+        
+        let reviewsHtml = '';
+        
+        if (reviewsSnapshot.empty) {
+            reviewsHtml = '<div class="no-reviews">No reviews yet</div>';
+        } else {
+            reviewsSnapshot.forEach(doc => {
+                const review = doc.data();
+                const date = review.updatedAt?.toDate().toLocaleDateString() || 'Unknown';
+                
+                // Generate star HTML
+                let starsHtml = '';
+                for (let i = 1; i <= 5; i++) {
+                    starsHtml += i <= review.rating ? '★' : '☆';
+                }
+                
+                reviewsHtml += `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <img src="${review.clientProfileImage || 'https://via.placeholder.com/40'}" class="review-profile-img">
+                            <div class="review-business-name">${review.clientBusinessName || 'Anonymous'}</div>
+                            <div class="review-stars">${starsHtml}</div>
+                        </div>
+                        <div class="review-text">"${review.reviewText}"</div>
+                        <div class="review-meta">${review.jobsTogether} completed jobs together • Updated ${date}</div>
+                    </div>
+                    <div class="review-divider"></div>
+                `;
+            });
+        }
+        
+        modal.innerHTML = `
+            <div class="reviews-modal-content">
+                <div class="reviews-modal-header">
+                    <h2>${provider.businessName || 'Provider'}</h2>
+                    <button class="close-btn" onclick="this.closest('.reviews-modal').remove()">✕</button>
+                </div>
+                <div class="reviews-summary">
+                    <div class="rating-big">${provider.rating || '0.0'}</div>
+                    <div class="stars-big">${generateStarString(provider.rating || 0)}</div>
+                    <div class="review-count-big">${provider.reviewCount || 0} reviews</div>
+                </div>
+                <div class="reviews-list">
+                    ${reviewsHtml}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+        alert('Failed to load reviews');
+    }
+};
+
+// Helper function to generate star string
+function generateStarString(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        stars += i <= rating ? '★' : '☆';
+    }
+    return stars;
+}
+
 window.getDirectionsToProvider = async function(providerId) {
     alert('Step 1: Function started');
     
@@ -1113,10 +1197,10 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                         <span class="stat-number">${jobsCount}</span>
                         <span class="stat-label">Jobs</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-number">${rating}</span>
-                        <span class="stat-label">★ Rating</span>
-                    </div>
+                    <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')">
+    <span class="stat-number">${rating}</span>
+    <span class="stat-label">★ Rating</span>
+</div>
                     ${isOwnProfile ? `
                         <div class="stat-item clickable" onclick="openSavedModal()">
                             <span class="stat-number">${savedCount}</span>
