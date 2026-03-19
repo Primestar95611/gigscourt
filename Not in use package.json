@@ -1,8 +1,0 @@
-{
-    "name": "gigscourt",
-    "version": "1.0.0",
-    "type": "module",
-    "dependencies": {
-        "imagekit": "^5.0.0"
-    }
-}
