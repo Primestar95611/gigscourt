@@ -2484,3 +2484,16 @@ body {
     font-size: 12px !important;
     font-weight: normal !important;
 }
+
+.profile-contact.clickable-location {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.profile-contact.clickable-location:active {
+    opacity: 0.6;
+}
+
+.profile-contact.clickable-location:hover {
+    text-decoration: underline;
+}
