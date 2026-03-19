@@ -11,17 +11,6 @@ const firebaseConfig = {
     measurementId: "G-BY1YBSYJHV"
 };
 
-// Force load Eruda
-(function() {
-    var script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
-    script.onload = function() {
-        eruda.init();
-        console.log('Eruda loaded');
-    };
-    document.head.appendChild(script);
-})();
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -4032,3 +4021,13 @@ window.viewUserProfile = function(userId) {
     loadProfileTab(userId);
 };
     
+// Force load Eruda
+(function() {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+    script.onload = function() {
+        eruda.init();
+        console.log('Eruda loaded');
+    };
+    document.head.appendChild(script);
+})();
