@@ -48,6 +48,15 @@ let pullToRefresh = {
     pulling: false
 };
 
+// Force Eruda to show
+window.showEruda = function() {
+    if (window.eruda) {
+        eruda.show();
+    } else {
+        alert('Eruda not loaded');
+    }
+};
+
 // Helper function to calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of the earth in km
