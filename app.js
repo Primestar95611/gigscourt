@@ -2523,7 +2523,7 @@ function getUserLocation() {
                 // Store in localStorage as backup
                 localStorage.setItem('userLocation', JSON.stringify(userLocation));
                 initializeMap();
-                loadNearbyProviders();
+                loadNearbyProviders(true);
             },
             (error) => {
                 console.error('Geolocation error:', error);
@@ -2536,7 +2536,7 @@ function getUserLocation() {
                     userLocation = { lat: 6.5244, lng: 3.3792 };
                 }
                 initializeMap();
-                loadNearbyProviders();
+                loadNearbyProviders(true);
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -2820,9 +2820,7 @@ function setupSearchListeners() {
             loadNearbyProviders(true);
         });
     }
-}
-
-// Infinite scroll for provider list
+    // Infinite scroll for provider list
 const providerDrawer = document.querySelector('.provider-drawer');
 if (providerDrawer) {
     providerDrawer.addEventListener('scroll', () => {
@@ -2833,6 +2831,9 @@ if (providerDrawer) {
         }
     });
 }
+}
+
+
 
 function filterProviders(searchTerm) {
     const items = document.querySelectorAll('.provider-list-item');
@@ -3469,7 +3470,7 @@ window.handleSignup = async function(event) {
     portfolioImages: [],
     bio: '',
     location: null,
-    locationGeo: null  // Add this line for geolocation
+    locationGeo: null,  // Add this line for geolocation
     points: 15,
     jobsThisMonth: 0,        
 });
