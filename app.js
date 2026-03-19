@@ -1023,7 +1023,7 @@ window.showProviderReviews = async function(providerId) {
                             <div class="review-stars">${starsHtml}</div>
                         </div>
                         <div class="review-text">"${review.reviewText}"</div>
-                        <div class="review-meta">${review.jobsTogether} completed jobs together • Updated ${date}</div>
+                        <div class="review-meta">${review.jobsTogether} completed gigs together • Updated ${date}</div>
                     </div>
                     <div class="review-divider"></div>
                 `;
@@ -1284,9 +1284,9 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                 
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <span class="stat-number">${jobsCount}</span>
-                        <span class="stat-label">Jobs</span>
-                    </div>
+    <span class="stat-number">${jobsCount}</span>
+    <span class="stat-label">Gigs</span>
+</div>
                     <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')">
     <span class="stat-number">${rating}</span>
     <span class="stat-label">★ Rating</span>
@@ -1307,13 +1307,13 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
 
         ${isOwnProfile ? `
             <div class="profile-actions-header">
-                <button class="register-job-btn" onclick="showRegisterJobModal()">Register Job (3 pts)</button>
+                <button class="register-job-btn" onclick="showRegisterJobModal()">Register Gig (3 pts)</button>
             </div>
         ` : ''}
         
         <div class="profile-meta">
             Joined ${profile.createdAt ? new Date(profile.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'} • 
-            ${profile.jobsThisMonth || 0} jobs this month
+            ${profile.jobsThisMonth || 0} gigs this month
         </div>
         
         <!-- Bio -->
