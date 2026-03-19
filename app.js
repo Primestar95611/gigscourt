@@ -711,6 +711,7 @@ window.getDirectionsToProvider = async function(providerId) {
     
     const checkMapReady = setInterval(() => {
         attempts++;
+console.log('Attempt', attempts, 'map:', !!map, 'userLocation:', !!userLocation);
         
         if (map && userLocation) {
             clearInterval(checkMapReady);
