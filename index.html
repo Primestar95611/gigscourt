@@ -58,8 +58,16 @@
     <script src="app.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-    eruda.init();
-</script>
+    <script>
+        // Initialize Eruda with a slight delay
+        setTimeout(function() {
+            try {
+                eruda.init();
+                console.log('Eruda initialized');
+            } catch(e) {
+                console.log('Eruda failed:', e);
+            }
+        }, 1000);
+    </script>
 </body>
 </html>
