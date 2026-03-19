@@ -683,6 +683,9 @@ window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
 window.getDirectionsToProvider = async function(providerId) {
+    alert('Function called! Provider ID: ' + providerId);
+    return; // Stop here for testing
+};
     // Get provider's location from Firestore
     const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
     const provider = providerDoc.data();
