@@ -854,6 +854,12 @@ window.submitReview = async function(providerId, jobId) {
         // Update provider's average rating
         await updateProviderAverageRating(providerId);
         
+        // Increment provider's gig count
+        await firebase.firestore().collection('users').doc(providerId).update({
+            jobsDone: firebase.firestore.FieldValue.increment(1),
+            jobsThisMonth: firebase.firestore.FieldValue.increment(1)
+        });
+        
         modal.remove();
         alert('Review submitted! Thank you.');
         
