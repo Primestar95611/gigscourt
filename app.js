@@ -757,11 +757,12 @@ window.confirmJobCompletion = async function(jobId, providerId) {
 function showReviewModal(providerId, jobId) {
     const modal = document.createElement('div');
     modal.className = 'review-modal';
+    document.body.style.overflow = 'hidden';
     modal.innerHTML = `
         <div class="review-modal-content">
             <div class="review-modal-header">
                 <h3>Rate this provider</h3>
-                <button class="close-btn" onclick="this.closest('.review-modal').remove()">✕</button>
+                <button class="close-btn" onclick="(function(b){b.closest('.review-modal').remove(); document.body.style.overflow = '';})(this)">✕</button>
             </div>
             <div class="review-modal-body">
                 <p>How was your experience?</p>
@@ -866,6 +867,7 @@ window.submitReview = async function(providerId, jobId) {
         });
         
         modal.remove();
+        document.body.style.overflow = '';
         alert('Review submitted! Thank you.');
         
     } catch (error) {
@@ -1011,6 +1013,7 @@ window.showProviderReviews = async function(providerId) {
         // Create modal
         const modal = document.createElement('div');
         modal.className = 'reviews-modal';
+        document.body.style.overflow = 'hidden';
         
         let reviewsHtml = '';
         
@@ -1046,7 +1049,7 @@ window.showProviderReviews = async function(providerId) {
             <div class="reviews-modal-content">
                 <div class="reviews-modal-header">
                     <h2>${provider.businessName || 'Provider'}</h2>
-                    <button class="close-btn" onclick="this.closest('.reviews-modal').remove()">✕</button>
+                    <button class="close-btn" onclick="(function(b){b.closest('.reviews-modal').remove(); document.body.style.overflow = '';})(this)">✕</button>
                 </div>
                 <div class="reviews-summary">
                     <div class="rating-big">${provider.rating || '0.0'}</div>
@@ -1060,6 +1063,14 @@ window.showProviderReviews = async function(providerId) {
         `;
         
         document.body.appendChild(modal);
+
+        // Close when clicking outside
+modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+});
         
     } catch (error) {
         console.error('Error loading reviews:', error);
