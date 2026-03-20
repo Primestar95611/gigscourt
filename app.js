@@ -3153,6 +3153,14 @@ function openChat(chatId, otherUserId, chatData) {
     `;
     
     loadMessages(chatId);
+    
+    // Check for pending gigs after chat loads
+    setTimeout(() => {
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            checkPendingGigs(otherUserId, chatMessages);
+        }
+    }, 500);
 }
 
 function loadMessages(chatId) {
