@@ -1,4 +1,4 @@
-// app.js - Complete with Home Tab
+// app.js - Complete with all 10 cost-saving fixes
 
 // Firebase config
 const firebaseConfig = {
@@ -13,14 +13,13 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-// Fix Firestore WebChannel error
 firebase.firestore().settings({
     experimentalForceLongPolling: true,
     useFetchStreams: false
 });
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-// Initialize ImageKit for client-side upload
+// Initialize ImageKit
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
     urlEndpoint: "https://ik.imagekit.io/GigsCourt"
@@ -38,14 +37,13 @@ let providers = [];
 let lastDoc = null;
 let loading = false;
 let hasMore = true;
-let userLocation = null;  // Make it global for other tabs to use
-// Search tab pagination and cache
+let userLocation = null;
 let searchLastDoc = null;
 let searchHasMore = true;
 let searchLoading = false;
 let searchCache = null;
 let searchCacheTime = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_DURATION = 30 * 60 * 1000; // FIX #9: Increased to 30 minutes
 let pullToRefresh = {
     startY: 0,
     currentY: 0,
@@ -53,9 +51,14 @@ let pullToRefresh = {
     pulling: false
 };
 
-// Helper function to calculate distance between two coordinates (Haversine formula)
+// Home pagination - FIX #2: Load More button instead of infinite scroll
+let homeCurrentPage = 1;
+let homeTotalLoaded = 0;
+const HOME_PAGE_SIZE = 10;
+
+// Helper function to calculate distance
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
+    const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
     const dLon = deg2rad(lon2 - lon1);
     const a = 
@@ -63,15 +66,14 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
         Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
         Math.sin(dLon/2) * Math.sin(dLon/2); 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    const distance = R * c; // Distance in km
-    return distance;
+    return R * c;
 }
 
 function deg2rad(deg) {
     return deg * (Math.PI/180);
 }
 
-// Listen for auth state
+// Auth state listener
 firebase.auth().onAuthStateChanged(async (user) => {
     currentUser = user;
     const app = document.getElementById('app');
@@ -79,24 +81,18 @@ firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
         if (user.emailVerified) {
             try {
-                // Get user data from Firestore
                 const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
                 
                 if (userDoc.exists) {
-                    // User document exists - normal flow
                     currentUserData = userDoc.data();
                     loadMainApp();
                 } else {
-                    // User document doesn't exist - redirect to profile completion
-                    console.log('User document missing, redirecting to profile setup');
                     window.location.hash = 'complete-profile';
                     loadProfileCompletion();
                 }
             } catch (error) {
                 console.error('Error fetching user document:', error);
-                // Show error message to user
                 alert('Error loading your profile. Please try again.');
-                // Optionally sign out
                 firebase.auth().signOut();
             }
         } else {
@@ -145,7 +141,6 @@ function loadProfileCompletion() {
     `;
 }
 
-// Add save profile function
 window.saveProfile = async function() {
     const businessName = document.getElementById('complete-business').value;
     const bio = document.getElementById('complete-bio').value;
@@ -157,25 +152,25 @@ window.saveProfile = async function() {
     
     try {
         await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).set({
-    businessName: businessName,
-    email: firebase.auth().currentUser.email,
-    services: window.selectedServices || [],
-    pendingServices: [],
-    bio: bio,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    emailVerified: true,
-    phoneVerified: false,
-    signupMethod: 'email',
-    rating: 0,
-    reviewCount: 0,
-    jobsDone: 0,
-    profileImage: '',
-    portfolioImages: [],
-    location: null,
-    locationGeo: null  // Add this line
-});
+            businessName: businessName,
+            email: firebase.auth().currentUser.email,
+            services: window.selectedServices || [],
+            pendingServices: [],
+            bio: bio,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            emailVerified: true,
+            phoneVerified: false,
+            signupMethod: 'email',
+            rating: 0,
+            reviewCount: 0,
+            jobsDone: 0,
+            profileImage: '',
+            portfolioImages: [],
+            location: null,
+            locationGeo: null,
+            savedProfiles: {} // FIX #7: Store saved profiles as map on user document
+        });
         
-        // Reload the app
         loadMainApp();
     } catch (error) {
         alert('Error saving profile: ' + error.message);
@@ -208,6 +203,10 @@ function loadHomeTab() {
                 <!-- Providers will load here -->
             </div>
             
+            <div id="load-more-container" style="text-align: center; margin: 20px;">
+                <button id="load-more-btn" class="btn" style="display: none;" onclick="loadMoreProviders()">Load More</button>
+            </div>
+            
             <div id="loading-spinner" class="loading-spinner hidden">
                 <div class="spinner"></div>
             </div>
@@ -218,16 +217,17 @@ function loadHomeTab() {
         </div>
     `;
     
-    // Load initial providers
-    loadProviders();
+    homeCurrentPage = 1;
+    homeTotalLoaded = 0;
+    providers = [];
+    lastDoc = null;
+    hasMore = true;
     
-    // Setup pull to refresh
+    loadProviders(true);
     setupPullToRefresh();
-    
-    // Setup infinite scroll
-    setupInfiniteScroll();
 }
 
+// FIX #2: Load providers with explicit Load More button
 async function loadProviders(reset = true) {
     if (loading) return;
     loading = true;
@@ -236,27 +236,29 @@ async function loadProviders(reset = true) {
         providers = [];
         lastDoc = null;
         hasMore = true;
+        homeTotalLoaded = 0;
         document.getElementById('providers-grid').innerHTML = '';
+        document.getElementById('load-more-btn').style.display = 'none';
     }
     
     if (!hasMore) {
         loading = false;
+        if (homeTotalLoaded > 0) {
+            document.getElementById('load-more-btn').style.display = 'none';
+        }
         return;
     }
     
     document.getElementById('loading-spinner')?.classList.remove('hidden');
     
     try {
-        // Get user's current location
-        let userLat = 6.5244; // Default Lagos
+        let userLat = 6.5244;
         let userLng = 3.3792;
         
-        // Try to get from global userLocation (set by search tab)
         if (window.userLocation) {
             userLat = window.userLocation.lat;
             userLng = window.userLocation.lng;
         } else {
-            // Try localStorage
             const savedLocation = localStorage.getItem('userLocation');
             if (savedLocation) {
                 const loc = JSON.parse(savedLocation);
@@ -267,8 +269,8 @@ async function loadProviders(reset = true) {
         
         let query = firebase.firestore().collection('users')
             .where('emailVerified', '==', true)
-            .where('locationGeo', '!=', null)  // Only get users with location
-            .limit(10);  // Increased limit for home tab
+            .where('locationGeo', '!=', null)
+            .limit(HOME_PAGE_SIZE);
         
         if (lastDoc) {
             query = query.startAfter(lastDoc);
@@ -281,15 +283,13 @@ async function loadProviders(reset = true) {
             if (providers.length === 0) {
                 document.getElementById('empty-state').classList.remove('hidden');
             }
+            document.getElementById('load-more-btn').style.display = 'none';
         } else {
             lastDoc = snapshot.docs[snapshot.docs.length - 1];
             
-            // Process each provider
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
-                
-                // Calculate REAL distance
-                let distance = 999; // Default large number if no location
+                let distance = 999;
                 if (data.locationGeo) {
                     distance = calculateDistance(
                         userLat,
@@ -306,10 +306,17 @@ async function loadProviders(reset = true) {
                 });
             });
             
-            // Sort by distance (closest first)
             providers.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
             
             renderProviders();
+            homeTotalLoaded += snapshot.docs.length;
+            
+            if (snapshot.docs.length === HOME_PAGE_SIZE) {
+                document.getElementById('load-more-btn').style.display = 'block';
+            } else {
+                hasMore = false;
+                document.getElementById('load-more-btn').style.display = 'none';
+            }
         }
         
     } catch (error) {
@@ -320,12 +327,17 @@ async function loadProviders(reset = true) {
     loading = false;
 }
 
+window.loadMoreProviders = function() {
+    if (!loading && hasMore) {
+        loadProviders(false);
+    }
+};
+
 function renderProviders() {
     const grid = document.getElementById('providers-grid');
     if (!grid) return;
     
     providers.forEach(provider => {
-        // Check if already rendered
         if (document.getElementById(`provider-${provider.id}`)) return;
         
         const card = document.createElement('div');
@@ -333,7 +345,6 @@ function renderProviders() {
         card.className = 'provider-card';
         card.onclick = () => openQuickView(provider);
         
-        // Get first 2 services
         const services = provider.services || [];
         const displayServices = services.slice(0, 2).join(' • ');
         const hasMoreServices = services.length > 2 ? '...' : '';
@@ -350,7 +361,7 @@ function renderProviders() {
                 </div>
                 <div class="provider-services">${displayServices}${hasMoreServices}</div>
                 <div class="provider-distance" onclick="event.stopPropagation(); showOnMap('${provider.id}')">
-    📍 ${provider.distance} km away
+                    📍 ${provider.distance} km away
                 </div>
             </div>
         `;
@@ -359,7 +370,6 @@ function renderProviders() {
     });
 }
 
-// Pull to Refresh
 function setupPullToRefresh() {
     const container = document.querySelector('.home-container');
     if (!container) return;
@@ -388,7 +398,6 @@ function setupPullToRefresh() {
             const spinner = indicator.querySelector('.ptr-spinner');
             const text = indicator.querySelector('.ptr-text');
             
-            // Resistance physics
             const pullDistance = Math.min(diff * 0.3, 80);
             indicator.style.transform = `translateY(${pullDistance}px)`;
             
@@ -428,12 +437,12 @@ async function refreshProviders() {
     indicator.classList.add('refreshing');
     indicator.querySelector('.ptr-text').textContent = 'Refreshing...';
     
-    // Reset and reload
     providers = [];
     lastDoc = null;
     hasMore = true;
+    homeTotalLoaded = 0;
     document.getElementById('providers-grid').innerHTML = '';
-    await loadProviders();
+    await loadProviders(true);
     
     setTimeout(resetPullToRefresh, 500);
 }
@@ -444,17 +453,6 @@ function resetPullToRefresh() {
     indicator.classList.remove('refreshing');
     indicator.querySelector('.ptr-text').textContent = 'Pull to refresh';
     indicator.querySelector('.ptr-spinner').style.transform = '';
-}
-
-// Infinite Scroll
-function setupInfiniteScroll() {
-    window.addEventListener('scroll', () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-            if (!loading && hasMore) {
-                loadProviders(false);
-            }
-        }
-    });
 }
 
 // Quick View Bottom Sheet
@@ -500,7 +498,6 @@ function openQuickView(provider) {
         </div>
     `;
     
-    // Drag to close
     let startY = 0;
     sheet.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
@@ -526,7 +523,6 @@ function openQuickView(provider) {
     document.body.appendChild(overlay);
     document.body.appendChild(sheet);
     
-    // Animate in
     setTimeout(() => {
         overlay.classList.add('active');
         sheet.classList.add('active');
@@ -546,7 +542,6 @@ window.closeQuickView = function() {
     }, 300);
 };
 
-// Notifications
 window.openNotifications = function() {
     const panel = document.createElement('div');
     panel.className = 'notification-panel';
@@ -574,7 +569,6 @@ window.openNotifications = function() {
     
     document.body.appendChild(panel);
     
-    // Close on outside click
     setTimeout(() => {
         document.addEventListener('click', function closePanel(e) {
             if (!panel.contains(e.target) && !e.target.closest('.notification-bell')) {
@@ -591,16 +585,13 @@ window.markAllRead = function() {
     });
 };
 
-// ========== MESSAGE FUNCTIONS ==========
 window.viewProfile = (id) => {
     switchTab('profile');
     loadProfileTab(id);
 };
 
 window.messageUser = (id) => {
-    // Switch to messages tab and open chat with this user
     switchTab('messages');
-    // We'll implement creating a new chat here
     setTimeout(() => {
         createNewChat(id);
     }, 500);
@@ -610,7 +601,6 @@ async function createNewChat(otherUserId) {
     const currentUserId = firebase.auth().currentUser.uid;
     
     try {
-        // Check if chat already exists
         const chatsSnapshot = await firebase.firestore()
             .collection('chats')
             .where('participants', 'array-contains', currentUserId)
@@ -626,12 +616,9 @@ async function createNewChat(otherUserId) {
         });
         
         if (existingChatId) {
-            // Open existing chat
             const chatData = (await firebase.firestore().collection('chats').doc(existingChatId).get()).data();
             openChat(existingChatId, otherUserId, chatData);
         } else {
-            // Create new chat
-            // Get other user's info first
             const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
             const otherUserData = otherUserDoc.data();
 
@@ -646,7 +633,6 @@ async function createNewChat(otherUserId) {
                 lastMessageRead: true
             });  
             
-            // Open the new chat
             openChat(newChatRef.id, otherUserId, {
                 ...otherUserData,
                 otherUserName: otherUserData.businessName
@@ -658,7 +644,6 @@ async function createNewChat(otherUserId) {
     }
 }
 
-// Fix for existing chats - updates them with user names
 async function fixChatUserNames() {
     const currentUserId = firebase.auth().currentUser.uid;
     
@@ -672,7 +657,6 @@ async function fixChatUserNames() {
             const chat = doc.data();
             const otherUserId = chat.participants.find(id => id !== currentUserId);
             
-            // If chat doesn't have otherUserName, add it
             if (!chat.otherUserName) {
                 const userDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
                 if (userDoc.exists) {
@@ -681,11 +665,9 @@ async function fixChatUserNames() {
                         otherUserName: userData.businessName || 'User',
                         otherUserImage: userData.profileImage || 'https://via.placeholder.com/40'
                     });
-                    console.log('Updated chat with user:', userData.businessName);
                 }
             }
         }
-        console.log('Finished fixing chats');
     } catch (error) {
         console.error('Error fixing chats:', error);
     }
@@ -695,13 +677,11 @@ window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
 // ========== JOB & REVIEW FUNCTIONS ==========
+// FIX #6: Incremental rating update instead of reading all reviews
 
-// Register a new job (provider spends points)
 window.registerJob = async function(clientId) {
     const providerId = firebase.auth().currentUser.uid;
     const providerData = currentUserData;
-    
-    // Check if provider has enough points (assuming 3 points per job)
     const JOB_COST = 3;
     
     if (!providerData.points || providerData.points < JOB_COST) {
@@ -710,7 +690,6 @@ window.registerJob = async function(clientId) {
     }
     
     try {
-        // Create job document
         const jobRef = await firebase.firestore().collection('jobs').add({
             providerId: providerId,
             clientId: clientId,
@@ -720,14 +699,11 @@ window.registerJob = async function(clientId) {
             completedAt: null
         });
         
-        // Deduct points from provider
         await firebase.firestore().collection('users').doc(providerId).update({
             points: firebase.firestore.FieldValue.increment(-JOB_COST)
         });
         
         alert('Job registered successfully! Waiting for client confirmation.');
-        
-        // TODO: Send notification to client
         
     } catch (error) {
         console.error('Error registering job:', error);
@@ -735,16 +711,13 @@ window.registerJob = async function(clientId) {
     }
 };
 
-// Client confirms job completion
 window.confirmJobCompletion = async function(jobId, providerId) {
     try {
-        // Update job status
         await firebase.firestore().collection('jobs').doc(jobId).update({
             status: 'completed',
             completedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Show review modal immediately
         showReviewModal(providerId, jobId);
         
     } catch (error) {
@@ -753,15 +726,13 @@ window.confirmJobCompletion = async function(jobId, providerId) {
     }
 };
 
-// Show review modal
 function showReviewModal(providerId, jobId) {
     const modal = document.createElement('div');
     modal.className = 'review-modal';
-    // Lock background scrolling
-let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
-if (scrollableContainer) {
-    scrollableContainer.style.overflow = 'hidden';
-}
+    let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+    if (scrollableContainer) {
+        scrollableContainer.style.overflow = 'hidden';
+    }
     modal.innerHTML = `
         <div class="review-modal-content">
             <div class="review-modal-header">
@@ -788,13 +759,11 @@ if (scrollableContainer) {
     
     document.body.appendChild(modal);
     
-    // Add star rating functionality
     const stars = modal.querySelectorAll('.star');
     stars.forEach(star => {
         star.addEventListener('click', function() {
             const rating = this.dataset.rating;
             
-            // Highlight selected stars
             stars.forEach((s, index) => {
                 if (index < rating) {
                     s.style.color = '#FFD700';
@@ -803,13 +772,12 @@ if (scrollableContainer) {
                 }
             });
             
-            // Store selected rating
             modal.dataset.selectedRating = rating;
         });
     });
 }
 
-// Submit review
+// FIX #6: Incremental rating update
 window.submitReview = async function(providerId, jobId) {
     const modal = document.querySelector('.review-modal');
     const rating = modal.dataset.selectedRating;
@@ -828,7 +796,6 @@ window.submitReview = async function(providerId, jobId) {
     }
     
     try {
-        // Check if review already exists for this client-provider pair
         const existingReviewQuery = await firebase.firestore()
             .collection('reviews')
             .where('providerId', '==', providerId)
@@ -836,7 +803,6 @@ window.submitReview = async function(providerId, jobId) {
             .get();
         
         if (existingReviewQuery.empty) {
-            // Create new review
             await firebase.firestore().collection('reviews').add({
                 providerId: providerId,
                 clientId: clientId,
@@ -850,7 +816,6 @@ window.submitReview = async function(providerId, jobId) {
                 lastJobId: jobId
             });
         } else {
-            // Update existing review
             const reviewDoc = existingReviewQuery.docs[0];
             await reviewDoc.ref.update({
                 rating: parseInt(rating),
@@ -861,20 +826,42 @@ window.submitReview = async function(providerId, jobId) {
             });
         }
         
-        // Update provider's average rating
-        await updateProviderAverageRating(providerId);
+        // FIX #6: Incremental rating update without reading all reviews
+        const providerRef = firebase.firestore().collection('users').doc(providerId);
+        const providerDoc = await providerRef.get();
+        const provider = providerDoc.data();
         
-        // Increment provider's gig count
-        await firebase.firestore().collection('users').doc(providerId).update({
+        let newRating;
+        let newReviewCount;
+        
+        if (existingReviewQuery.empty) {
+            // New review - incremental calculation
+            const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
+            const newTotal = oldTotal + parseInt(rating);
+            newReviewCount = (provider.reviewCount || 0) + 1;
+            newRating = newTotal / newReviewCount;
+        } else {
+            // Updating existing review - need to adjust
+            const oldReview = existingReviewQuery.docs[0].data();
+            const oldRatingValue = oldReview.rating;
+            const oldTotal = (provider.rating || 0) * (provider.reviewCount || 0);
+            const newTotal = oldTotal - oldRatingValue + parseInt(rating);
+            newRating = newTotal / (provider.reviewCount || 0);
+            newReviewCount = provider.reviewCount;
+        }
+        
+        await providerRef.update({
+            rating: parseFloat(newRating.toFixed(1)),
+            reviewCount: newReviewCount,
             jobsDone: firebase.firestore.FieldValue.increment(1),
             jobsThisMonth: firebase.firestore.FieldValue.increment(1)
         });
         
         modal.remove();
         let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
-if (scrollableContainer) {
-    scrollableContainer.style.overflow = '';
-}
+        if (scrollableContainer) {
+            scrollableContainer.style.overflow = '';
+        }
         alert('Review submitted! Thank you.');
         
     } catch (error) {
@@ -883,39 +870,10 @@ if (scrollableContainer) {
     }
 };
 
-// Update provider's average rating
-async function updateProviderAverageRating(providerId) {
-    try {
-        const reviewsSnapshot = await firebase.firestore()
-            .collection('reviews')
-            .where('providerId', '==', providerId)
-            .get();
-        
-        let totalRating = 0;
-        reviewsSnapshot.forEach(doc => {
-            totalRating += doc.data().rating;
-        });
-        
-        const averageRating = reviewsSnapshot.size > 0 
-            ? (totalRating / reviewsSnapshot.size).toFixed(1)
-            : 0;
-        
-        await firebase.firestore().collection('users').doc(providerId).update({
-            rating: parseFloat(averageRating),
-            reviewCount: reviewsSnapshot.size
-        });
-        
-    } catch (error) {
-        console.error('Error updating average rating:', error);
-    }
-}
-
-// Show register job modal
 window.showRegisterJobModal = async function() {
     const providerId = firebase.auth().currentUser.uid;
     
     try {
-        // Get recent chats to show as potential clients
         const chatsSnapshot = await firebase.firestore()
             .collection('chats')
             .where('participants', 'array-contains', providerId)
@@ -965,7 +923,6 @@ window.showRegisterJobModal = async function() {
     }
 };
 
-// Select client and register gig
 window.selectClient = async function(clientId, clientName) {
     if (!confirm(`Register gig with ${clientName} for 3 points?`)) return;
     
@@ -973,7 +930,6 @@ window.selectClient = async function(clientId, clientName) {
     const providerData = currentUserData;
     
     try {
-        // Create gig document
         const gigRef = await firebase.firestore().collection('jobs').add({
             providerId: providerId,
             providerName: providerData.businessName,
@@ -985,14 +941,11 @@ window.selectClient = async function(clientId, clientName) {
             notifiedClient: false
         });
         
-        // Deduct points from provider
         await firebase.firestore().collection('users').doc(providerId).update({
             points: firebase.firestore.FieldValue.increment(-3)
         });
         
-        // Close modal
         document.querySelector('.register-job-modal').remove();
-        
         alert('Gig registered! Waiting for client confirmation.');
         
     } catch (error) {
@@ -1002,29 +955,23 @@ window.selectClient = async function(clientId, clientName) {
 };
 
 // ========== REVIEWS DISPLAY ==========
-
-// Show all reviews for a provider (called when clicking rating)
 window.showProviderReviews = async function(providerId) {
     try {
-        // Get provider info
         const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
         const provider = providerDoc.data();
         
-        // Get all reviews for this provider
         const reviewsSnapshot = await firebase.firestore()
             .collection('reviews')
             .where('providerId', '==', providerId)
             .orderBy('updatedAt', 'desc')
             .get();
         
-        // Create modal
         const modal = document.createElement('div');
         modal.className = 'reviews-modal';
-        // Lock background scrolling
-let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
-if (scrollableContainer) {
-    scrollableContainer.style.overflow = 'hidden';
-}
+        let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+        if (scrollableContainer) {
+            scrollableContainer.style.overflow = 'hidden';
+        }
         
         let reviewsHtml = '';
         
@@ -1035,7 +982,6 @@ if (scrollableContainer) {
                 const review = doc.data();
                 const date = review.updatedAt?.toDate().toLocaleDateString() || 'Unknown';
                 
-                // Generate star HTML
                 let starsHtml = '';
                 for (let i = 1; i <= 5; i++) {
                     starsHtml += i <= review.rating ? '★' : '☆';
@@ -1075,16 +1021,15 @@ if (scrollableContainer) {
         
         document.body.appendChild(modal);
 
-        // Close when clicking outside
-modal.addEventListener('click', function(e) {
-    if (e.target === modal) {
-        modal.remove();
-        let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
-        if (scrollableContainer) {
-            scrollableContainer.style.overflow = '';
-        }
-    }
-});
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+                let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
+                if (scrollableContainer) {
+                    scrollableContainer.style.overflow = '';
+                }
+            }
+        });
         
     } catch (error) {
         console.error('Error loading reviews:', error);
@@ -1092,7 +1037,6 @@ modal.addEventListener('click', function(e) {
     }
 };
 
-// Helper function to generate star string
 function generateStarString(rating) {
     let stars = '';
     for (let i = 1; i <= 5; i++) {
@@ -1102,24 +1046,15 @@ function generateStarString(rating) {
 }
 
 window.getDirectionsToProvider = async function(providerId) {
-    alert('Step 1: Function started');
-    
     try {
-        alert('Step 2: Fetching provider data');
-        // Get provider's location from Firestore
         const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
         const provider = providerDoc.data();
         
-        alert('Step 3: Provider data received');
-        
         if (!provider.locationGeo) {
-            alert('Step 3a: No locationGeo found');
+            alert('Provider has not set their location');
             return;
         }
         
-        alert('Step 4: LocationGeo exists: ' + JSON.stringify(provider.locationGeo));
-        
-        // Store the target provider for directions
         window.directionsTarget = {
             id: providerId,
             location: {
@@ -1129,28 +1064,20 @@ window.getDirectionsToProvider = async function(providerId) {
             name: provider.businessName
         };
         
-        alert('Step 5: Switching to search tab');
-        
-        // Switch to search tab
         switchTab('search');
         
-        alert('Step 6: Waiting for map...');
-        
-        // Wait for search tab to fully load
         let attempts = 0;
         const maxAttempts = 10;
         
         const checkMapReady = setInterval(() => {
             attempts++;
-            alert('Attempt ' + attempts + ': map=' + (!!map) + ' userLocation=' + (!!userLocation));
             
             if (map && userLocation) {
-                alert('Step 7: Map ready! Showing directions');
                 clearInterval(checkMapReady);
                 showDirectionsToTarget();
             } else if (attempts >= maxAttempts) {
-                alert('Step 8: Map not ready after ' + maxAttempts + ' attempts');
                 clearInterval(checkMapReady);
+                alert('Map is taking too long to load. Please try again.');
             }
         }, 500);
         
@@ -1172,12 +1099,10 @@ function showDirectionsToTarget() {
     
     const target = window.directionsTarget;
     
-    // Remove existing routing
     if (routingControl) {
         map.removeControl(routingControl);
     }
     
-    // Create routing control with directions
     routingControl = L.Routing.control({
         waypoints: [
             L.latLng(userLocation.lat, userLocation.lng),
@@ -1187,12 +1112,11 @@ function showDirectionsToTarget() {
         showAlternatives: false,
         fitSelectedRoutes: true,
         lineOptions: {
-            styles: [{ color: '#0000FF', opacity: 0.8, weight: 5 }] // Blue line
+            styles: [{ color: '#0000FF', opacity: 0.8, weight: 5 }]
         },
-        createMarker: function() { return null; } // Don't create duplicate markers
+        createMarker: function() { return null; }
     }).addTo(map);
     
-    // Center map on the route
     setTimeout(() => {
         map.fitBounds([
             [userLocation.lat, userLocation.lng],
@@ -1200,7 +1124,6 @@ function showDirectionsToTarget() {
         ], { padding: [50, 50] });
     }, 500);
     
-    // Clear the target
     window.directionsTarget = null;
 }
 
@@ -1260,7 +1183,6 @@ function loadMainApp() {
         </div>
     `;
     
-    // Load home tab by default
     loadHomeTab();
 }
 
@@ -1273,7 +1195,6 @@ async function loadProfileTab(profileUserId = null) {
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
     
     try {
-        // Get profile data
         const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
         if (!profileDoc.exists) {
             container.innerHTML = '<div class="error-state">Profile not found</div>';
@@ -1283,14 +1204,31 @@ async function loadProfileTab(profileUserId = null) {
         const profile = profileDoc.data();
         profile.id = targetUserId;
         
-        // Get stats counts
-        const savedCount = await getSavedCount(targetUserId);
-        const savesCount = await getSavesCount(targetUserId);
+        // FIX #7: Use savedProfiles map instead of separate query
+        let savedCount = 0;
+        let savesCount = 0;
         
-        // Render profile
+        if (isOwnProfile) {
+            savedCount = Object.keys(profile.savedProfiles || {}).length;
+            
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savesCount = savesSnapshot.size;
+        } else {
+            const currentUserDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+            savesCount = Object.keys(currentUserDoc.data()?.savedProfiles || {}).length;
+            
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savedCount = savesSnapshot.size;
+        }
+        
         container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile);
         
-        // Add event listeners
         if (isOwnProfile) {
             setupOwnProfileListeners(profile);
         } else {
@@ -1309,7 +1247,6 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
     
     return `
     <div class="profile-container">
-        <!-- Profile Picture + Business Name + Stats Row (Instagram style) -->
         <div class="profile-stats-row">
             <div class="profile-picture">
                 <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
@@ -1321,13 +1258,13 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
                 
                 <div class="stats-grid">
                     <div class="stat-item">
-    <span class="stat-number">${jobsCount}</span>
-    <span class="stat-label">Gigs</span>
-</div>
+                        <span class="stat-number">${jobsCount}</span>
+                        <span class="stat-label">Gigs</span>
+                    </div>
                     <div class="stat-item clickable" onclick="showProviderReviews('${profile.id}')">
-    <span class="stat-number">${rating}</span>
-    <span class="stat-label">★ Rating</span>
-</div>
+                        <span class="stat-number">${rating}</span>
+                        <span class="stat-label">★ Rating</span>
+                    </div>
                     ${isOwnProfile ? `
                         <div class="stat-item clickable" onclick="openSavedModal()">
                             <span class="stat-number">${savedCount}</span>
@@ -1353,12 +1290,10 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
             ${profile.jobsThisMonth || 0} gigs this month
         </div>
         
-        <!-- Bio -->
         <div class="profile-bio">
             ${profile.bio || 'No bio yet.'}
         </div>
         
-        <!-- Contact Info (only show if exists) -->
         ${profile.phoneNumber ? `
             <div class="profile-contact">
                 <span class="contact-icon">📞</span>
@@ -1366,15 +1301,14 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
             </div>
         ` : ''}
         
-        ${profile.location ? `
-    <div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" 
-         ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}>
-        <span class="contact-icon">📍</span>
-        <span class="contact-text">${profile.locationDescription || profile.location}</span>
-    </div>
-` : ''}
+        ${profile.locationGeo ? `
+            <div class="profile-contact ${!isOwnProfile ? 'clickable-location' : ''}" 
+                 ${!isOwnProfile ? `onclick="getDirectionsToProvider('${profile.id}')"` : ''}>
+                <span class="contact-icon">📍</span>
+                <span class="contact-text">${profile.locationDescription || `${profile.locationGeo.latitude}, ${profile.locationGeo.longitude}`}</span>
+            </div>
+        ` : ''}
         
-        <!-- Services Section -->
         <div class="profile-section">
             <h3 class="section-title">Services</h3>
             <div class="services-horizontal">
@@ -1387,7 +1321,6 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
             </div>
         </div>
         
-        <!-- Action Buttons -->
         <div class="profile-actions">
             ${isOwnProfile ? `
                 <button class="btn" onclick="openEditProfile()">Edit Profile</button>
@@ -1399,7 +1332,6 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
             `}
         </div>
         
-        <!-- Portfolio Section -->
         <div class="profile-section">
             <div class="section-header">
                 <h3 class="section-title">Portfolio ${profile.portfolioImages?.length ? `(${profile.portfolioImages.length})` : ''}</h3>
@@ -1419,14 +1351,214 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile) {
     `;
 }
 
-// Helper functions for stats
+// FIX #7: Use savedProfiles map
+window.toggleSaveProfile = async function(profileId) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    if (currentUserId === profileId) {
+        alert('You cannot save your own profile');
+        return;
+    }
+    
+    const saveBtn = document.getElementById(`save-btn-${profileId}`);
+    const isSaved = saveBtn.textContent === 'Saved';
+    
+    try {
+        const userRef = firebase.firestore().collection('users').doc(currentUserId);
+        const userDoc = await userRef.get();
+        const currentSaved = userDoc.data()?.savedProfiles || {};
+        
+        if (isSaved) {
+            // Unsave
+            delete currentSaved[profileId];
+            await userRef.update({
+                savedProfiles: currentSaved
+            });
+            saveBtn.textContent = 'Save';
+            saveBtn.classList.remove('saved');
+        } else {
+            // Save
+            currentSaved[profileId] = true;
+            await userRef.update({
+                savedProfiles: currentSaved
+            });
+            saveBtn.textContent = 'Saved';
+            saveBtn.classList.add('saved');
+        }
+        
+        // Refresh profile stats
+        loadProfileTab(profileId);
+        
+    } catch (error) {
+        console.error('Error toggling save:', error);
+        alert('Failed to save/unsave profile');
+    }
+};
+
+// FIX #7: Check saved status from user document
+async function checkIfSaved(profileId) {
+    const currentUserId = firebase.auth().currentUser.uid;
+    if (currentUserId === profileId) return;
+    
+    const btn = document.getElementById(`save-btn-${profileId}`);
+    if (!btn) return;
+    
+    try {
+        const userDoc = await firebase.firestore().collection('users').doc(currentUserId).get();
+        const savedProfiles = userDoc.data()?.savedProfiles || {};
+        
+        if (savedProfiles[profileId]) {
+            btn.textContent = 'Saved';
+            btn.classList.add('saved');
+        } else {
+            btn.textContent = 'Save';
+            btn.classList.remove('saved');
+        }
+    } catch (error) {
+        console.error('Error checking save status:', error);
+    }
+}
+
+// FIX #7: Saved modal using map
+window.openSavedModal = async function() {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        const userDoc = await firebase.firestore().collection('users').doc(currentUserId).get();
+        const savedProfiles = userDoc.data()?.savedProfiles || {};
+        const savedUserIds = Object.keys(savedProfiles);
+        
+        if (savedUserIds.length === 0) {
+            alert('You haven\'t saved any profiles yet');
+            return;
+        }
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-container';
+        
+        let html = `
+            <div class="modal-header">
+                <h2>Saved Profiles</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-list">
+        `;
+        
+        for (const userId of savedUserIds) {
+            const userDoc = await firebase.firestore().collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                html += `
+                    <div class="modal-item" onclick="viewProfileFromModal('${userId}')">
+                        <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
+                        <div class="modal-item-info">
+                            <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
+                            <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
+                        </div>
+                        <button class="modal-unsave-btn" onclick="unsaveProfile(event, '${userId}')">Unsave</button>
+                    </div>
+                `;
+            }
+        }
+        
+        html += `</div>`;
+        modalContent.innerHTML = html;
+        document.body.appendChild(modalContent);
+        
+    } catch (error) {
+        console.error('Error opening saved modal:', error);
+        alert('Failed to load saved profiles');
+    }
+};
+
+window.openSavesModal = async function() {
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        const savesSnapshot = await firebase.firestore()
+            .collection('users')
+            .where(`savedProfiles.${currentUserId}`, '==', true)
+            .get();
+        
+        if (savesSnapshot.empty) {
+            alert('No one has saved your profile yet');
+            return;
+        }
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-container';
+        
+        let html = `
+            <div class="modal-header">
+                <h2>People who saved you</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-list">
+        `;
+        
+        for (const doc of savesSnapshot.docs) {
+            const userData = doc.data();
+            html += `
+                <div class="modal-item" onclick="viewProfileFromModal('${doc.id}')">
+                    <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
+                    <div class="modal-item-info">
+                        <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
+                        <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        modalContent.innerHTML = html;
+        document.body.appendChild(modalContent);
+        
+    } catch (error) {
+        console.error('Error opening saves modal:', error);
+        alert('Failed to load saves');
+    }
+};
+
+window.unsaveProfile = async function(event, savedUserId) {
+    event.stopPropagation();
+    
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    try {
+        const userRef = firebase.firestore().collection('users').doc(currentUserId);
+        const userDoc = await userRef.get();
+        const savedProfiles = userDoc.data()?.savedProfiles || {};
+        
+        delete savedProfiles[savedUserId];
+        await userRef.update({ savedProfiles: savedProfiles });
+        
+        closeModal();
+        window.openSavedModal();
+        
+        if (document.querySelector('.profile-container')) {
+            loadProfileTab(currentUserId);
+        }
+        
+    } catch (error) {
+        console.error('Error unsaving:', error);
+        alert('Failed to unsave profile');
+    }
+};
+
+window.closeModal = function() {
+    const modal = document.querySelector('.modal-container');
+    if (modal) modal.remove();
+};
+
+window.viewProfileFromModal = function(userId) {
+    closeModal();
+    switchTab('profile');
+    loadProfileTab(userId);
+};
+
 async function getSavedCount(userId) {
     try {
-        const snapshot = await firebase.firestore()
-            .collection('saves')
-            .where('saverId', '==', userId)
-            .get();
-        return snapshot.size; // Use .size instead of .count()
+        const userDoc = await firebase.firestore().collection('users').doc(userId).get();
+        return Object.keys(userDoc.data()?.savedProfiles || {}).length;
     } catch (error) {
         console.error('Error getting saved count:', error);
         return 0;
@@ -1436,19 +1568,26 @@ async function getSavedCount(userId) {
 async function getSavesCount(userId) {
     try {
         const snapshot = await firebase.firestore()
-            .collection('saves')
-            .where('savedUserId', '==', userId)
+            .collection('users')
+            .where(`savedProfiles.${userId}`, '==', true)
             .get();
-        return snapshot.size; // Use .size instead of .count()
+        return snapshot.size;
     } catch (error) {
         console.error('Error getting saves count:', error);
         return 0;
     }
 }
 
+function setupOwnProfileListeners(profile) {
+    // Placeholder
+}
+
+function setupOtherProfileListeners(profile) {
+    checkIfSaved(profile.id);
+}
+
 // ========== IMAGE UPLOAD FUNCTIONS ==========
 window.openImageUpload = function() {
-    // Create file input
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -1460,24 +1599,19 @@ async function uploadProfileImage(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Show loading
     alert('Uploading image...');
     
     try {
-        // Compress image
         const compressedFile = await compressImage(file);
         
-        // Get authentication parameters from your backend FIRST
         const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
         const authData = await authResponse.json();
         
-        // Read as base64
         const reader = new FileReader();
         reader.readAsDataURL(compressedFile);
         reader.onload = function() {
             const base64 = reader.result.split(',')[1];
             
-            // Upload to ImageKit with security parameters
             imagekit.upload({
                 file: base64,
                 fileName: `profile_${Date.now()}.jpg`,
@@ -1493,13 +1627,11 @@ async function uploadProfileImage(event) {
                     return;
                 }
                 
-                // Update user profile with new image URL
                 firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
                     profileImage: result.url
                 }).then(() => {
                     alert('Profile picture updated!');
                     
-                    // Refresh current view
                     if (document.querySelector('.profile-container')) {
                         loadProfileTab();
                     } else if (document.querySelector('.edit-profile-container')) {
@@ -1518,7 +1650,6 @@ async function uploadProfileImage(event) {
 }
 
 window.addPortfolioImages = function() {
-    // Create file input that accepts multiple files
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -1537,17 +1668,12 @@ async function uploadPortfolioImages(event) {
         const uploadedUrls = [];
         
         for (const file of files) {
-            // Get fresh authentication parameters for EACH image
             const authResponse = await fetch('https://gigscourt.vercel.app/api/imagekit-auth');
             const authData = await authResponse.json();
             
-            // Compress image
             const compressedFile = await compressImage(file);
-            
-            // Read as base64
             const base64 = await readFileAsBase64(compressedFile);
             
-            // Upload to ImageKit with security parameters
             await new Promise((resolve, reject) => {
                 imagekit.upload({
                     file: base64,
@@ -1562,14 +1688,12 @@ async function uploadPortfolioImages(event) {
                         reject(err);
                         return;
                     }
-                    
                     uploadedUrls.push(result.url);
                     resolve();
                 });
             });
         }
             
-        // After all uploads complete, update Firestore
         await updateFirestoreWithPortfolio(uploadedUrls);
         
     } catch (error) {
@@ -1580,19 +1704,15 @@ async function uploadPortfolioImages(event) {
 
 async function updateFirestoreWithPortfolio(uploadedUrls) {
     try {
-        // Get current user data
         const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
         const userData = userDoc.data();
         const existingImages = userData.portfolioImages || [];
         
-        // Update with new images
         await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
             portfolioImages: [...existingImages, ...uploadedUrls]
         });
         
         alert(`${uploadedUrls.length} images uploaded successfully!`);
-        
-        // Refresh profile
         loadProfileTab();
     } catch (error) {
         console.error('Firestore error:', error);
@@ -1600,7 +1720,6 @@ async function updateFirestoreWithPortfolio(uploadedUrls) {
     }
 }
 
-// Helper function to compress images
 function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1612,7 +1731,6 @@ function compressImage(file) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Max dimensions
                 const MAX_WIDTH = 1600;
                 const MAX_HEIGHT = 1600;
                 
@@ -1638,7 +1756,7 @@ function compressImage(file) {
                 
                 canvas.toBlob((blob) => {
                     resolve(blob);
-                }, file.type, 0.8); // 80% quality
+                }, file.type, 0.8);
             };
             img.onerror = reject;
         };
@@ -1667,17 +1785,13 @@ window.deleteImage = async (event, imageUrl) => {
         const userDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
         const userData = userDoc.data();
         
-        // Filter out the deleted image
         const updatedImages = (userData.portfolioImages || []).filter(url => url !== imageUrl);
         
-        // Update Firestore
         await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
             portfolioImages: updatedImages
         });
         
         alert('Image deleted');
-        
-        // Refresh profile
         loadProfileTab();
     } catch (error) {
         console.error('Delete error:', error);
@@ -1698,7 +1812,6 @@ window.openEditProfile = function() {
             </div>
             
             <div class="edit-profile-form">
-                <!-- Profile Picture -->
                 <div class="edit-picture-section">
                     <div class="edit-picture">
                         <img src="${currentUserData?.profileImage ? currentUserData.profileImage + '?tr=w-80,h-80' : 'https://via.placeholder.com/80'}" alt="Profile">
@@ -1706,41 +1819,35 @@ window.openEditProfile = function() {
                     </div>
                 </div>
                 
-                <!-- Business Name (with cooldown) -->
                 <div class="form-group">
                     <label>Business Name</label>
                     <input type="text" id="edit-business-name" value="${currentUserData?.businessName || ''}">
                     <small class="cooldown-hint">Can change every 14 days</small>
                 </div>
                 
-                <!-- Username (with cooldown) -->
                 <div class="form-group">
                     <label>Username</label>
                     <input type="text" id="edit-username" value="${currentUserData?.username || ''}">
                     <small class="cooldown-hint">Can change every 14 days</small>
                 </div>
                 
-                <!-- Bio -->
                 <div class="form-group">
                     <label>Bio</label>
                     <textarea id="edit-bio" rows="3">${currentUserData?.bio || ''}</textarea>
                 </div>
                 
-                <!-- Phone -->
                 <div class="form-group">
                     <label>Phone Number</label>
                     <input type="tel" id="edit-phone" value="${currentUserData?.phoneNumber || ''}">
                 </div>
                 
-                <!-- Location -->
                 <div class="form-group">
                     <label>Location</label>
                     <button class="location-picker-btn" onclick="openLocationPicker()">
-                        📍 ${currentUserData?.location || 'Set your location'}
+                        📍 ${currentUserData?.locationDescription || (currentUserData?.locationGeo ? `${currentUserData.locationGeo.latitude}, ${currentUserData.locationGeo.longitude}` : 'Set your location')}
                     </button>
                 </div>
                 
-                <!-- Services -->
                 <div class="form-group">
                     <label>Services</label>
                     <div class="current-services">
@@ -1754,7 +1861,6 @@ window.openEditProfile = function() {
                     </div>
                 </div>
                 
-                <!-- Account Actions -->
                 <div class="account-actions">
                     <button class="btn btn-outline" onclick="logout()">Log Out</button>
                     <button class="btn btn-outline delete-account" onclick="deleteAccount()">Delete Account</button>
@@ -1764,7 +1870,6 @@ window.openEditProfile = function() {
     `;
 };
 
-// Edit Profile Helper Functions
 window.saveEditProfile = async function() {
     const businessName = document.getElementById('edit-business-name').value;
     const username = document.getElementById('edit-username').value;
@@ -1784,7 +1889,6 @@ window.saveEditProfile = async function() {
             phoneNumber: phone
         });
         
-        // Reload profile tab
         loadProfileTab();
     } catch (error) {
         alert('Error saving profile: ' + error.message);
@@ -1826,7 +1930,6 @@ window.openLocationPicker = function() {
         </div>
     `;
     
-    // Initialize map after container is visible
     setTimeout(() => {
         initializeLocationMap();
     }, 300);
@@ -1840,43 +1943,35 @@ function initializeLocationMap() {
     const mapContainer = document.getElementById('location-map');
     if (!mapContainer) return;
     
-    // Try to get user's current location first
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                // Use current location
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 setupMap(lat, lng);
             },
             (error) => {
                 console.log('Geolocation error:', error);
-                // Fallback to stored location or Lagos default
                 useFallbackLocation();
             },
             { timeout: 5000 }
         );
     } else {
-        // Geolocation not supported, use fallback
         useFallbackLocation();
     }
     
     function useFallbackLocation() {
-        let lat = 6.5244; // Lagos default
+        let lat = 6.5244;
         let lng = 3.3792;
         
-        if (currentUserData?.location) {
-            const parts = currentUserData.location.split(',');
-            if (parts.length === 2) {
-                lat = parseFloat(parts[0]);
-                lng = parseFloat(parts[1]);
-            }
+        if (currentUserData?.locationGeo) {
+            lat = currentUserData.locationGeo.latitude;
+            lng = currentUserData.locationGeo.longitude;
         }
         setupMap(lat, lng);
     }
     
     function setupMap(lat, lng) {
-        // Initialize map
         locationMap = L.map('location-map', {
             center: [lat, lng],
             zoom: 15,
@@ -1888,17 +1983,14 @@ function initializeLocationMap() {
             maxZoom: 19
         }).addTo(locationMap);
         
-        // Store selected location
         selectedLocation = { lat, lng };
         
-        // Update address when map moves (pin stays centered)
         locationMap.on('moveend', function() {
             const center = locationMap.getCenter();
             selectedLocation = { lat: center.lat, lng: center.lng };
             updateAddressFromCoords(center.lat, center.lng);
         });
         
-        // Get initial address
         updateAddressFromCoords(lat, lng);
     }
 }
@@ -1907,14 +1999,10 @@ async function updateAddressFromCoords(lat, lng) {
     const addressInput = document.getElementById('location-address');
     if (!addressInput) return;
     
-    // Store selected location
     selectedLocation = { lat, lng };
-    
-    // Show loading
     addressInput.value = 'Getting address...';
     
     try {
-        // Use Nominatim for reverse geocoding
         const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
             {
@@ -1946,20 +2034,13 @@ window.saveLocation = function() {
     const address = document.getElementById('location-address').value;
     const description = document.getElementById('location-description').value;
     
-    // Create GeoPoint for Firestore
     const geopoint = new firebase.firestore.GeoPoint(selectedLocation.lat, selectedLocation.lng);
     
-    // Format location as string "lat,lng" for backward compatibility
-    const locationString = `${selectedLocation.lat},${selectedLocation.lng}`;
-    
-    // Update Firestore with both formats
     firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
-        location: locationString,
-        locationGeo: geopoint,  // New field for geo queries
+        locationGeo: geopoint,
         locationDescription: description
     }).then(() => {
         alert('Location saved!');
-        // Refresh currentUserData
         firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get().then(doc => {
             currentUserData = doc.data();
             openEditProfile();
@@ -1969,13 +2050,6 @@ window.saveLocation = function() {
         alert('Failed to save location');
     });
 };
-
-// Add search functionality
-document.addEventListener('input', function(e) {
-    if (e.target && e.target.id === 'location-search-input') {
-        searchLocation(e.target.value);
-    }
-});
 
 let searchTimeout;
 async function searchLocation(query) {
@@ -2000,7 +2074,6 @@ async function searchLocation(query) {
                 const lat = parseFloat(first.lat);
                 const lng = parseFloat(first.lon);
                 
-                // Move map to searched location
                 locationMap.setView([lat, lng], 15);
                 updateAddressFromCoords(lat, lng);
             }
@@ -2010,6 +2083,12 @@ async function searchLocation(query) {
     }, 500);
 }
 
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'location-search-input') {
+        searchLocation(e.target.value);
+    }
+});
+
 window.removeService = function(service) {
     const services = currentUserData?.services || [];
     const updatedServices = services.filter(s => s !== service);
@@ -2017,7 +2096,6 @@ window.removeService = function(service) {
     firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
         services: updatedServices
     }).then(() => {
-        // Refresh edit profile
         window.openEditProfile();
     });
 };
@@ -2029,7 +2107,6 @@ window.addService = function() {
     const services = currentUserData?.services || [];
     const pendingServices = currentUserData?.pendingServices || [];
     
-    // Check if it's a preset service
     if (['Barber', 'Tech', 'Design', 'Marketing'].includes(newService)) {
         if (!services.includes(newService)) {
             firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
@@ -2040,7 +2117,6 @@ window.addService = function() {
             });
         }
     } else {
-        // Custom service goes to pending
         if (!pendingServices.includes(newService)) {
             firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
                 pendingServices: [...pendingServices, newService]
@@ -2054,80 +2130,52 @@ window.addService = function() {
 
 // ========== SHARE PROFILE ==========
 window.shareProfile = async function(profileId) {
-    // If no profileId provided, use current user's ID
     const targetId = profileId || firebase.auth().currentUser.uid;
-    console.log('1. Share function started', profileId);
     
-    // Get the profile data
     const profileDoc = await firebase.firestore().collection('users').doc(targetId).get();
-    console.log('2. Profile fetched', profileDoc.exists);
-    
     if (!profileDoc.exists) return;
     
     const profile = profileDoc.data();
     const businessName = profile.businessName || 'GigsCourt Profile';
     const bio = profile.bio ? profile.bio.substring(0, 100) : 'Check out my profile on GigsCourt';
-    
-    // Create the profile URL using document ID
     const profileUrl = `${window.location.origin}/user/${targetId}`;
     
-    console.log('3. Share data prepared', { businessName, bio, profileUrl });
-    
-    // Try native share first (mobile)
     if (navigator.share) {
-        console.log('4. Web Share API is supported');
         try {
             await navigator.share({
                 title: businessName,
                 text: bio,
                 url: profileUrl
             });
-            console.log('5. Share successful');
         } catch (err) {
-            console.log('5. Share error:', err.name, err.message);
             if (err.name !== 'AbortError') {
-                console.log('6. Falling back to clipboard');
                 copyProfileLink(profileUrl);
             }
         }
     } else {
-        console.log('4. Web Share API NOT supported, using clipboard');
         copyProfileLink(profileUrl);
     }
 };
 
-// Helper function to copy link and show toast
 async function copyProfileLink(url) {
-    console.log('7. Copying to clipboard:', url);
     try {
         await navigator.clipboard.writeText(url);
-        console.log('8. Copy successful');
         showToast('Link copied!');
     } catch (err) {
-        console.error('8. Copy failed:', err);
         alert('Could not copy link. Please copy manually: ' + url);
     }
 }
 
-// Toast notification function
 function showToast(message) {
-    console.log('9. Showing toast:', message);
-    // Remove any existing toast
     const existingToast = document.querySelector('.toast-notification');
     if (existingToast) existingToast.remove();
     
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     toast.textContent = message;
     
-    // Add to body
     document.body.appendChild(toast);
-    
-    // Trigger animation
     setTimeout(() => toast.classList.add('show'), 10);
-    
-    // Remove after 2 seconds
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
@@ -2135,79 +2183,13 @@ function showToast(message) {
 }
 
 window.startChat = (id) => alert('Chat coming soon');
-window.toggleSaveProfile = async function(profileId) {
-    const currentUserId = firebase.auth().currentUser.uid;
-    if (currentUserId === profileId) {
-        alert('You cannot save your own profile');
-        return;
-    }
-    
-    const saveBtn = document.getElementById(`save-btn-${profileId}`);
-    const isSaved = saveBtn.textContent === 'Saved';
-    
-    try {
-        if (isSaved) {
-            // Unsave - delete the save document
-            const savesSnapshot = await firebase.firestore()
-                .collection('saves')
-                .where('saverId', '==', currentUserId)
-                .where('savedUserId', '==', profileId)
-                .get();
-            
-            const deletePromises = [];
-            savesSnapshot.forEach(doc => {
-                deletePromises.push(doc.ref.delete());
-            });
-            
-            await Promise.all(deletePromises);
-            
-            // Update button
-            saveBtn.textContent = 'Save';
-            saveBtn.classList.remove('saved');
-            
-        } else {
-            // Save - create new save document
-            await firebase.firestore().collection('saves').add({
-                saverId: currentUserId,
-                savedUserId: profileId,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // Update button
-            saveBtn.textContent = 'Saved';
-            saveBtn.classList.add('saved');
-        }
-        
-        // Update the stats counts in the profile
-        updateProfileStats(profileId);
-        
-    } catch (error) {
-        console.error('Error toggling save:', error);
-        alert('Failed to save/unsave profile');
-    }
-};
-
-async function updateProfileStats(profileId) {
-    // Get updated counts
-    const savedCount = await getSavedCount(profileId);
-    const savesCount = await getSavesCount(profileId);
-    
-    // Update the displayed numbers
-    const savedStat = document.querySelector('.stat-item.clickable .stat-number');
-    const savesStat = document.querySelectorAll('.stat-item.clickable')[1]?.querySelector('.stat-number');
-    
-    if (savedStat) savedStat.textContent = savedCount;
-    if (savesStat) savesStat.textContent = savesCount;
-}
 
 // ========== GLIGHTBOX GALLERY ==========
 window.openPhotoSwipe = function(index) {
-    // Find all portfolio images on the page
     const portfolioItems = document.querySelectorAll('.portfolio-item img');
     const images = [];
     
     portfolioItems.forEach((img, i) => {
-        // Get high-quality image URL (remove transformation params)
         let imgUrl = img.src;
         if (imgUrl.includes('?tr=')) {
             imgUrl = imgUrl.split('?tr=')[0];
@@ -2222,32 +2204,19 @@ window.openPhotoSwipe = function(index) {
     
     if (images.length === 0) return;
     
-    // Initialize GLightbox with the images starting at clicked index
     const lightbox = GLightbox({
         elements: images,
         startAt: index,
         loop: true,
         touchNavigation: true,
         autoplayVideos: false,
-        plyr: {
-            css: false,
-            js: false
-        },
         closeButton: true,
         closeOnOutsideClick: true,
         zoomable: true,
         draggable: true,
         slideEffect: 'fade',
-        moreText: 'See more',
-        moreLength: 60,
-        descPosition: 'bottom',
         openEffect: 'fade',
         closeEffect: 'fade',
-        cssEfects: {
-            fade: { in: 'fadeIn', out: 'fadeOut' },
-            zoom: { in: 'zoomIn', out: 'zoomOut' }
-        },
-        // Custom styles for minimalist grayscale
         onOpen: function() {
             document.body.style.overflow = 'hidden';
         },
@@ -2259,245 +2228,6 @@ window.openPhotoSwipe = function(index) {
     lightbox.open();
 };
 
-// Add minimalist CSS for GLightbox (injected via JS to match your dark/light mode)
-const style = document.createElement('style');
-style.textContent = `
-    .glightbox-container .gclose,
-    .glightbox-container .gprev,
-    .glightbox-container .gnext,
-    .glightbox-container .gcounter {
-        background: rgba(0, 0, 0, 0.3) !important;
-        color: #999 !important;
-        border-radius: 50% !important;
-        filter: grayscale(100%);
-        transition: opacity 0.3s;
-    }
-    .glightbox-container .gclose:hover,
-    .glightbox-container .gprev:hover,
-    .glightbox-container .gnext:hover {
-        opacity: 0.8;
-    }
-    .glightbox-container .gslide-description {
-        background: linear-gradient(transparent, rgba(0,0,0,0.7)) !important;
-    }
-    .glightbox-container .gslide-title {
-        color: #999 !important;
-        font-size: 14px !important;
-        font-weight: normal !important;
-        text-align: center !important;
-    }
-    .glightbox-container .gslide-inner-content {
-        background: transparent !important;
-    }
-    .glightbox-mobile .glightbox-container .gslide-media {
-        margin-top: 0 !important;
-    }
-`;
-document.head.appendChild(style);
-
-// ========== SAVED/SAVES MODALS ==========
-window.openSavedModal = async function() {
-    const currentUserId = firebase.auth().currentUser.uid;
-    
-    try {
-        // Get all profiles that current user has saved
-        const savesSnapshot = await firebase.firestore()
-            .collection('saves')
-            .where('saverId', '==', currentUserId)
-            .orderBy('timestamp', 'desc')
-            .get();
-        
-        if (savesSnapshot.empty) {
-            alert('You haven\'t saved any profiles yet');
-            return;
-        }
-        
-        // Get the saved user IDs
-        const savedUserIds = [];
-        savesSnapshot.forEach(doc => {
-            savedUserIds.push(doc.data().savedUserId);
-        });
-        
-        // Fetch all the user profiles
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-container';
-        
-        let html = `
-            <div class="modal-header">
-                <h2>Saved Profiles</h2>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="modal-list">
-        `;
-        
-        for (const userId of savedUserIds) {
-            const userDoc = await firebase.firestore().collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                html += `
-                    <div class="modal-item" onclick="viewProfileFromModal('${userId}')">
-                        <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
-                        <div class="modal-item-info">
-                            <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
-                            <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
-                        </div>
-                        <button class="modal-unsave-btn" onclick="unsaveProfile(event, '${userId}')">Unsave</button>
-                    </div>
-                `;
-            }
-        }
-        
-        html += `</div>`;
-        modalContent.innerHTML = html;
-        
-        // Add modal to page
-        document.body.appendChild(modalContent);
-        
-    } catch (error) {
-        console.error('Error opening saved modal:', error);
-        alert('Failed to load saved profiles');
-    }
-};
-
-window.openSavesModal = async function() {
-    const currentUserId = firebase.auth().currentUser.uid;
-    
-    try {
-        // Get all profiles that have saved current user
-        const savesSnapshot = await firebase.firestore()
-            .collection('saves')
-            .where('savedUserId', '==', currentUserId)
-            .orderBy('timestamp', 'desc')
-            .get();
-        
-        if (savesSnapshot.empty) {
-            alert('No one has saved your profile yet');
-            return;
-        }
-        
-        // Get the saver user IDs
-        const saverUserIds = [];
-        savesSnapshot.forEach(doc => {
-            saverUserIds.push(doc.data().saverId);
-        });
-        
-        // Fetch all the user profiles
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-container';
-        
-        let html = `
-            <div class="modal-header">
-                <h2>People who saved you</h2>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="modal-list">
-        `;
-        
-        for (const userId of saverUserIds) {
-            const userDoc = await firebase.firestore().collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                html += `
-                    <div class="modal-item" onclick="viewProfileFromModal('${userId}')">
-                        <img src="${userData.profileImage ? userData.profileImage + '?tr=w-50,h-50' : 'https://via.placeholder.com/50'}" class="modal-item-image">
-                        <div class="modal-item-info">
-                            <div class="modal-item-name">${userData.businessName || 'Business Name'}</div>
-                            <div class="modal-item-rating">⭐ ${userData.rating || '0.0'}</div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        
-        html += `</div>`;
-        modalContent.innerHTML = html;
-        
-        // Add modal to page
-        document.body.appendChild(modalContent);
-        
-    } catch (error) {
-        console.error('Error opening saves modal:', error);
-        alert('Failed to load saves');
-    }
-};
-
-// Helper functions for modals
-window.closeModal = function() {
-    const modal = document.querySelector('.modal-container');
-    if (modal) modal.remove();
-};
-
-window.viewProfileFromModal = function(userId) {
-    closeModal();
-    switchTab('profile');
-    loadProfileTab(userId);
-};
-
-window.unsaveProfile = async function(event, savedUserId) {
-    event.stopPropagation(); // Prevent triggering the parent click
-    
-    const currentUserId = firebase.auth().currentUser.uid;
-    
-    try {
-        // Find and delete the save document
-        const savesSnapshot = await firebase.firestore()
-            .collection('saves')
-            .where('saverId', '==', currentUserId)
-            .where('savedUserId', '==', savedUserId)
-            .get();
-        
-        savesSnapshot.forEach(doc => doc.ref.delete());
-        
-        // Refresh the modal
-        closeModal();
-        window.openSavedModal();
-        
-        // Update stats if on profile page
-        updateProfileStats(currentUserId);
-        
-    } catch (error) {
-        console.error('Error unsaving:', error);
-        alert('Failed to unsave profile');
-    }
-};
-
-// Setup functions
-function setupOwnProfileListeners(profile) {
-    // Add any own-profile specific listeners
-}
-
-function setupOtherProfileListeners(profile) {
-    // Check if already saved and update button text
-    checkIfSaved(profile.id);
-}
-
-async function checkIfSaved(profileId) {
-    const currentUserId = firebase.auth().currentUser.uid;
-    if (currentUserId === profileId) return;
-    
-    const btn = document.getElementById(`save-btn-${profileId}`);
-    if (!btn) return;
-    
-    try {
-        // Check if already saved
-        const savesSnapshot = await firebase.firestore()
-            .collection('saves')
-            .where('saverId', '==', currentUserId)
-            .where('savedUserId', '==', profileId)
-            .get();
-        
-        if (!savesSnapshot.empty) {
-            btn.textContent = 'Saved';
-            btn.classList.add('saved');
-        } else {
-            btn.textContent = 'Save';
-            btn.classList.remove('saved');
-        }
-    } catch (error) {
-        console.error('Error checking save status:', error);
-    }
-}
-
 // ========== SEARCH TAB ==========
 let map = null;
 let userMarker = null;
@@ -2505,7 +2235,7 @@ let providerMarkers = [];
 let routingControl = null;
 let searchProviders = [];
 let radiusCircle = null;
-let currentRadius = 10; // Default 10km
+let currentRadius = 10;
 
 function loadSearchTab() {
     const container = document.getElementById('tab-content');
@@ -2513,10 +2243,8 @@ function loadSearchTab() {
     
     container.innerHTML = `
         <div class="search-container">
-            <!-- Map Container (45%) -->
             <div id="search-map" class="search-map"></div>
             
-            <!-- Search Controls (10%) -->
             <div class="search-controls">
                 <div class="search-input-container">
                     <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
@@ -2529,12 +2257,9 @@ function loadSearchTab() {
                 </div>
             </div>
             
-            <!-- Provider List Drawer (45%) -->
             <div class="provider-drawer">
                 <div class="drawer-handle"></div>
-                <div id="provider-list" class="provider-list">
-                    <!-- Providers will load here -->
-                </div>
+                <div id="provider-list" class="provider-list"></div>
                 <div id="drawer-loading" class="drawer-loading hidden">
                     <div class="spinner-small"></div>
                 </div>
@@ -2542,10 +2267,7 @@ function loadSearchTab() {
         </div>
     `;
     
-    // Get user location
     getUserLocation();
-    
-    // Setup event listeners
     setupSearchListeners();
 }
 
@@ -2557,19 +2279,16 @@ function getUserLocation() {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
-                // Store in localStorage as backup
                 localStorage.setItem('userLocation', JSON.stringify(userLocation));
                 initializeMap();
                 loadNearbyProviders(true);
             },
             (error) => {
                 console.error('Geolocation error:', error);
-                // Try to get from localStorage first
                 const savedLocation = localStorage.getItem('userLocation');
                 if (savedLocation) {
                     userLocation = JSON.parse(savedLocation);
                 } else {
-                    // Default to Lagos if no saved location
                     userLocation = { lat: 6.5244, lng: 3.3792 };
                 }
                 initializeMap();
@@ -2578,32 +2297,27 @@ function getUserLocation() {
             { enableHighAccuracy: true, timeout: 10000 }
         );
     } else {
-        // Try to get from localStorage
         const savedLocation = localStorage.getItem('userLocation');
         if (savedLocation) {
             userLocation = JSON.parse(savedLocation);
         } else {
-            // Default to Lagos
             userLocation = { lat: 6.5244, lng: 3.3792 };
         }
         initializeMap();
-        loadNearbyProviders();
+        loadNearbyProviders(true);
     }
 }
 
 function initializeMap() {
-    // Wait for container to be visible
     setTimeout(() => {
         const mapContainer = document.getElementById('search-map');
         if (!mapContainer) return;
         
-        // Check if map already initialized
         if (map) {
             map.remove();
             map = null;
         }
         
-        // Initialize map with Humanitarian OSM tiles
         map = L.map('search-map', {
             center: [userLocation.lat, userLocation.lng],
             zoom: 13,
@@ -2616,10 +2330,8 @@ function initializeMap() {
             attribution: '© OpenStreetMap'
         }).addTo(map);
         
-        // Add zoom control to bottom right
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         
-        // Add user location marker (blue dot)
         const userIcon = L.divIcon({
             className: 'user-location-marker',
             html: '<div class="user-dot"></div>',
@@ -2629,10 +2341,8 @@ function initializeMap() {
         
         userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
         
-        // Draw initial radius circle
         updateRadiusCircle();
         
-        // Handle map movement for location picker (will be used later)
         map.on('moveend', onMapMoved);
         
     }, 300);
@@ -2641,14 +2351,12 @@ function initializeMap() {
 function updateRadiusCircle() {
     if (!map || !userLocation) return;
     
-    // Remove existing circle
     if (radiusCircle) {
         map.removeLayer(radiusCircle);
     }
     
-    // Draw new circle
     radiusCircle = L.circle([userLocation.lat, userLocation.lng], {
-        radius: currentRadius * 1000, // Convert km to meters
+        radius: currentRadius * 1000,
         color: '#000000',
         weight: 1,
         fillColor: '#000000',
@@ -2656,7 +2364,6 @@ function updateRadiusCircle() {
         lineCap: 'round'
     }).addTo(map);
     
-    // Fit map to circle bounds
     map.fitBounds(radiusCircle.getBounds(), { padding: [20, 20] });
 }
 
@@ -2683,7 +2390,6 @@ async function loadNearbyProviders(reset = true) {
     if (loadingEl) loadingEl.classList.remove('hidden');
     
     try {
-        // Check cache first (only on reset)
         if (reset && searchCache && searchCacheTime) {
             const now = new Date().getTime();
             if (now - searchCacheTime < CACHE_DURATION) {
@@ -2697,11 +2403,10 @@ async function loadNearbyProviders(reset = true) {
             }
         }
         
-        // Build query with pagination
         let query = firebase.firestore().collection('users')
             .where('emailVerified', '==', true)
             .where('locationGeo', '!=', null)
-            .limit(20); // Load 20 at a time
+            .limit(20);
         
         if (searchLastDoc) {
             query = query.startAfter(searchLastDoc);
@@ -2714,11 +2419,9 @@ async function loadNearbyProviders(reset = true) {
         } else {
             searchLastDoc = snapshot.docs[snapshot.docs.length - 1];
             
-            // Process each provider
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 
-                // Calculate REAL distance
                 const distance = calculateDistance(
                     userLocation.lat,
                     userLocation.lng,
@@ -2726,9 +2429,7 @@ async function loadNearbyProviders(reset = true) {
                     data.locationGeo.longitude
                 );
                 
-                // Only include if within radius
                 if (distance <= currentRadius) {
-                    // Create location object for map marker
                     const providerLocation = {
                         lat: data.locationGeo.latitude,
                         lng: data.locationGeo.longitude
@@ -2743,16 +2444,13 @@ async function loadNearbyProviders(reset = true) {
                 }
             });
             
-            // Sort by distance (closest first)
             searchProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
             
-            // Update cache on first load
             if (reset) {
                 searchCache = [...searchProviders];
                 searchCacheTime = new Date().getTime();
             }
             
-            // Update UI
             renderProviderList();
             updateMapMarkers();
         }
@@ -2766,13 +2464,10 @@ async function loadNearbyProviders(reset = true) {
 }
 
 function updateMapMarkers() {
-    // Clear existing markers
     providerMarkers.forEach(marker => map.removeLayer(marker));
     providerMarkers = [];
     
-    // Add new markers
     searchProviders.forEach(provider => {
-        // Create custom marker with rating badge
         const markerHtml = `
             <div class="provider-marker">
                 <div class="marker-pin"></div>
@@ -2788,13 +2483,11 @@ function updateMapMarkers() {
             popupAnchor: [0, -40]
         });
         
-        // Use provider location or random nearby point
-        const lat = provider.location?.lat || userLocation.lat + (Math.random() - 0.5) * 0.1;
-        const lng = provider.location?.lng || userLocation.lng + (Math.random() - 0.5) * 0.1;
+        const lat = provider.location?.lat || userLocation.lat;
+        const lng = provider.location?.lng || userLocation.lng;
         
         const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
         
-        // Add popup
         marker.bindPopup(`
             <div class="map-popup">
                 <strong>${provider.businessName}</strong><br>
@@ -2833,7 +2526,6 @@ function renderProviderList() {
 }
 
 function setupSearchListeners() {
-    // Search input
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -2842,11 +2534,11 @@ function setupSearchListeners() {
         });
     }
     
-    // Radius slider
     const radiusSlider = document.getElementById('radius-slider');
     const radiusValue = document.getElementById('radius-value');
     
     if (radiusSlider && radiusValue) {
+        // FIX #3: Only load on release (change event), not on input
         radiusSlider.addEventListener('input', (e) => {
             currentRadius = parseInt(e.target.value);
             radiusValue.textContent = `${currentRadius} km`;
@@ -2857,20 +2549,18 @@ function setupSearchListeners() {
             loadNearbyProviders(true);
         });
     }
-    // Infinite scroll for provider list
-const providerDrawer = document.querySelector('.provider-drawer');
-if (providerDrawer) {
-    providerDrawer.addEventListener('scroll', () => {
-        if (providerDrawer.scrollTop + providerDrawer.clientHeight >= providerDrawer.scrollHeight - 100) {
-            if (!searchLoading && searchHasMore) {
-                loadNearbyProviders(false);
+    
+    const providerDrawer = document.querySelector('.provider-drawer');
+    if (providerDrawer) {
+        providerDrawer.addEventListener('scroll', () => {
+            if (providerDrawer.scrollTop + providerDrawer.clientHeight >= providerDrawer.scrollHeight - 100) {
+                if (!searchLoading && searchHasMore) {
+                    loadNearbyProviders(false);
+                }
             }
-        }
-    });
+        });
+    }
 }
-}
-
-
 
 function filterProviders(searchTerm) {
     const items = document.querySelectorAll('.provider-list-item');
@@ -2885,28 +2575,23 @@ function filterProviders(searchTerm) {
     });
 }
 
-// Directions feature
 window.getDirections = function(providerId) {
     const provider = searchProviders.find(p => p.id === providerId);
     if (!provider || !userLocation) return;
     
-    // Switch to search tab
     switchTab('search');
     
-    // Wait for map to be ready
     setTimeout(() => {
         if (!map) return;
         
-        // Remove existing routing
         if (routingControl) {
             map.removeControl(routingControl);
         }
         
-        // Create routing control
         routingControl = L.Routing.control({
             waypoints: [
                 L.latLng(userLocation.lat, userLocation.lng),
-                L.latLng(provider.location?.lat || userLocation.lat + 0.01, provider.location?.lng || userLocation.lng + 0.01)
+                L.latLng(provider.location?.lat || userLocation.lat, provider.location?.lng || userLocation.lng)
             ],
             routeWhileDragging: false,
             showAlternatives: false,
@@ -2914,10 +2599,9 @@ window.getDirections = function(providerId) {
             lineOptions: {
                 styles: [{ color: '#000000', opacity: 0.8, weight: 4 }]
             },
-            createMarker: function() { return null; } // Don't create markers
+            createMarker: function() { return null; }
         }).addTo(map);
         
-        // Add show/hide button
         const directionsBtn = document.createElement('button');
         directionsBtn.className = 'directions-toggle-btn';
         directionsBtn.textContent = 'Hide';
@@ -2954,120 +2638,42 @@ window.openQuickViewFromSearch = function(providerId) {
 };
 
 function onMapMoved() {
-    // Used for location picker later
+    // Placeholder
 }
 
 // ========== MESSAGES TAB ==========
 let conversationsListener = null;
 let currentChatId = null;
 let messagesListener = null;
+let conversationsInterval = null;
+let messagesInterval = null;
 
-function loadMessagesTab() {
-    const container = document.getElementById('tab-content');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="messages-container">
-            <div class="messages-header">
-                <h1 class="messages-title">Messages</h1>
-            </div>
-            
-            <div id="conversations-list" class="conversations-list">
-                <!-- Conversations will load here -->
-            </div>
-            
-            <div id="conversations-loading" class="conversations-loading">
-                <div class="spinner"></div>
-            </div>
-        </div>
-    `;
-    
-    loadConversations();
-    fixChatUserNames();
-}
-
-// Check for pending gigs when opening chat
-async function checkPendingGigs(otherUserId, chatContainer) {
-    const currentUserId = firebase.auth().currentUser.uid;
-    
-    try {
-        // Check if there's a pending gig where current user is the client
-        const pendingGigsSnapshot = await firebase.firestore()
-            .collection('jobs')
-            .where('providerId', '==', otherUserId)
-            .where('clientId', '==', currentUserId)
-            .where('status', '==', 'pending')
-            .where('notifiedClient', '==', false)
-            .limit(1)
-            .get();
-        
-        if (!pendingGigsSnapshot.empty) {
-            const gig = pendingGigsSnapshot.docs[0].data();
-            const gigId = pendingGigsSnapshot.docs[0].id;
-            
-            // Add confirmation button to chat
-            const confirmDiv = document.createElement('div');
-            confirmDiv.className = 'gig-confirmation';
-            confirmDiv.innerHTML = `
-                <div class="gig-message">
-                    <strong>${gig.providerName || 'Provider'}</strong> registered a gig with you.
-                </div>
-                <button class="btn confirm-gig-btn" onclick="confirmGig('${gigId}', '${otherUserId}')">Confirm Gig</button>
-            `;
-            
-            chatContainer.appendChild(confirmDiv);
-            
-            // Mark as notified
-            await pendingGigsSnapshot.docs[0].ref.update({
-                notifiedClient: true
-            });
-        }
-    } catch (error) {
-        console.error('Error checking pending gigs:', error);
-    }
-}
-
-// Confirm gig and show review modal
-window.confirmGig = async function(gigId, providerId) {
-    try {
-        // Update gig status
-        await firebase.firestore().collection('jobs').doc(gigId).update({
-            status: 'completed',
-            completedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Show review modal immediately
-        showReviewModal(providerId, gigId);
-        
-        // Remove the confirmation button
-        document.querySelector('.gig-confirmation')?.remove();
-        
-    } catch (error) {
-        console.error('Error confirming gig:', error);
-        alert('Failed to confirm gig');
-    }
-};
-
+// FIX #1: Manual refresh for conversations
 function loadConversations() {
     const userId = firebase.auth().currentUser.uid;
     const conversationsList = document.getElementById('conversations-list');
     const loadingEl = document.getElementById('conversations-loading');
     
-    // Clear existing listener
     if (conversationsListener) {
         conversationsListener();
+        conversationsListener = null;
     }
     
-    // Set up real-time listener
-    conversationsListener = firebase.firestore()
-        .collection('chats')
-        .where('participants', 'array-contains', userId)
-        .orderBy('lastMessageTimestamp', 'desc')
-        .onSnapshot((snapshot) => {
-            loadingEl.style.display = 'none';
+    if (window.conversationsInterval) {
+        clearInterval(window.conversationsInterval);
+    }
+    
+    async function fetchConversations() {
+        try {
+            const snapshot = await firebase.firestore()
+                .collection('chats')
+                .where('participants', 'array-contains', userId)
+                .orderBy('lastMessageTimestamp', 'desc')
+                .get();
+            
+            if (loadingEl) loadingEl.style.display = 'none';
             
             if (snapshot.empty) {
-                // Empty state - no conversations
                 conversationsList.innerHTML = `
                     <div class="empty-state-messages">
                         <div class="empty-icon">💬</div>
@@ -3079,7 +2685,6 @@ function loadConversations() {
                 return;
             }
             
-            // Build conversations list
             let html = '';
             snapshot.forEach(doc => {
                 const chat = doc.data();
@@ -3089,7 +2694,6 @@ function loadConversations() {
             
             conversationsList.innerHTML = html;
             
-            // Add click handlers
             snapshot.forEach(doc => {
                 const chatId = doc.id;
                 const otherUserId = doc.data().participants.find(id => id !== userId);
@@ -3097,7 +2701,98 @@ function loadConversations() {
                     openChat(chatId, otherUserId, doc.data());
                 });
             });
-        });
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            if (loadingEl) loadingEl.style.display = 'none';
+            conversationsList.innerHTML = `
+                <div class="empty-state-messages">
+                    <div class="empty-icon">⚠️</div>
+                    <h3>Error Loading Messages</h3>
+                    <p>Pull down to try again</p>
+                </div>
+            `;
+        }
+    }
+    
+    fetchConversations();
+    
+    window.conversationsInterval = setInterval(() => {
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.textContent.includes('Messages')) {
+            fetchConversations();
+        }
+    }, 60000);
+}
+
+// FIX #1: Manual refresh for messages
+function loadMessages(chatId) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const currentUserId = firebase.auth().currentUser.uid;
+    
+    if (messagesListener) {
+        messagesListener();
+        messagesListener = null;
+    }
+    
+    if (window.messagesInterval) {
+        clearInterval(window.messagesInterval);
+    }
+    
+    async function fetchMessages() {
+        try {
+            const snapshot = await firebase.firestore()
+                .collection('chats').doc(chatId)
+                .collection('messages')
+                .orderBy('timestamp', 'asc')
+                .get();
+            
+            if (snapshot.empty) {
+                messagesContainer.innerHTML = `
+                    <div class="empty-state-chat">
+                        <div class="empty-icon">💭</div>
+                        <p>No messages yet</p>
+                        <p class="empty-hint">Send a message to start the conversation</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            let lastDate = null;
+            
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                msg.id = doc.id;
+                
+                const msgDate = msg.timestamp?.toDate().toLocaleDateString();
+                if (msgDate !== lastDate) {
+                    html += `<div class="chat-date-separator">${msg.timestamp?.toDate().toLocaleDateString()}</div>`;
+                    lastDate = msgDate;
+                }
+                
+                html += renderMessage(msg, currentUserId);
+                
+                if (msg.senderId !== currentUserId && !msg.read) {
+                    markMessageAsRead(chatId, msg.id);
+                }
+            });
+            
+            messagesContainer.innerHTML = html;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+    
+    fetchMessages();
+    
+    window.messagesInterval = setInterval(() => {
+        if (document.getElementById('chat-messages')) {
+            fetchMessages();
+        } else {
+            clearInterval(window.messagesInterval);
+        }
+    }, 30000);
 }
 
 function renderConversationItem(chat, currentUserId) {
@@ -3106,11 +2801,9 @@ function renderConversationItem(chat, currentUserId) {
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get other user's name from chat data or use placeholder
     let otherUserName = chat.otherUserName || 'Loading...';
     let otherUserImage = chat.otherUserImage || 'https://via.placeholder.com/40';
     
-    // Determine tick status for list
     let statusIcon = '';
     if (chat.lastMessageSender === currentUserId) {
         statusIcon = chat.lastMessageRead ? '✓✓' : '✓';
@@ -3150,17 +2843,14 @@ function formatMessageTime(date) {
 function openChat(chatId, otherUserId, chatData) {
     currentChatId = chatId;
     
-    // Get other user's info if not already in chatData
     let otherUserName = 'Loading...';
     if (chatData.businessName) {
         otherUserName = chatData.businessName;
     } else {
-        // Fetch user data
         firebase.firestore().collection('users').doc(otherUserId).get().then(doc => {
             if (doc.exists) {
                 const userData = doc.data();
                 otherUserName = userData.businessName || 'User';
-                // Update the header
                 const headerName = document.querySelector('.chat-header-name');
                 if (headerName) headerName.textContent = otherUserName;
             }
@@ -3177,9 +2867,7 @@ function openChat(chatId, otherUserId, chatData) {
                 <span class="chat-header-name">${otherUserName}</span>
             </div>
             
-            <div id="chat-messages" class="chat-messages">
-                <!-- Messages will load here -->
-            </div>
+            <div id="chat-messages" class="chat-messages"></div>
             
             <div class="chat-input-container">
                 <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
@@ -3190,7 +2878,6 @@ function openChat(chatId, otherUserId, chatData) {
     
     loadMessages(chatId);
     
-    // Check for pending gigs after chat loads
     setTimeout(() => {
         const chatMessages = document.getElementById('chat-messages');
         if (chatMessages) {
@@ -3199,62 +2886,59 @@ function openChat(chatId, otherUserId, chatData) {
     }, 500);
 }
 
-function loadMessages(chatId) {
-    const messagesContainer = document.getElementById('chat-messages');
+async function checkPendingGigs(otherUserId, chatContainer) {
     const currentUserId = firebase.auth().currentUser.uid;
     
-    // Clear existing listener
-    if (messagesListener) {
-        messagesListener();
-    }
-    
-    // Set up real-time listener
-    messagesListener = firebase.firestore()
-        .collection('chats').doc(chatId)
-        .collection('messages')
-        .orderBy('timestamp', 'asc')
-        .onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                // Empty state - no messages
-                messagesContainer.innerHTML = `
-                    <div class="empty-state-chat">
-                        <div class="empty-icon">💭</div>
-                        <p>No messages yet</p>
-                        <p class="empty-hint">Send a message to start the conversation</p>
-                    </div>
-                `;
-                return;
-            }
+    try {
+        const pendingGigsSnapshot = await firebase.firestore()
+            .collection('jobs')
+            .where('providerId', '==', otherUserId)
+            .where('clientId', '==', currentUserId)
+            .where('status', '==', 'pending')
+            .where('notifiedClient', '==', false)
+            .limit(1)
+            .get();
+        
+        if (!pendingGigsSnapshot.empty) {
+            const gig = pendingGigsSnapshot.docs[0].data();
+            const gigId = pendingGigsSnapshot.docs[0].id;
             
-            let html = '';
-            let lastDate = null;
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'gig-confirmation';
+            confirmDiv.innerHTML = `
+                <div class="gig-message">
+                    <strong>${gig.providerName || 'Provider'}</strong> registered a gig with you.
+                </div>
+                <button class="btn confirm-gig-btn" onclick="confirmGig('${gigId}', '${otherUserId}')">Confirm Gig</button>
+            `;
             
-            snapshot.forEach(doc => {
-                const msg = doc.data();
-                msg.id = doc.id;
-                
-                // Add date separator if needed
-                const msgDate = msg.timestamp?.toDate().toLocaleDateString();
-                if (msgDate !== lastDate) {
-                    html += `<div class="chat-date-separator">${msg.timestamp?.toDate().toLocaleDateString()}</div>`;
-                    lastDate = msgDate;
-                }
-                
-                // Add message
-                html += renderMessage(msg, currentUserId);
-                
-                // Mark as read if this message was sent to current user
-                if (msg.senderId !== currentUserId && !msg.read) {
-                    markMessageAsRead(chatId, msg.id);
-                }
+            chatContainer.appendChild(confirmDiv);
+            
+            await pendingGigsSnapshot.docs[0].ref.update({
+                notifiedClient: true
             });
-            
-            messagesContainer.innerHTML = html;
-            
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
+        }
+    } catch (error) {
+        console.error('Error checking pending gigs:', error);
+    }
 }
+
+window.confirmGig = async function(gigId, providerId) {
+    try {
+        await firebase.firestore().collection('jobs').doc(gigId).update({
+            status: 'completed',
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showReviewModal(providerId, gigId);
+        
+        document.querySelector('.gig-confirmation')?.remove();
+        
+    } catch (error) {
+        console.error('Error confirming gig:', error);
+        alert('Failed to confirm gig');
+    }
+};
 
 function renderMessage(msg, currentUserId) {
     const isMine = msg.senderId === currentUserId;
@@ -3287,7 +2971,6 @@ window.sendMessage = async function() {
     const messagesRef = chatRef.collection('messages');
     
     try {
-        // Add message
         await messagesRef.add({
             senderId: currentUserId,
             text: text,
@@ -3295,7 +2978,6 @@ window.sendMessage = async function() {
             read: false
         });
         
-        // Update chat last message
         await chatRef.update({
             lastMessage: text,
             lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3316,7 +2998,6 @@ async function markMessageAsRead(chatId, messageId) {
             .collection('messages').doc(messageId)
             .update({ read: true });
         
-        // Check if all messages are read to update chat status
         const chatRef = firebase.firestore().collection('chats').doc(chatId);
         const messagesSnapshot = await chatRef.collection('messages')
             .where('senderId', '!=', firebase.auth().currentUser.uid)
@@ -3331,8 +3012,38 @@ async function markMessageAsRead(chatId, messageId) {
     }
 }
 
-// Clean up listeners when switching tabs
+function loadMessagesTab() {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="messages-container">
+            <div class="messages-header">
+                <h1 class="messages-title">Messages</h1>
+            </div>
+            
+            <div id="conversations-list" class="conversations-list"></div>
+            
+            <div id="conversations-loading" class="conversations-loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    `;
+    
+    loadConversations();
+    fixChatUserNames();
+}
+
+// Clean up intervals on tab change
 window.addEventListener('tabChange', () => {
+    if (window.conversationsInterval) {
+        clearInterval(window.conversationsInterval);
+        window.conversationsInterval = null;
+    }
+    if (window.messagesInterval) {
+        clearInterval(window.messagesInterval);
+        window.messagesInterval = null;
+    }
     if (conversationsListener) {
         conversationsListener();
         conversationsListener = null;
@@ -3344,7 +3055,16 @@ window.addEventListener('tabChange', () => {
 });
 
 window.switchTab = (tab) => {
-    // Update active tab
+    // Clear intervals when leaving tabs
+    if (window.conversationsInterval) {
+        clearInterval(window.conversationsInterval);
+        window.conversationsInterval = null;
+    }
+    if (window.messagesInterval) {
+        clearInterval(window.messagesInterval);
+        window.messagesInterval = null;
+    }
+    
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.textContent.toLowerCase().includes(tab) || 
@@ -3357,7 +3077,6 @@ window.switchTab = (tab) => {
         }
     });
     
-    // Load tab content
     switch(tab) {
         case 'home':
             loadHomeTab();
@@ -3415,7 +3134,6 @@ function loadVerification() {
     `;
 }
 
-// Auth functions
 window.showLogin = function() {
     const content = document.getElementById('auth-content');
     if (!content) return;
@@ -3562,25 +3280,25 @@ window.handleSignup = async function(event) {
         await user.sendEmailVerification();
         
         await firebase.firestore().collection('users').doc(user.uid).set({
-    businessName: businessName,
-    email: email,
-    services: services.filter(s => ['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
-    pendingServices: services.filter(s => !['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    emailVerified: false,
-    phoneVerified: false,
-    signupMethod: 'email',
-    rating: 0,
-    reviewCount: 0,
-    jobsDone: 0,
-    profileImage: '',
-    portfolioImages: [],
-    bio: '',
-    location: null,
-    locationGeo: null,  // Add this line for geolocation
-    points: 15,
-    jobsThisMonth: 0,        
-});
+            businessName: businessName,
+            email: email,
+            services: services.filter(s => ['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
+            pendingServices: services.filter(s => !['Barber', 'Tech', 'Design', 'Marketing'].includes(s)),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            emailVerified: false,
+            phoneVerified: false,
+            signupMethod: 'email',
+            rating: 0,
+            reviewCount: 0,
+            jobsDone: 0,
+            profileImage: '',
+            portfolioImages: [],
+            bio: '',
+            locationGeo: null,
+            points: 15,
+            jobsThisMonth: 0,
+            savedProfiles: {}
+        });
         
         alert('Account created! Please check your email for verification.');
         
@@ -3605,18 +3323,15 @@ window.resendVerification = function() {
         .catch(error => alert('Error: ' + error.message));
 };
 
-// Logout function
 window.logout = function() {
-    // Clear search cache on logout
-searchCache = null;
-searchCacheTime = null;
-searchProviders = [];
-searchLastDoc = null;
-searchHasMore = true;
+    searchCache = null;
+    searchCacheTime = null;
+    searchProviders = [];
+    searchLastDoc = null;
+    searchHasMore = true;
     firebase.auth().signOut();
 };
 
-// Delete account function
 window.deleteAccount = function() {
     if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
         const user = firebase.auth().currentUser;
@@ -3633,7 +3348,6 @@ async function loadAdminTab() {
     const container = document.getElementById('tab-content');
     if (!container) return;
     
-    // Check if current user is admin
     const currentUserEmail = firebase.auth().currentUser?.email;
     if (currentUserEmail !== 'agboghidiaugust@gmail.com') {
         container.innerHTML = `
@@ -3665,20 +3379,16 @@ async function loadAdminTab() {
                 </button>
             </div>
             
-            <div id="admin-content" class="admin-content">
-                <!-- Content will load here -->
-            </div>
+            <div id="admin-content" class="admin-content"></div>
         </div>
     `;
     
-    // Load default tab
     switchAdminTab(adminCurrentTab);
 }
 
 window.switchAdminTab = function(tab) {
     adminCurrentTab = tab;
     
-    // Update subtab active states
     document.querySelectorAll('.admin-subtab').forEach(btn => {
         btn.classList.remove('active');
         if (btn.textContent.includes(tab === 'dashboard' ? '📊' : 
@@ -3687,7 +3397,6 @@ window.switchAdminTab = function(tab) {
         }
     });
     
-    // Load appropriate content
     switch(tab) {
         case 'dashboard':
             loadAdminDashboard();
@@ -3701,6 +3410,7 @@ window.switchAdminTab = function(tab) {
     }
 };
 
+// FIX #4: Aggregated stats for admin dashboard
 async function loadAdminDashboard() {
     const container = document.getElementById('admin-content');
     if (!container) return;
@@ -3708,54 +3418,73 @@ async function loadAdminDashboard() {
     container.innerHTML = '<div class="admin-loading"><div class="spinner"></div></div>';
     
     try {
-        // Get total users count
-        const usersSnapshot = await firebase.firestore().collection('users').get();
-        const totalUsers = usersSnapshot.size;
+        let statsDoc = await firebase.firestore().collection('stats').doc('dashboard').get();
         
-        // Get users joined this week
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const recentUsers = usersSnapshot.docs.filter(doc => {
-            const createdAt = doc.data().createdAt?.toDate();
-            return createdAt && createdAt > oneWeekAgo;
-        }).length;
+        if (!statsDoc.exists) {
+            // Calculate stats once and store
+            const usersSnapshot = await firebase.firestore().collection('users').get();
+            const totalUsers = usersSnapshot.size;
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const recentUsers = usersSnapshot.docs.filter(doc => {
+                const createdAt = doc.data().createdAt?.toDate();
+                return createdAt && createdAt > oneWeekAgo;
+            }).length;
+            
+            const pendingServices = usersSnapshot.docs.filter(doc => {
+                return doc.data().pendingServices?.length > 0;
+            }).length;
+            
+            let totalImages = 0;
+            usersSnapshot.docs.forEach(doc => {
+                totalImages += doc.data().portfolioImages?.length || 0;
+            });
+            
+            const recentSignups = usersSnapshot.docs
+                .filter(doc => doc.data().createdAt)
+                .sort((a, b) => {
+                    return (b.data().createdAt?.toDate() || 0) - (a.data().createdAt?.toDate() || 0);
+                })
+                .slice(0, 5)
+                .map(doc => ({ id: doc.id, data: doc.data() }));
+            
+            statsDoc = await firebase.firestore().collection('stats').doc('dashboard').set({
+                totalUsers,
+                recentUsers,
+                pendingServices,
+                totalImages,
+                recentSignups: recentSignups.map(s => ({
+                    id: s.id,
+                    businessName: s.data.businessName,
+                    profileImage: s.data.profileImage,
+                    createdAt: s.data.createdAt
+                })),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            statsDoc = await firebase.firestore().collection('stats').doc('dashboard').get();
+        }
         
-        // Get pending services count
-        const pendingServices = usersSnapshot.docs.filter(doc => {
-            return doc.data().pendingServices?.length > 0;
-        }).length;
-        
-        // Get total portfolio images
-        let totalImages = 0;
-        usersSnapshot.docs.forEach(doc => {
-            totalImages += doc.data().portfolioImages?.length || 0;
-        });
-        
-        // Get recent sign-ups (last 5)
-        const recentSignups = usersSnapshot.docs
-            .filter(doc => doc.data().createdAt)
-            .sort((a, b) => {
-                return b.data().createdAt - a.data().createdAt;
-            })
-            .slice(0, 5);
+        const stats = statsDoc.data();
         
         container.innerHTML = `
             <div class="admin-dashboard">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-number">${totalUsers}</div>
+                        <div class="stat-number">${stats.totalUsers || 0}</div>
                         <div class="stat-label">Total Users</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">${recentUsers}</div>
+                        <div class="stat-number">${stats.recentUsers || 0}</div>
                         <div class="stat-label">Joined This Week</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">${pendingServices}</div>
+                        <div class="stat-number">${stats.pendingServices || 0}</div>
                         <div class="stat-label">Pending Approvals</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">${totalImages}</div>
+                        <div class="stat-number">${stats.totalImages || 0}</div>
                         <div class="stat-label">Portfolio Images</div>
                     </div>
                 </div>
@@ -3763,14 +3492,13 @@ async function loadAdminDashboard() {
                 <div class="recent-section">
                     <h3 class="section-title">Recent Sign-ups</h3>
                     <div class="recent-list">
-                        ${recentSignups.map(doc => {
-                            const data = doc.data();
-                            const date = data.createdAt?.toDate().toLocaleDateString() || 'Unknown';
+                        ${(stats.recentSignups || []).map(item => {
+                            const date = item.createdAt?.toDate().toLocaleDateString() || 'Unknown';
                             return `
-                                <div class="recent-item" onclick="viewUserProfile('${doc.id}')">
-                                    <img src="${data.profileImage ? data.profileImage + '?tr=w-40,h-40' : 'https://via.placeholder.com/40'}" class="recent-image">
+                                <div class="recent-item" onclick="viewUserProfile('${item.id}')">
+                                    <img src="${item.profileImage ? item.profileImage + '?tr=w-40,h-40' : 'https://via.placeholder.com/40'}" class="recent-image">
                                     <div class="recent-info">
-                                        <div class="recent-name">${data.businessName || 'Unnamed'}</div>
+                                        <div class="recent-name">${item.businessName || 'Unnamed'}</div>
                                         <div class="recent-meta">Joined: ${date}</div>
                                     </div>
                                 </div>
@@ -3812,7 +3540,6 @@ async function loadAdminUsers() {
             </div>
         `;
         
-        // Add search functionality
         document.getElementById('user-search').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const filtered = users.filter(user => 
@@ -3909,14 +3636,12 @@ async function loadAdminApprovals() {
     }
 }
 
-// Admin action functions
 window.approveService = async function(userId, service) {
     try {
         const userRef = firebase.firestore().collection('users').doc(userId);
         const userDoc = await userRef.get();
         const userData = userDoc.data();
         
-        // Remove from pending, add to services
         const updatedPending = userData.pendingServices.filter(s => s !== service);
         const updatedServices = [...(userData.services || []), service];
         
@@ -3925,28 +3650,33 @@ window.approveService = async function(userId, service) {
             services: updatedServices
         });
         
-        // Send notification via chat
         await sendAdminNotification(userId, `Your service "${service}" has been approved!`);
         
-        // Remove from UI
         const serviceElement = document.getElementById(`service-${userId}-${service.replace(/\s+/g, '-')}`);
         if (serviceElement) {
             serviceElement.remove();
         }
         
-        // Check if no more pending for this user
         const approvalItem = document.getElementById(`approval-${userId}`);
         if (approvalItem && !approvalItem.querySelector('.pending-service-item')) {
             approvalItem.remove();
         }
         
-        // Show empty state if no approvals left
         const approvalsContainer = document.querySelector('.admin-approvals');
         if (approvalsContainer && !approvalsContainer.querySelector('.approval-item')) {
             document.getElementById('admin-content').innerHTML = '<div class="empty-approvals">No pending approvals</div>';
         }
         
         showToast('Service approved!');
+        
+        // Update stats document
+        const statsDoc = await firebase.firestore().collection('stats').doc('dashboard').get();
+        if (statsDoc.exists) {
+            await statsDoc.ref.update({
+                pendingServices: firebase.firestore.FieldValue.increment(-1)
+            });
+        }
+        
     } catch (error) {
         console.error('Error approving service:', error);
         alert('Failed to approve service');
@@ -3962,14 +3692,12 @@ window.editService = async function(userId, service) {
         const userDoc = await userRef.get();
         const userData = userDoc.data();
         
-        // Replace in pending
         const updatedPending = userData.pendingServices.map(s => s === service ? newService : s);
         
         await userRef.update({
             pendingServices: updatedPending
         });
         
-        // Update UI
         const serviceElement = document.getElementById(`service-${userId}-${service.replace(/\s+/g, '-')}`);
         if (serviceElement) {
             const serviceNameSpan = serviceElement.querySelector('.service-name');
@@ -3978,7 +3706,6 @@ window.editService = async function(userId, service) {
             }
             serviceElement.id = `service-${userId}-${newService.replace(/\s+/g, '-')}`;
             
-            // Update button onclick
             const approveBtn = serviceElement.querySelector('.approve-btn');
             const editBtn = serviceElement.querySelector('.edit-btn');
             if (approveBtn) {
@@ -3996,12 +3723,10 @@ window.editService = async function(userId, service) {
     }
 };
 
-// Helper function to send admin notifications
 async function sendAdminNotification(userId, message) {
     const adminId = firebase.auth().currentUser.uid;
     
     try {
-        // Check if chat already exists
         const chatsSnapshot = await firebase.firestore()
             .collection('chats')
             .where('participants', 'array-contains', adminId)
@@ -4016,7 +3741,6 @@ async function sendAdminNotification(userId, message) {
         });
         
         if (existingChatId) {
-            // Send message to existing chat
             await firebase.firestore()
                 .collection('chats').doc(existingChatId)
                 .collection('messages')
@@ -4034,7 +3758,6 @@ async function sendAdminNotification(userId, message) {
                 lastMessageRead: false
             });
         } else {
-            // Create new chat
             const newChatRef = await firebase.firestore().collection('chats').add({
                 participants: [adminId, userId],
                 otherUserName: 'Admin',
@@ -4046,7 +3769,6 @@ async function sendAdminNotification(userId, message) {
                 lastMessageRead: false
             });
             
-            // Send message
             await newChatRef.collection('messages').add({
                 senderId: adminId,
                 text: message,
@@ -4059,9 +3781,7 @@ async function sendAdminNotification(userId, message) {
     }
 }
 
-// Helper function to view user profile from admin
 window.viewUserProfile = function(userId) {
     switchTab('profile');
     loadProfileTab(userId);
 };
-
