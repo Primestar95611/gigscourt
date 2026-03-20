@@ -1,3 +1,10 @@
+// Global error handler
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error('Global error:', message, source, lineno, colno, error);
+    alert('Error: ' + message + ' at line ' + lineno);
+    return false;
+};
+
 // app.js - Complete with Home Tab
 
 // Firebase config
