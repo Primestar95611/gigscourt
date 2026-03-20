@@ -25,6 +25,9 @@ var imagekit = new ImageKit({
     urlEndpoint: "https://ik.imagekit.io/GigsCourt"
 });
 
+// Initialize FCM
+const messaging = firebase.messaging();
+
 // Initialize GeoFirestore
 const firestore = firebase.firestore();
 const GeoFirestore = window.GeoFirestore;
@@ -56,6 +59,22 @@ let homeCurrentPage = 1;
 let homeTotalLoaded = 0;
 const HOME_PAGE_SIZE = 10;
 
+// Setup push notifications
+async function setupNotifications(userId) {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const token = await messaging.getToken();
+            await firebase.firestore().collection('users').doc(userId).update({
+                fcmToken: token
+            });
+            console.log('FCM token saved');
+        }
+    } catch (error) {
+        console.log('Notification setup failed:', error);
+    }
+}
+
 // Helper function to calculate distance
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -85,6 +104,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 
                 if (userDoc.exists) {
                     currentUserData = userDoc.data();
+                    setupNotifications(user.uid);
                     loadMainApp();
                 } else {
                     window.location.hash = 'complete-profile';
