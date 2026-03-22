@@ -270,6 +270,7 @@ function loadHomeTab() {
     
     loadProviders(true);
     setupPullToRefresh();
+}
 
 // Call it after home tab loads
 
