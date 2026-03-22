@@ -212,7 +212,6 @@ function loadHomeTab() {
         <div class="home-header">
             <h1 class="logo">GigsCourt</h1>
             <div class="header-actions">
-                <button id="notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; position:relative; z-index:999;">🔔 Enable</button>
                 <div class="notification-bell" onclick="openNotifications()">
                     <span class="bell-icon">🔔</span>
                     <span class="notification-badge" id="notification-count">0</span>
@@ -251,42 +250,7 @@ function loadHomeTab() {
     
     loadProviders(true);
     setupPullToRefresh();
-    setupSubscribeButton();
-}
 
-// Subscribe to notifications (iOS fix)
-function setupSubscribeButton() {
-    const btn = document.getElementById('notify-btn');
-    if (btn) {
-        // Remove any existing listeners to avoid duplicates
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        newBtn.onclick = async function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            
-            console.log('Button clicked'); // Debug line
-            
-            if (window.OneSignalDeferred) {
-                window.OneSignalDeferred.push(async function(OneSignal) {
-                    console.log('OneSignal ready, showing prompt'); // Debug line
-                    const result = await OneSignal.showNativePrompt();
-                    console.log('Prompt result:', result); // Debug line
-                    if (result === 'subscribed') {
-                        newBtn.textContent = '✅ Enabled';
-                        newBtn.style.background = '#4CAF50';
-                        setTimeout(() => {
-                            newBtn.style.display = 'none';
-                        }, 3000);
-                    }
-                });
-            } else {
-                console.log('OneSignalDeferred not available');
-                alert('Notifications not ready. Please refresh and try again.');
-            }
-        };
-    }
 }
 
 // Call it after home tab loads
