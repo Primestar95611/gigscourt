@@ -183,16 +183,17 @@ function loadHomeTab() {
     if (!container) return;
     
     container.innerHTML = `
-        <div class="home-container">
-            <div class="home-header">
-                <h1 class="logo">GigsCourt</h1>
-                <div class="header-actions">
-                    <div class="notification-bell" onclick="openNotifications()">
-                        <span class="bell-icon">🔔</span>
-                        <span class="notification-badge" id="notification-count">0</span>
-                    </div>
+    <div class="home-container">
+        <div class="home-header">
+            <h1 class="logo">GigsCourt</h1>
+            <div class="header-actions">
+                <button id="notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px;">🔔 Enable</button>
+                <div class="notification-bell" onclick="openNotifications()">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notification-badge" id="notification-count">0</span>
                 </div>
             </div>
+        </div>
             
             <div id="pull-to-refresh-indicator" class="ptr-indicator">
                 <span class="ptr-spinner"></span>
@@ -225,7 +226,31 @@ function loadHomeTab() {
     
     loadProviders(true);
     setupPullToRefresh();
+    setupSubscribeButton();
 }
+
+// Subscribe to notifications (iOS fix)
+function setupSubscribeButton() {
+    const btn = document.getElementById('notify-btn');
+    if (btn) {
+        btn.onclick = async function() {
+            if (window.OneSignalDeferred) {
+                window.OneSignalDeferred.push(async function(OneSignal) {
+                    const result = await OneSignal.showNativePrompt();
+                    if (result === 'subscribed') {
+                        btn.textContent = '✅ Enabled';
+                        btn.style.background = '#4CAF50';
+                        setTimeout(() => {
+                            btn.style.display = 'none';
+                        }, 3000);
+                    }
+                });
+            }
+        };
+    }
+}
+
+// Call it after home tab loads
 
 // FIX #2: Load providers with explicit Load More button
 async function loadProviders(reset = true) {
