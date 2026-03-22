@@ -20,28 +20,6 @@
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 
-    <!-- OneSignal Push Notifications -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "ddcf011a-e32a-4d72-ab2e-815032447f61",
-        });
-        
-        // iOS requires user interaction before notification prompt
-        // Show prompt on first tap anywhere on the page
-        const hasShownPrompt = sessionStorage.getItem('onesignalPromptShown');
-        if (!hasShownPrompt) {
-          document.body.addEventListener('click', function showPrompt() {
-            OneSignal.showNativePrompt();
-            sessionStorage.setItem('onesignalPromptShown', 'true');
-            document.body.removeEventListener('click', showPrompt);
-          }, { once: true });
-        }
-      });
-    </script>
-    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
