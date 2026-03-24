@@ -93,6 +93,9 @@ let pullToRefresh = {
     currentY: 0,
     refreshing: false,
     pulling: false
+ // Track where chat was opened from
+let chatPreviousScreen = null;
+let lastProfileViewedId = null;   
 };
 
 // Home pagination - FIX #2: Load More button instead of infinite scroll
@@ -552,7 +555,7 @@ function openQuickView(provider) {
             
             <div class="quick-view-actions">
                 <button class="btn" onclick="viewProfile('${provider.id}')">View Profile</button>
-                <button class="btn" onclick="messageUser('${provider.id}')">Message</button>
+                <button class="btn" onclick="messageUser('${provider.id}', '${window.currentTab || 'home'}')">Message</button>
                 <button class="btn" onclick="getDirections('${provider.id}')">Directions</button>
             </div>
         </div>
@@ -650,14 +653,15 @@ window.viewProfile = (id) => {
     loadProfileTab(id, true); // Hide tab bar when viewing another user
 };
 
-window.messageUser = (id) => {
+window.messageUser = (id, fromScreen = 'messages') => {
+    lastProfileViewedId = id; // Store for back navigation
     switchTab('messages');
     setTimeout(() => {
-        createNewChat(id);
+        createNewChat(id, fromScreen);
     }, 500);
 };
 
-async function createNewChat(otherUserId) {
+async function createNewChat(otherUserId, fromScreen = 'messages') {
     const currentUserId = firebase.auth().currentUser.uid;
     
     try {
@@ -677,7 +681,7 @@ async function createNewChat(otherUserId) {
         
         if (existingChatId) {
             const chatData = (await firebase.firestore().collection('chats').doc(existingChatId).get()).data();
-            openChat(existingChatId, otherUserId, chatData);
+            openChat(existingChatId, otherUserId, chatData, fromScreen);
         } else {
             const otherUserDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
             const otherUserData = otherUserDoc.data();
@@ -711,7 +715,7 @@ async function createNewChat(otherUserId) {
                     [currentUserId]: currentUserData.profileImage,
                     [otherUserId]: otherUserData.profileImage
                 }
-            });
+            }, fromScreen);
         }
     } catch (error) {
         console.error('Error creating chat:', error);
@@ -1460,7 +1464,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar
                 <button class="btn" onclick="openEditProfile()">Edit Profile</button>
                 <button class="btn btn-outline" onclick="shareProfile()">Share</button>
             ` : `
-                <button class="btn" onclick="startChat('${profile.id}')">Message</button>
+                <button class="btn" onclick="messageUser('${profile.id}', 'profile')">Message</button>
                 <button class="btn" onclick="toggleSaveProfile('${profile.id}')" id="save-btn-${profile.id}">Save</button>
                 <button class="btn btn-outline" onclick="shareProfile('${profile.id}')">Share</button>
             `}
@@ -2352,7 +2356,9 @@ function showToast(message) {
     }, 2000);
 }
 
-window.startChat = (id) => alert('Chat coming soon');
+window.startChat = (id) => {
+    messageUser(id, 'profile');
+};
 
 // ========== GLIGHTBOX GALLERY ==========
 window.openPhotoSwipe = function(index) {
@@ -3019,8 +3025,9 @@ function formatMessageTime(date) {
     return `${diffDays}d`;
 }
 
-function openChat(chatId, otherUserId, chatData) {
+function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     currentChatId = chatId;
+    chatPreviousScreen = previousScreen; // Store where we came from
     
     // Get the other user's name from the stored map
     let otherUserName = 'Loading...';
@@ -3041,10 +3048,18 @@ function openChat(chatId, otherUserId, chatData) {
     
     const container = document.getElementById('tab-content');
     
+    // Determine back button action
+    let backAction = 'loadMessagesTab()'; // default
+    if (previousScreen === 'profile') {
+        backAction = 'goBackFromChat()';
+    } else if (previousScreen === 'home' || previousScreen === 'search') {
+        backAction = 'goBackFromChat()';
+    }
+    
     container.innerHTML = `
         <div class="chat-container">
             <div class="chat-header">
-                <button class="chat-back-btn" onclick="loadMessagesTab()">←</button>
+                <button class="chat-back-btn" onclick="${backAction}">←</button>
                 <img src="${otherUserImage}" class="chat-header-image" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">
                 <span class="chat-header-name" onclick="viewProfileFromChat('${otherUserId}')" style="cursor:pointer;">${otherUserName}</span>
             </div>
@@ -3067,6 +3082,7 @@ function openChat(chatId, otherUserId, chatData) {
         }
     }, 500);
 }
+
 
 async function checkPendingGigs(otherUserId, chatContainer) {
     const currentUserId = firebase.auth().currentUser.uid;
@@ -4065,12 +4081,37 @@ window.goBack = function() {
     }
     // Go back to previous screen
     window.history.back();
+};
     // If history doesn't work, fallback to home
     setTimeout(() => {
         if (document.querySelector('.profile-container') && !document.querySelector('.home-container')) {
             switchTab('home');
         }
     }, 100);
+};
+
+window.goBackFromChat = function() {
+    // Show tab bar
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) {
+        tabBar.style.display = 'flex';
+    }
+    
+    // Go back to previous screen based on where we came from
+    if (chatPreviousScreen === 'profile' && lastProfileViewedId) {
+        // Go back to the profile we were viewing
+        loadProfileTab(lastProfileViewedId, true);
+    } else if (chatPreviousScreen === 'home') {
+        switchTab('home');
+    } else if (chatPreviousScreen === 'search') {
+        switchTab('search');
+    } else {
+        // Default to messages list
+        loadMessagesTab();
+    }
+    
+    // Clear the stored screen
+    chatPreviousScreen = null;
 };
 
 window.viewProfileFromChat = function(userId) {
