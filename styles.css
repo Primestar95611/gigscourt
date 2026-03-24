@@ -1449,6 +1449,8 @@ body {
     display: flex;
     flex-direction: column;
     background: var(--bg-primary);
+    overscroll-behavior: none;
+    position: relative;
 }
 
 .chat-header {
@@ -1494,6 +1496,8 @@ body {
     flex-direction: column;
     gap: 8px;
     background: var(--bg-secondary);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .chat-date-separator {
