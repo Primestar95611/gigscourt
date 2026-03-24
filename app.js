@@ -129,7 +129,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 
                 if (userDoc.exists) {
                     currentUserData = userDoc.data();
-                    setupNotifications(user.uid);
                     loadMainApp();
                 } else {
                     window.location.hash = 'complete-profile';
@@ -230,14 +229,15 @@ function loadHomeTab() {
     container.innerHTML = `
     <div class="home-container">
         <div class="home-header">
-            <h1 class="logo">GigsCourt</h1>
-            <div class="header-actions">
-                <div class="notification-bell" onclick="openNotifications()">
-                    <span class="bell-icon">🔔</span>
-                    <span class="notification-badge" id="notification-count">0</span>
-                </div>
-            </div>
+    <h1 class="logo">GigsCourt</h1>
+    <div class="header-actions">
+        <button id="enable-notify-btn" class="btn-small" style="background:#8B0000; color:white; border-radius:20px; padding:5px 12px; margin-right:8px;">🔔 Enable</button>
+        <div class="notification-bell" onclick="openNotifications()">
+            <span class="bell-icon">🔔</span>
+            <span class="notification-badge" id="notification-count">0</span>
         </div>
+    </div>
+</div>
             
             <div id="pull-to-refresh-indicator" class="ptr-indicator">
                 <span class="ptr-spinner"></span>
@@ -270,6 +270,19 @@ function loadHomeTab() {
     
     loadProviders(true);
     setupPullToRefresh();
+    
+    // Enable notifications button
+    const enableBtn = document.getElementById('enable-notify-btn');
+    if (enableBtn) {
+        enableBtn.onclick = async function() {
+            const userId = firebase.auth().currentUser?.uid;
+            if (userId) {
+                await setupNotifications(userId);
+            } else {
+                alert('Please log in first');
+            }
+        };
+    }
 }
 
 // Call it after home tab loads
