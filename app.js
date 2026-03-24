@@ -4088,14 +4088,7 @@ window.goBack = function() {
     // Go back to previous screen
     window.history.back();
 };
-    // If history doesn't work, fallback to home
-    setTimeout(() => {
-        if (document.querySelector('.profile-container') && !document.querySelector('.home-container')) {
-            switchTab('home');
-        }
-    }, 100);
-};
-
+    
 window.goBackFromChat = function() {
     // Show tab bar
     const tabBar = document.querySelector('.tab-bar');
