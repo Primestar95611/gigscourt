@@ -762,6 +762,7 @@ body {
     padding-bottom: 70px;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
 }
 
 /* Profile Completion Screen */
@@ -2864,4 +2865,34 @@ body {
 
 .confirm-gig-btn:active {
     opacity: 0.7;
+}
+
+/* Safe area adjustments for Dynamic Island / Notch */
+.home-container,
+.profile-container,
+.search-container,
+.messages-container,
+.admin-container,
+.edit-profile-container,
+.location-picker-container,
+.chat-container {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
+}
+
+/* Chat messages area - ensure content doesn't go under notch */
+.chat-messages {
+    padding-top: env(safe-area-inset-top);
+}
+
+/* Headers should respect safe area */
+.home-header,
+.profile-header,
+.messages-header,
+.admin-header,
+.edit-profile-header,
+.location-picker-header,
+.chat-header {
+    padding-top: max(15px, env(safe-area-inset-top));
 }
