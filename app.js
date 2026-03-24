@@ -264,6 +264,8 @@ function loadHomeTab() {
             </div>
         </div>
     `;
+
+    window.currentTab = 'home';
     
     homeCurrentPage = 1;
     homeTotalLoaded = 0;
@@ -1323,6 +1325,8 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         if (tabBar) {
             tabBar.style.display = 'flex';
         }
+        window.currentTab = 'profile';
+    }
     }
     
     const container = document.getElementById('tab-content');
@@ -2442,6 +2446,7 @@ function loadSearchTab() {
             </div>
         </div>
     `;
+    window.currentTab = 'search';
     
     getUserLocation();
     setupSearchListeners();
@@ -2930,6 +2935,7 @@ function loadMessages(chatId) {
                         <p class="empty-hint">Send a message to start the conversation</p>
                     </div>
                 `;
+                  window.currentTab = 'messages';
                 return;
             }
             
