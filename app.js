@@ -2931,15 +2931,13 @@ function renderConversationItem(chat, currentUserId) {
     const lastMessageTime = chat.lastMessageTimestamp ? formatMessageTime(chat.lastMessageTimestamp.toDate()) : '';
     const unread = chat.lastMessageSender !== currentUserId && !chat.lastMessageRead;
     
-    // Get the other user's name - fetch from chat or fallback
+    // Get the other user's name - dynamic from Firestore
     let otherUserName = 'User';
     let otherUserImage = 'https://via.placeholder.com/40';
     
     // Use stored other user info if available
-    if (chat.otherUserName) {
+    if (chat.otherUserName && chat.otherUserImage) {
         otherUserName = chat.otherUserName;
-    }
-    if (chat.otherUserImage) {
         otherUserImage = chat.otherUserImage;
     }
     
@@ -3153,6 +3151,9 @@ window.sendMessage = async function() {
             lastMessageSender: currentUserId,
             lastMessageRead: false
         });
+        
+        // Refresh messages immediately
+        loadMessages(currentChatId);
         
         // Send push notification to recipient
         try {
