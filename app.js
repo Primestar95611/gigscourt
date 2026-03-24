@@ -969,6 +969,7 @@ window.submitReview = async function(providerId, jobId) {
             scrollableContainer.style.overflow = '';
         }
         alert('Review submitted! Thank you.');
+    }
 
 window.showRegisterJobModal = async function() {
     const providerId = firebase.auth().currentUser.uid;
