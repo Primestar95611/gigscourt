@@ -92,11 +92,12 @@ let pullToRefresh = {
     startY: 0,
     currentY: 0,
     refreshing: false,
-    pulling: false
- // Track where chat was opened from
-let chatPreviousScreen = null;
-let lastProfileViewedId = null;   
+    pulling: false  
 };
+
+// Track where chat was opened from
+let chatPreviousScreen = null;
+let lastProfileViewedId = null;
 
 // Home pagination - FIX #2: Load More button instead of infinite scroll
 let homeCurrentPage = 1;
