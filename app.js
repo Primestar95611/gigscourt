@@ -1693,7 +1693,7 @@ window.unsaveProfile = async function(event, savedUserId) {
         window.openSavedModal();
         
         if (document.querySelector('.profile-container')) {
-            loadProfileTab(currentUserId);
+            loadProfileTab(currentUserId, true);
         }
         
     } catch (error) {
