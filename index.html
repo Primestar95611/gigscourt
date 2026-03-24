@@ -86,6 +86,33 @@
         }
       })();
     </script>
+
+    <!-- iOS Version Guidance Banner -->
+<script>
+  (function() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const version = navigator.userAgent.match(/OS (\d+)_/);
+    const iosVersion = version ? parseInt(version[1], 10) : 0;
+    const hasSeenBanner = localStorage.getItem('iosBannerSeen');
+    
+    if (isIOS && iosVersion < 16 && iosVersion > 0 && !hasSeenBanner) {
+      const banner = document.createElement('div');
+      banner.id = 'ios-update-banner';
+      banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#8B0000;color:white;padding:15px;text-align:center;z-index:10000;font-family:-apple-system,sans-serif;font-size:14px;box-shadow:0 -2px 10px rgba(0,0,0,0.2);';
+      banner.innerHTML = `
+        <strong>📱 Update for Notifications</strong><br>
+        iOS 16.4 or later required to receive notifications.<br>
+        <button id="close-ios-banner" style="margin-top:10px;background:white;color:#8B0000;border:none;padding:6px 16px;border-radius:25px;font-weight:bold;">Got it</button>
+      `;
+      document.body.appendChild(banner);
+      
+      document.getElementById('close-ios-banner').onclick = function() {
+        banner.remove();
+        localStorage.setItem('iosBannerSeen', 'true');
+      };
+    }
+  })();
+</script>
     
 </body>
 </html>
