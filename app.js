@@ -98,6 +98,7 @@ let pullToRefresh = {
 // Track where chat was opened from
 let chatPreviousScreen = null;
 let lastProfileViewedId = null;
+let profilePreviousScreen = null;
 
 // Home pagination - FIX #2: Load More button instead of infinite scroll
 let homeCurrentPage = 1;
@@ -557,7 +558,7 @@ function openQuickView(provider) {
             </div>
             
             <div class="quick-view-actions">
-                <button class="btn" onclick="viewProfile('${provider.id}')">View Profile</button>
+                <button class="btn" onclick="viewProfile('${provider.id}', '${window.currentTab || 'home'}')">View Profile</button>
                 <button class="btn" onclick="messageUser('${provider.id}', '${window.currentTab || 'home'}')">Message</button>
                 <button class="btn" onclick="getDirections('${provider.id}')">Directions</button>
             </div>
@@ -651,9 +652,10 @@ window.markAllRead = function() {
     });
 };
 
-window.viewProfile = (id) => {
+window.viewProfile = (id, fromScreen = 'home') => {
+    profilePreviousScreen = fromScreen;
     switchTab('profile');
-    loadProfileTab(id, true); // Hide tab bar when viewing another user
+    loadProfileTab(id, true);
 };
 
 window.messageUser = (id, fromScreen = 'messages') => {
@@ -1716,9 +1718,10 @@ window.closeModal = function() {
 };
 
 window.viewProfileFromModal = function(userId) {
+    profilePreviousScreen = 'saved';
     closeModal();
     switchTab('profile');
-    loadProfileTab(userId, true); // Hide tab bar when viewing from modal
+    loadProfileTab(userId, true);
 };
 
 async function getSavedCount(userId) {
@@ -4085,8 +4088,33 @@ window.goBack = function() {
     if (tabBar) {
         tabBar.style.display = 'flex';
     }
-    // Go back to previous screen
-    window.history.back();
+    
+    // Go back to previous screen based on where profile was opened from
+    if (profilePreviousScreen === 'chat') {
+        // Go back to chat
+        const tabBar = document.querySelector('.tab-bar');
+        if (tabBar) {
+            tabBar.style.display = 'flex';
+        }
+        loadMessagesTab();
+        setTimeout(() => {
+            if (currentChatId) {
+                openChat(currentChatId, null, {});
+            }
+        }, 100);
+    } else if (profilePreviousScreen === 'saved') {
+        openSavedModal();
+    } else if (profilePreviousScreen === 'home') {
+        switchTab('home');
+    } else if (profilePreviousScreen === 'search') {
+        switchTab('search');
+    } else {
+        // Default fallback
+        window.history.back();
+    }
+    
+    // Clear stored screen
+    profilePreviousScreen = null;
 };
     
 window.goBackFromChat = function() {
@@ -4114,7 +4142,7 @@ window.goBackFromChat = function() {
 };
 
 window.viewProfileFromChat = function(userId) {
-    // Hide tab bar for profile view
+    profilePreviousScreen = 'chat';
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'none';
