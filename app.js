@@ -763,6 +763,29 @@ window.registerJob = async function(clientId) {
             points: firebase.firestore.FieldValue.increment(-JOB_COST)
         });
         
+        // Send notification to client
+        try {
+            const clientDoc = await firebase.firestore().collection('users').doc(clientId).get();
+            const clientToken = clientDoc.data()?.fcmToken;
+            
+            if (clientToken) {
+                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipientToken: clientToken,
+                        title: 'New Gig Request',
+                        body: `${providerData.businessName} wants to work with you`,
+                        chatId: ''
+                    })
+                });
+                console.log('Gig request notification sent');
+            }
+        } catch (notifyError) {
+            console.log('Failed to send gig notification:', notifyError);
+        }
+        
         alert('Job registered successfully! Waiting for client confirmation.');
         
     } catch (error) {
@@ -917,18 +940,35 @@ window.submitReview = async function(providerId, jobId) {
             jobsThisMonth: firebase.firestore.FieldValue.increment(1)
         });
         
+        // Send notification to provider
+        try {
+            const providerToken = providerDoc.data()?.fcmToken;
+            const clientName = clientData.businessName || 'A client';
+            
+            if (providerToken) {
+                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipientToken: providerToken,
+                        title: 'New Review',
+                        body: `${clientName} left you a ${rating}★ review`,
+                        chatId: ''
+                    })
+                });
+                console.log('New review notification sent');
+            }
+        } catch (notifyError) {
+            console.log('Failed to send review notification:', notifyError);
+        }
+        
         modal.remove();
         let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
         if (scrollableContainer) {
             scrollableContainer.style.overflow = '';
         }
         alert('Review submitted! Thank you.');
-        
-    } catch (error) {
-        console.error('Error submitting review:', error);
-        alert('Failed to submit review');
-    }
-};
 
 window.showRegisterJobModal = async function() {
     const providerId = firebase.auth().currentUser.uid;
@@ -1421,6 +1461,7 @@ window.toggleSaveProfile = async function(profileId) {
     
     const saveBtn = document.getElementById(`save-btn-${profileId}`);
     const isSaved = saveBtn.textContent === 'Saved';
+    const currentUserName = currentUserData?.businessName || 'Someone';
     
     try {
         const userRef = firebase.firestore().collection('users').doc(currentUserId);
@@ -1443,6 +1484,29 @@ window.toggleSaveProfile = async function(profileId) {
             });
             saveBtn.textContent = 'Saved';
             saveBtn.classList.add('saved');
+            
+            // Send notification to the person whose profile was saved
+            try {
+                const targetUserDoc = await firebase.firestore().collection('users').doc(profileId).get();
+                const targetToken = targetUserDoc.data()?.fcmToken;
+                
+                if (targetToken) {
+                    const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                    await fetch(workerUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recipientToken: targetToken,
+                            title: 'Someone Saved Your Profile',
+                            body: `${currentUserName} saved your profile`,
+                            chatId: ''
+                        })
+                    });
+                    console.log('Profile saved notification sent');
+                }
+            } catch (notifyError) {
+                console.log('Failed to send profile save notification:', notifyError);
+            }
         }
         
         // Refresh profile stats
@@ -2990,6 +3054,30 @@ window.confirmGig = async function(gigId, providerId) {
             completedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
+        // Send notification to provider
+        try {
+            const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
+            const providerToken = providerDoc.data()?.fcmToken;
+            const clientName = currentUserData?.businessName || 'A client';
+            
+            if (providerToken) {
+                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipientToken: providerToken,
+                        title: 'Gig Completed',
+                        body: `${clientName} confirmed your gig. Rate them!`,
+                        chatId: ''
+                    })
+                });
+                console.log('Gig confirmed notification sent');
+            }
+        } catch (notifyError) {
+            console.log('Failed to send gig confirmation notification:', notifyError);
+        }
+        
         showReviewModal(providerId, gigId);
         
         document.querySelector('.gig-confirmation')?.remove();
@@ -3735,6 +3823,28 @@ window.approveService = async function(userId, service) {
             pendingServices: updatedPending,
             services: updatedServices
         });
+        
+        // Send push notification to user
+        try {
+            const userToken = userData?.fcmToken;
+            
+            if (userToken) {
+                const workerUrl = 'https://gigscourtnotification.agboghidiaugust.workers.dev';
+                await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipientToken: userToken,
+                        title: 'Service Approved',
+                        body: `Your service "${service}" has been approved!`,
+                        chatId: ''
+                    })
+                });
+                console.log('Service approved notification sent');
+            }
+        } catch (notifyError) {
+            console.log('Failed to send service approval notification:', notifyError);
+        }
         
         await sendAdminNotification(userId, `Your service "${service}" has been approved!`);
         
