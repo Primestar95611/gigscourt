@@ -309,7 +309,6 @@ function loadHomeTab() {
         setupInfiniteScroll();
     }, 500);
 }
-}
 
 // Infinite scroll setup
 let observer = null;
