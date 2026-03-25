@@ -846,35 +846,6 @@ async function createNewChat(otherUserId, fromScreen = 'messages') {
     }
 }
 
-async function fixChatUserNames() {
-    const currentUserId = firebase.auth().currentUser.uid;
-    
-    try {
-        const chatsSnapshot = await firebase.firestore()
-            .collection('chats')
-            .where('participants', 'array-contains', currentUserId)
-            .get();
-        
-        for (const doc of chatsSnapshot.docs) {
-            const chat = doc.data();
-            const otherUserId = chat.participants.find(id => id !== currentUserId);
-            
-            if (!chat.otherUserName) {
-                const userDoc = await firebase.firestore().collection('users').doc(otherUserId).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    await doc.ref.update({
-                        otherUserName: userData.businessName || 'User',
-                        otherUserImage: userData.profileImage || 'https://via.placeholder.com/40'
-                    });
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error fixing chats:', error);
-    }
-}
-
 window.getDirections = (id) => alert('Directions coming soon');
 window.showOnMap = (id) => alert('Map view coming soon');
 
@@ -3504,7 +3475,6 @@ function loadMessagesTab() {
     `;
     
     loadConversations();
-    fixChatUserNames();
 }
 
 // Clean up intervals on tab change
