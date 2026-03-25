@@ -502,7 +502,7 @@ function renderProviders() {
         const hasMoreServices = services.length > 2 ? '...' : '';
         
         const profileImage = provider.profileImage 
-    ? `${provider.profileImage}?tr=w-300,h-300,fo-auto,format-webp` 
+    ? `${provider.profileImage}?tr=w-300,h-300,fo-auto,format-webp,bl-20,l-image` 
     : 'https://via.placeholder.com/300';
         
         card.innerHTML = `
@@ -653,7 +653,7 @@ function openQuickView(provider) {
         <div class="sheet-handle"></div>
         <div class="sheet-content">
             <div class="quick-view-header">
-                <img src="${provider.profileImage ? provider.profileImage + '?tr=w-100,h-100,format-webp' : 'https://via.placeholder.com/100'}" class="quick-view-image">
+                <img src="${provider.profileImage ? provider.profileImage + '?tr=w-100,h-100,format-webp,bl-20,l-image' : 'https://via.placeholder.com/100'}" class="quick-view-image">
                 <div class="quick-view-info">
                     <h2>${provider.businessName}</h2>
                     <div class="quick-view-rating">⭐ ${provider.rating || '0.0'} (${provider.reviewCount || 0} reviews)</div>
@@ -1558,7 +1558,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar
         ${hideTabBar ? '<button class="back-btn" onclick="goBack()" style="position:absolute; top:20px; left:20px; font-size:24px; background:none; border:none; z-index:10; cursor:pointer;">←</button>' : ''}
         <div class="profile-stats-row">
             <div class="profile-picture">
-                <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80,format-webp' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
+                <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80,format-webp,bl-20,l-image' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
             </div>
             
@@ -1649,7 +1649,7 @@ function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar
             <div class="portfolio-grid">
                 ${(profile.portfolioImages || []).map((img, index) => `
                     <div class="portfolio-item" onclick="openPhotoSwipe(${index})">
-                        <img src="${img}?tr=w-150,h-150,format-webp" loading="lazy">
+                        <img src="${img}?tr=w-150,h-150,format-webp,bl-20,l-image" loading="lazy">
                         ${isOwnProfile ? '<div class="delete-overlay" onclick="deleteImage(event, \'' + img + '\')">✕</div>' : ''}
                     </div>
                 `).join('')}
@@ -2895,7 +2895,7 @@ function renderProviderList() {
     
     listContainer.innerHTML = searchProviders.map(provider => `
         <div class="provider-list-item" onclick="openQuickViewFromSearch('${provider.id}')">
-            <img src="${provider.profileImage ? provider.profileImage + '?tr=w-40,h-40,format-webp' : 'https://via.placeholder.com/40'}" class="list-item-image">
+            <img src="${provider.profileImage ? provider.profileImage + '?tr=w-40,h-40,format-webp,bl-20,l-image' : 'https://via.placeholder.com/40'}" class="list-item-image">
             <div class="list-item-info">
                 <div class="list-item-name">${provider.businessName}</div>
                 <div class="list-item-details">
