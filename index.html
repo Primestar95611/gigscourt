@@ -71,10 +71,9 @@
 
     <!-- Service Worker Registration (PWA) -->
     <script>
-  // Service worker disabled temporarily
-  // if ('serviceWorker' in navigator) {
-  //   navigator.serviceWorker.register('/sw.js');
-  // }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
 </script>
     
     <!-- iOS Install Banner -->
