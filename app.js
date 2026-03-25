@@ -1406,16 +1406,13 @@ function loadMainApp() {
 
 // ========== PROFILE TAB ==========
 async function loadProfileTab(profileUserId = null, hideTabBar = false) {
-    alert("1. START");
     // Handle tab bar visibility
     if (hideTabBar) {
-        alert("2. HIDE TAB BAR");
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) {
             tabBar.style.display = 'none';
         }
     } else {
-        alert("3. SHOW TAB BAR");
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) {
             tabBar.style.display = 'flex';
@@ -1423,40 +1420,23 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         window.currentTab = 'profile';
     }
     
-    alert("4. GET CONTAINER");
     const container = document.getElementById('tab-content');
-    if (!container) {
-        alert("5. CONTAINER NOT FOUND");
-        return;
-    }
-    alert("6. CONTAINER FOUND");
+    if (!container) return;
     
-    alert("7. GET USER ID");
     const targetUserId = profileUserId || firebase.auth().currentUser.uid;
-    alert("8. TARGET USER: " + targetUserId);
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
-    alert("9. IS OWN PROFILE: " + isOwnProfile);
     
-    try {
-        alert("10. STARTING FIRESTORE QUERY");
-        const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
-        alert("11. PROFILE EXISTS: " + profileDoc.exists);
-        
-        if (!profileDoc.exists) {
-            container.innerHTML = '<div class="error-state">Profile not found</div>';
-            return;
-        }
-        
-        alert("12. GETTING PROFILE DATA");
-        const profile = profileDoc.data();
-        alert("13. PROFILE NAME: " + profile.businessName);
+    // Define cache variables
+    const cacheKey = `profile_${targetUserId}`;
+    const cachedProfile = sessionStorage.getItem(cacheKey);
+    const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+    const now = Date.now();
+    
+    // Use cache if available and less than 5 minutes old
+    if (cachedProfile && cacheTime && (now - parseInt(cacheTime)) < 300000) {
+        const profile = JSON.parse(cachedProfile);
         profile.id = targetUserId;
         
-        alert("14. CACHING PROFILE");
-        sessionStorage.setItem(cacheKey, JSON.stringify(profile));
-        sessionStorage.setItem(`${cacheKey}_time`, now.toString());
-        
-        alert("15. GETTING SAVED COUNTS");
         let savedCount = 0;
         let savesCount = 0;
         
@@ -1477,9 +1457,52 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
             savedCount = savesSnapshot.size;
         }
         
-        alert("16. RENDERING PROFILE");
         container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar);
-        alert("17. RENDER COMPLETE");
+        
+        if (isOwnProfile) {
+            setupOwnProfileListeners(profile);
+        } else {
+            setupOtherProfileListeners(profile);
+        }
+        return;
+    }
+    
+    // No cache, fetch from Firestore
+    try {
+        const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
+        if (!profileDoc.exists) {
+            container.innerHTML = '<div class="error-state">Profile not found</div>';
+            return;
+        }
+        
+        const profile = profileDoc.data();
+        profile.id = targetUserId;
+        
+        // Cache profile data
+        sessionStorage.setItem(cacheKey, JSON.stringify(profile));
+        sessionStorage.setItem(`${cacheKey}_time`, now.toString());
+        
+        let savedCount = 0;
+        let savesCount = 0;
+        
+        if (isOwnProfile) {
+            savedCount = Object.keys(profile.savedProfiles || {}).length;
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savesCount = savesSnapshot.size;
+        } else {
+            const currentUserDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+            savesCount = Object.keys(currentUserDoc.data()?.savedProfiles || {}).length;
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savedCount = savesSnapshot.size;
+        }
+        
+        container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar);
         
         if (isOwnProfile) {
             setupOwnProfileListeners(profile);
@@ -1488,7 +1511,6 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         }
         
     } catch (error) {
-        alert("ERROR: " + error.message);
         console.error('Error loading profile:', error);
         container.innerHTML = '<div class="error-state">Error loading profile</div>';
     }
