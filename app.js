@@ -1447,7 +1447,8 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
 function renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar = false) {
     const jobsCount = profile.jobsDone || 0;
     const rating = profile.rating || 0;
-    
+
+    window.currentPortfolioImages = profile.portfolioImages || [];
     return `
     <div class="profile-container" style="position:relative;">
         ${hideTabBar ? '<button class="back-btn" onclick="goBack()" style="position:absolute; top:20px; left:20px; font-size:24px; background:none; border:none; z-index:10; cursor:pointer;">←</button>' : ''}
@@ -2429,6 +2430,38 @@ window.startChat = (id) => {
 
 // ========== GLIGHTBOX GALLERY ==========
 window.openPhotoSwipe = function(index) {
+    if (window.currentPortfolioImages && window.currentPortfolioImages.length > 0) {
+        const images = window.currentPortfolioImages.map((imgUrl, i) => ({
+            href: imgUrl,
+            title: `Portfolio image ${i + 1}`,
+            type: 'image'
+        }));
+        
+        const lightbox = GLightbox({
+            elements: images,
+            startAt: index,
+            loop: true,
+            touchNavigation: true,
+            autoplayVideos: false,
+            closeButton: true,
+            closeOnOutsideClick: true,
+            zoomable: true,
+            draggable: true,
+            slideEffect: 'fade',
+            openEffect: 'fade',
+            closeEffect: 'fade',
+            onOpen: function() {
+                document.body.style.overflow = 'hidden';
+            },
+            onClose: function() {
+                document.body.style.overflow = '';
+            }
+        });
+        
+        lightbox.open();
+        return;
+    }
+    
     const portfolioItems = document.querySelectorAll('.portfolio-item img');
     const images = [];
     
@@ -2437,7 +2470,6 @@ window.openPhotoSwipe = function(index) {
         if (imgUrl.includes('?tr=')) {
             imgUrl = imgUrl.split('?tr=')[0];
         }
-        
         images.push({
             href: imgUrl,
             title: `Portfolio image ${i + 1}`,
