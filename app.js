@@ -1410,6 +1410,48 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     const targetUserId = profileUserId || firebase.auth().currentUser.uid;
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
     
+    // Check cache first
+    const cacheKey = `profile_${targetUserId}`;
+    const cachedProfile = sessionStorage.getItem(cacheKey);
+    const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+    const now = Date.now();
+    
+    if (cachedProfile && cacheTime && (now - parseInt(cacheTime)) < 300000) { // 5 minutes cache
+        const profile = JSON.parse(cachedProfile);
+        profile.id = targetUserId;
+        
+        // Get saved counts from cache or fetch minimal
+        let savedCount = 0;
+        let savesCount = 0;
+        
+        if (isOwnProfile) {
+            savedCount = Object.keys(profile.savedProfiles || {}).length;
+            // savesCount needs live query for others saving you
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savesCount = savesSnapshot.size;
+        } else {
+            const currentUserDoc = await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get();
+            savesCount = Object.keys(currentUserDoc.data()?.savedProfiles || {}).length;
+            const savesSnapshot = await firebase.firestore()
+                .collection('users')
+                .where(`savedProfiles.${targetUserId}`, '==', true)
+                .get();
+            savedCount = savesSnapshot.size;
+        }
+        
+        container.innerHTML = renderProfile(profile, savedCount, savesCount, isOwnProfile, hideTabBar);
+        
+        if (isOwnProfile) {
+            setupOwnProfileListeners(profile);
+        } else {
+            setupOtherProfileListeners(profile);
+        }
+        return;
+    }
+    
     try {
         const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
         if (!profileDoc.exists) {
@@ -1419,6 +1461,10 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         
         const profile = profileDoc.data();
         profile.id = targetUserId;
+
+         // Cache profile data
+        sessionStorage.setItem(cacheKey, JSON.stringify(profile));
+        sessionStorage.setItem(`${cacheKey}_time`, now.toString());
         
         // FIX #7: Use savedProfiles map instead of separate query
         let savedCount = 0;
@@ -2137,6 +2183,9 @@ window.saveEditProfile = async function() {
             bio: bio,
             phoneNumber: phone
         });
+
+         // Clear cache for this profile
+        sessionStorage.removeItem(`profile_${firebase.auth().currentUser.uid}`);
         
         loadProfileTab(null, false); // Show tab bar when returning to own profile
     } catch (error) {
