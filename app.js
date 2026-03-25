@@ -17,6 +17,17 @@ firebase.firestore().settings({
     experimentalForceLongPolling: true,
     useFetchStreams: false
 });
+
+// Enable offline persistence - allows app to work without internet
+firebase.firestore().enablePersistence({
+    synchronizeTabs: true
+}).catch((err) => {
+    if (err.code == 'failed-precondition') {
+        console.log('Persistence failed: multiple tabs open');
+    } else if (err.code == 'unimplemented') {
+        console.log('Persistence not supported in this browser');
+    }
+});
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 // Initialize ImageKit
@@ -304,19 +315,21 @@ async function loadProviders(reset = true) {
         lastDoc = null;
         hasMore = true;
         homeTotalLoaded = 0;
-        document.getElementById('providers-grid').innerHTML = '';
-        document.getElementById('load-more-btn').style.display = 'none';
+        const grid = document.getElementById('providers-grid');
+        if (grid) grid.innerHTML = '';
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     }
     
     if (!hasMore) {
         loading = false;
-        if (homeTotalLoaded > 0) {
-            document.getElementById('load-more-btn').style.display = 'none';
-        }
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn && homeTotalLoaded > 0) loadMoreBtn.style.display = 'none';
         return;
     }
     
-    document.getElementById('loading-spinner')?.classList.remove('hidden');
+    const spinner = document.getElementById('loading-spinner');
+    if (spinner) spinner.classList.remove('hidden');
     
     try {
         let userLat = 6.5244;
@@ -335,7 +348,6 @@ async function loadProviders(reset = true) {
         }
         
         let query = firebase.firestore().collection('users')
-            .where('emailVerified', '==', true)
             .where('locationGeo', '!=', null)
             .limit(HOME_PAGE_SIZE);
         
@@ -348,12 +360,15 @@ async function loadProviders(reset = true) {
         if (snapshot.empty) {
             hasMore = false;
             if (providers.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
+                const emptyState = document.getElementById('empty-state');
+                if (emptyState) emptyState.classList.remove('hidden');
             }
-            document.getElementById('load-more-btn').style.display = 'none';
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         } else {
             lastDoc = snapshot.docs[snapshot.docs.length - 1];
             
+            const newProviders = [];
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 let distance = 999;
@@ -366,31 +381,43 @@ async function loadProviders(reset = true) {
                     );
                 }
                 
-                providers.push({
+                newProviders.push({
                     id: doc.id,
                     ...data,
                     distance: distance.toFixed(1)
                 });
             });
             
-            providers.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            newProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            
+            providers.push(...newProviders);
             
             renderProviders();
             homeTotalLoaded += snapshot.docs.length;
             
+            const loadMoreBtn = document.getElementById('load-more-btn');
             if (snapshot.docs.length === HOME_PAGE_SIZE) {
-                document.getElementById('load-more-btn').style.display = 'block';
+                if (loadMoreBtn) loadMoreBtn.style.display = 'block';
             } else {
                 hasMore = false;
-                document.getElementById('load-more-btn').style.display = 'none';
+                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             }
+        }
+        
+        if (providers.length > 0) {
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.classList.add('hidden');
         }
         
     } catch (error) {
         console.error('Error loading providers:', error);
+        const grid = document.getElementById('providers-grid');
+        if (grid && providers.length === 0) {
+            grid.innerHTML = '<div class="error-state">Failed to load providers. Pull down to refresh.</div>';
+        }
     }
     
-    document.getElementById('loading-spinner')?.classList.add('hidden');
+    if (spinner) spinner.classList.add('hidden');
     loading = false;
 }
 
@@ -404,9 +431,9 @@ function renderProviders() {
     const grid = document.getElementById('providers-grid');
     if (!grid) return;
     
+    grid.innerHTML = '';
+    
     providers.forEach(provider => {
-        if (document.getElementById(`provider-${provider.id}`)) return;
-        
         const card = document.createElement('div');
         card.id = `provider-${provider.id}`;
         card.className = 'provider-card';
@@ -416,17 +443,21 @@ function renderProviders() {
         const displayServices = services.slice(0, 2).join(' • ');
         const hasMoreServices = services.length > 2 ? '...' : '';
         
+        const profileImage = provider.profileImage 
+            ? `${provider.profileImage}?tr=w-300,h-300,fo-auto` 
+            : 'https://via.placeholder.com/300';
+        
         card.innerHTML = `
             <div class="provider-image">
-                <img src="${provider.profileImage ? provider.profileImage + '?tr=w-150,h-150' : 'https://via.placeholder.com/150'}" alt="${provider.businessName}">
+                <img src="${profileImage}" alt="${escapeHtml(provider.businessName)}" loading="lazy">
             </div>
             <div class="provider-info">
-                <h3 class="provider-name">${provider.businessName}</h3>
+                <h3 class="provider-name">${escapeHtml(provider.businessName)}</h3>
                 <div class="provider-rating">
                     <span class="stars">⭐ ${provider.rating || '0.0'}</span>
                     <span class="review-count">(${provider.reviewCount || 0})</span>
                 </div>
-                <div class="provider-services">${displayServices}${hasMoreServices}</div>
+                <div class="provider-services">${escapeHtml(displayServices)}${hasMoreServices}</div>
                 <div class="provider-distance" onclick="event.stopPropagation(); showOnMap('${provider.id}')">
                     📍 ${provider.distance} km away
                 </div>
@@ -434,6 +465,16 @@ function renderProviders() {
         `;
         
         grid.appendChild(card);
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
     });
 }
 
@@ -501,17 +542,36 @@ function setupPullToRefresh() {
 
 async function refreshProviders() {
     const indicator = document.getElementById('pull-to-refresh-indicator');
-    indicator.classList.add('refreshing');
-    indicator.querySelector('.ptr-text').textContent = 'Refreshing...';
+    if (indicator) {
+        indicator.classList.add('refreshing');
+        const textEl = indicator.querySelector('.ptr-text');
+        if (textEl) textEl.textContent = 'Refreshing...';
+    }
     
     providers = [];
     lastDoc = null;
     hasMore = true;
     homeTotalLoaded = 0;
-    document.getElementById('providers-grid').innerHTML = '';
+    homeCurrentPage = 1;
+    
+    const grid = document.getElementById('providers-grid');
+    if (grid) grid.innerHTML = '';
+    
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    
     await loadProviders(true);
     
-    setTimeout(resetPullToRefresh, 500);
+    setTimeout(() => {
+        if (indicator) {
+            indicator.style.transform = '';
+            indicator.classList.remove('refreshing');
+            const textEl = indicator.querySelector('.ptr-text');
+            if (textEl) textEl.textContent = 'Pull to refresh';
+            const spinnerEl = indicator.querySelector('.ptr-spinner');
+            if (spinnerEl) spinnerEl.style.transform = '';
+        }
+    }, 500);
 }
 
 function resetPullToRefresh() {
