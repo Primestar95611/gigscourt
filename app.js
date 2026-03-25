@@ -264,9 +264,12 @@ function loadHomeTab() {
                 <!-- Providers will load here -->
             </div>
             
-            <div id="load-more-container" style="text-align: center; margin: 20px;">
-                <button id="load-more-btn" class="btn" style="display: none;" onclick="loadMoreProviders()">Load More</button>
-            </div>
+            <div id="load-more-trigger" style="height: 20px; margin: 20px; text-align: center;">
+    <div id="load-more-spinner" class="loading-spinner hidden" style="padding: 10px;">
+        <div class="spinner"></div>
+    </div>
+    <div id="load-more-end" class="hidden" style="color: var(--text-secondary); font-size: 12px;">You've seen all providers</div>
+</div>
             
             <div id="loading-spinner" class="loading-spinner hidden">
                 <div class="spinner"></div>
@@ -300,6 +303,40 @@ function loadHomeTab() {
                 alert('Please log in first');
             }
         };
+    }
+    // Setup infinite scroll
+    setTimeout(() => {
+        setupInfiniteScroll();
+    }, 500);
+}
+}
+
+// Infinite scroll setup
+let observer = null;
+
+function setupInfiniteScroll() {
+    const trigger = document.getElementById('load-more-trigger');
+    if (!trigger) return;
+    
+    // Remove existing observer if any
+    if (observer) observer.disconnect();
+    
+    observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMore && !loading) {
+                loadProviders(false);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '100px' });
+    
+    observer.observe(trigger);
+}
+
+// Clean up observer when leaving home tab
+function cleanupInfiniteScroll() {
+    if (observer) {
+        observer.disconnect();
+        observer = null;
     }
 }
 
@@ -343,6 +380,12 @@ async function loadProviders(reset = true) {
     
     const spinner = document.getElementById('loading-spinner');
     if (spinner) spinner.classList.remove('hidden');
+
+    // Show infinite scroll spinner when loading more
+if (!reset) {
+    const moreSpinner = document.getElementById('load-more-spinner');
+    if (moreSpinner) moreSpinner.classList.remove('hidden');
+}
     
     try {
         let userLat = 6.5244;
@@ -409,12 +452,18 @@ async function loadProviders(reset = true) {
             homeTotalLoaded += snapshot.docs.length;
             
             const loadMoreBtn = document.getElementById('load-more-btn');
-            if (snapshot.docs.length === HOME_PAGE_SIZE) {
-                if (loadMoreBtn) loadMoreBtn.style.display = 'block';
-            } else {
-                hasMore = false;
-                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-            }
+            if (snapshot.empty) {
+    hasMore = false;
+    if (providers.length === 0) {
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) emptyState.classList.remove('hidden');
+    }
+    // Show end message
+    const endMsg = document.getElementById('load-more-end');
+    if (endMsg) endMsg.classList.remove('hidden');
+    const spinner = document.getElementById('load-more-spinner');
+    if (spinner) spinner.classList.add('hidden');
+}
         }
         
         if (providers.length > 0) {
@@ -429,6 +478,12 @@ async function loadProviders(reset = true) {
             grid.innerHTML = '<div class="error-state">Failed to load providers. Pull down to refresh.</div>';
         }
     }
+
+    // Hide infinite scroll spinner
+if (!reset) {
+    const moreSpinner = document.getElementById('load-more-spinner');
+    if (moreSpinner) moreSpinner.classList.add('hidden');
+}
     
     if (spinner) spinner.classList.add('hidden');
     loading = false;
@@ -3492,6 +3547,11 @@ window.switchTab = (tab) => {
         clearInterval(window.messagesInterval);
         window.messagesInterval = null;
     }
+
+    // Cleanup infinite scroll when leaving home
+if (window.currentTab === 'home') {
+    cleanupInfiniteScroll();
+}
     
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -3505,7 +3565,7 @@ window.switchTab = (tab) => {
         }
     });
     
-    switch(tab) {
+    switch(tab) {    
         case 'home':
             loadHomeTab();
             break;
