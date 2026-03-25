@@ -1,4 +1,4 @@
-/* styles.css - Cleaned and Optimized */
+/* styles.css - PWA-Optimized */
 
 * {
     margin: 0;
@@ -43,6 +43,10 @@
     }
 }
 
+html {
+    min-height: calc(100% + env(safe-area-inset-top));
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-primary);
@@ -51,9 +55,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ========== LAYOUT SYSTEM - FIXED HEADER + SCROLLABLE CONTENT ========== */
-
-/* All main containers */
+/* ========== MAIN CONTAINERS ========== */
 .home-container,
 .search-container,
 .messages-container,
@@ -64,51 +66,62 @@ body {
 .admin-container {
     display: flex !important;
     flex-direction: column !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
+    min-height: 100dvh !important;
     background: var(--bg-primary) !important;
 }
 
-/* Fixed headers */
+/* ========== HEADERS - STICKY FOR PWA ========== */
 .home-header,
 .messages-header,
 .admin-header,
 .edit-profile-header,
 .location-picker-header,
 .chat-header,
-.profile-fixed-header {
-    flex-shrink: 0 !important;
+.profile-fixed-header,
+.search-header {
+    position: sticky !important;
+    top: 0 !important;
     background: var(--bg-primary) !important;
     border-bottom: 1px solid var(--border-color) !important;
     padding-top: max(12px, env(safe-area-inset-top)) !important;
-    z-index: 10 !important;
+    z-index: 100 !important;
 }
 
-/* Scrollable content areas */
-.home-scrollable,
-.messages-scrollable,
-.profile-scrollable,
-.edit-profile-form,
-.location-details,
-.chat-messages,
+/* ========== SEARCH TAB ========== */
+.search-controls,
+.search-map {
+    position: sticky !important;
+    top: 70px !important;
+    background: var(--bg-primary) !important;
+    z-index: 50 !important;
+}
+
+.search-controls {
+    padding: 8px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-map {
+    height: 40vh;
+    width: 100%;
+}
+
 .provider-drawer {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-bottom: max(70px, env(safe-area-inset-bottom)) !important;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    padding-bottom: 70px;
 }
 
-/* Tab bar - fixed at bottom */
+/* ========== TAB BAR ========== */
 .tab-bar {
-    position: fixed !important;
+    position: sticky !important;
     bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
     display: flex !important;
     background: var(--bg-primary) !important;
     border-top: 1px solid var(--border-color) !important;
     padding: 8px 0 max(8px, env(safe-area-inset-bottom)) !important;
     z-index: 100 !important;
+    margin-top: auto !important;
 }
 
 .tab-btn {
@@ -121,7 +134,6 @@ body {
     padding: 4px 0;
     cursor: pointer;
     color: var(--tab-inactive);
-    transition: color 0.2s;
 }
 
 .tab-btn.active {
@@ -138,11 +150,13 @@ body {
     font-weight: 500;
 }
 
-/* Tab content wrapper */
-.tab-content {
-    padding: 0 !important;
-    min-height: 100dvh !important;
-    background: var(--bg-primary) !important;
+/* ========== PROFILE TAB ========== */
+.profile-fixed-header {
+    padding: 20px 20px 10px 20px;
+}
+
+.profile-scrollable {
+    padding: 0 20px 80px 20px;
 }
 
 /* ========== HOME TAB ========== */
@@ -259,13 +273,6 @@ body {
 }
 
 /* ========== SEARCH TAB ========== */
-.search-controls {
-    flex-shrink: 0;
-    padding: 8px 15px;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-color);
-}
-
 .search-input {
     width: 100%;
     padding: 8px 12px;
@@ -388,14 +395,6 @@ body {
 }
 
 /* ========== PROFILE TAB ========== */
-.profile-fixed-header {
-    padding: 20px 20px 10px 20px;
-}
-
-.profile-scrollable {
-    padding: 0 20px 80px 20px;
-}
-
 .profile-stats-row {
     display: flex;
     align-items: center;
@@ -855,6 +854,7 @@ body {
     flex-direction: column;
     gap: 8px;
     background: var(--bg-secondary);
+    padding-bottom: 70px;
 }
 
 .message-row.mine {
@@ -897,6 +897,7 @@ body {
     padding: 15px 20px;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
+    margin-top: auto;
 }
 
 .chat-input {
@@ -1036,150 +1037,4 @@ body {
     padding: 0 10px;
     color: var(--text-secondary);
     font-size: 14px;
-}
-
-/* Make headers fixed at top */
-.home-header,
-.search-header,
-.messages-header,
-.profile-fixed-header,
-.edit-profile-header,
-.location-picker-header,
-.chat-header {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 100 !important;
-    background: var(--bg-primary) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    padding-top: max(12px, env(safe-area-inset-top)) !important;
-}
-
-/* Add top margin to scrollable areas so content doesn't hide under header */
-.home-scrollable,
-.search-scrollable,
-.messages-scrollable,
-.profile-scrollable,
-.edit-profile-form,
-.location-details,
-.chat-messages {
-    margin-top: 70px !important;
-}
-
-/* Adjust for different screen sizes */
-@media (max-width: 600px) {
-    .home-scrollable,
-    .search-scrollable,
-    .messages-scrollable,
-    .profile-scrollable,
-    .edit-profile-form,
-    .location-details,
-    .chat-messages {
-        margin-top: 65px !important;
-    }
-}
-
-/* Tab bar stays fixed at bottom */
-.tab-bar {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 100 !important;
-}
-
-/* FIX 1: Profile page - ensure scrollable starts below header */
-.profile-scrollable {
-    margin-top: 70px !important;
-    padding-top: 10px !important;
-}
-
-/* FIX 2: Search tab - map and controls fixed, only provider list scrolls */
-.search-container {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
-}
-
-.search-controls {
-    flex-shrink: 0 !important;
-    position: relative !important;
-    z-index: 5 !important;
-}
-
-.search-map {
-    flex-shrink: 0 !important;
-    height: 40vh !important;
-    width: 100% !important;
-    position: relative !important;
-}
-
-.provider-drawer {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    background: var(--bg-primary) !important;
-    border-top: 1px solid var(--border-color) !important;
-}
-
-/* Remove any existing search-scrollable class if present */
-.search-scrollable {
-    display: none !important;
-}
-
-/* Fix: Profile page content not hidden behind header */
-.profile-container {
-    padding-top: 0 !important;
-}
-
-.profile-scrollable {
-    padding-top: 10px !important;
-    margin-top: 0 !important;
-}
-
-.profile-fixed-header {
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 10 !important;
-    background: var(--bg-primary) !important;
-}
-
-/* FORCED STATIC HEADERS */
-
-/* 1. Search Page: Lock Header and Map */
-.search-controls, 
-.search-map {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    flex-shrink: 0 !important;
-}
-
-/* 2. Profile Page: Lock Picture, Stats, and Buttons */
-.profile-fixed-header {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    flex-shrink: 0 !important;
-    background: var(--bg-primary) !important;
-}
-
-/* 3. Ensure the containers don't allow internal page-wide scrolling */
-.search-container, 
-.profile-container {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    overflow: hidden !important; 
-}
-
-/* 4. Ensure only these specific areas scroll */
-.provider-drawer, 
-.profile-scrollable {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    margin-top: 0 !important; /* Removes the gap from previous fixes */
 }
