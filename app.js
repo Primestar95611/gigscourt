@@ -1431,7 +1431,7 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     const cachedProfile = sessionStorage.getItem(cacheKey);
     const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
     const now = Date.now();
-    
+    /*
     if (cachedProfile && cacheTime && (now - parseInt(cacheTime)) < 300000) { // 5 minutes cache
         const profile = JSON.parse(cachedProfile);
         profile.id = targetUserId;
@@ -1467,6 +1467,7 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         }
         return;
     }
+    */
     
     try {
         const profileDoc = await firebase.firestore().collection('users').doc(targetUserId).get();
