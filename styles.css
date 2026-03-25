@@ -1,4 +1,4 @@
-/* styles.css - PWA-Optimized */
+/* styles.css - Fixed Header + Fixed Tab Bar + Scrollable Middle */
 
 * {
     margin: 0;
@@ -43,120 +43,86 @@
     }
 }
 
-html {
-    min-height: calc(100% + env(safe-area-inset-top));
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    height: 100dvh;
+    overflow: hidden;
 }
 
-/* ========== MAIN CONTAINERS ========== */
-.home-container,
-.search-container,
-.messages-container,
-.profile-container,
-.edit-profile-container,
-.location-picker-container,
-.chat-container,
-.admin-container {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 100dvh !important;
-    background: var(--bg-primary) !important;
+/* ========== MAIN APP STRUCTURE ========== */
+#app {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* ========== HEADERS - STICKY FOR PWA ========== */
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 !important;
+    background: var(--bg-primary);
+}
+
+/* ========== FIXED HEADER (Never Moves) ========== */
 .home-header,
 .messages-header,
 .admin-header,
 .edit-profile-header,
 .location-picker-header,
 .chat-header,
-.profile-fixed-header,
-.search-header {
-    position: sticky !important;
+.profile-fixed-header {
+    position: fixed !important;
     top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     background: var(--bg-primary) !important;
     border-bottom: 1px solid var(--border-color) !important;
     padding-top: max(12px, env(safe-area-inset-top)) !important;
     z-index: 100 !important;
 }
 
-/* ========== SEARCH TAB ========== */
-.search-controls,
-.search-map {
-    position: sticky !important;
-    top: 70px !important;
-    background: var(--bg-primary) !important;
-    z-index: 50 !important;
-}
-
-.search-controls {
-    padding: 8px 15px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.search-map {
-    height: 40vh;
-    width: 100%;
-}
-
-.provider-drawer {
-    background: var(--bg-primary);
-    border-top: 1px solid var(--border-color);
-    padding-bottom: 70px;
-}
-
-/* ========== TAB BAR ========== */
+/* ========== FIXED TAB BAR (Never Moves) ========== */
 .tab-bar {
-    position: sticky !important;
+    position: fixed !important;
     bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     display: flex !important;
     background: var(--bg-primary) !important;
     border-top: 1px solid var(--border-color) !important;
     padding: 8px 0 max(8px, env(safe-area-inset-bottom)) !important;
     z-index: 100 !important;
-    margin-top: auto !important;
 }
 
-.tab-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: none;
-    border: none;
-    padding: 4px 0;
-    cursor: pointer;
-    color: var(--tab-inactive);
+/* ========== SCROLLABLE MIDDLE CONTENT ========== */
+.home-scrollable,
+.messages-scrollable,
+.profile-scrollable,
+.edit-profile-form,
+.location-details,
+.chat-messages {
+    padding-top: 70px !important;
+    padding-bottom: 70px !important;
+    overflow-y: auto !important;
+    height: 100%;
 }
 
-.tab-btn.active {
-    color: var(--tab-active);
-}
-
-.tab-icon svg {
-    width: 24px;
-    height: 24px;
-}
-
-.tab-label {
-    font-size: 11px;
-    font-weight: 500;
-}
-
-/* ========== PROFILE TAB ========== */
-.profile-fixed-header {
-    padding: 20px 20px 10px 20px;
-}
-
-.profile-scrollable {
-    padding: 0 20px 80px 20px;
+/* Adjust padding for different screen sizes */
+@media (max-width: 600px) {
+    .home-scrollable,
+    .messages-scrollable,
+    .profile-scrollable,
+    .edit-profile-form,
+    .location-details,
+    .chat-messages {
+        padding-top: 65px !important;
+        padding-bottom: 65px !important;
+    }
 }
 
 /* ========== HOME TAB ========== */
@@ -273,6 +239,55 @@ body {
 }
 
 /* ========== SEARCH TAB ========== */
+.search-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.search-controls {
+    position: fixed !important;
+    top: 70px !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: var(--bg-primary) !important;
+    padding: 8px 15px;
+    border-bottom: 1px solid var(--border-color);
+    z-index: 50 !important;
+}
+
+.search-map {
+    position: fixed !important;
+    top: 120px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 40vh !important;
+    background: var(--bg-secondary);
+    z-index: 40 !important;
+}
+
+.provider-drawer {
+    margin-top: calc(70px + 40vh + 50px) !important;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    overflow-y: auto;
+    height: auto;
+    padding-bottom: 70px;
+}
+
+@media (max-width: 600px) {
+    .search-controls {
+        top: 65px !important;
+    }
+    .search-map {
+        top: 115px !important;
+    }
+    .provider-drawer {
+        margin-top: calc(65px + 40vh + 50px) !important;
+    }
+}
+
 .search-input {
     width: 100%;
     padding: 8px 12px;
@@ -395,6 +410,14 @@ body {
 }
 
 /* ========== PROFILE TAB ========== */
+.profile-fixed-header {
+    padding: 20px 20px 10px 20px;
+}
+
+.profile-scrollable {
+    padding: 0 20px 80px 20px;
+}
+
 .profile-stats-row {
     display: flex;
     align-items: center;
@@ -854,7 +877,6 @@ body {
     flex-direction: column;
     gap: 8px;
     background: var(--bg-secondary);
-    padding-bottom: 70px;
 }
 
 .message-row.mine {
@@ -897,7 +919,6 @@ body {
     padding: 15px 20px;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
-    margin-top: auto;
 }
 
 .chat-input {
