@@ -1147,60 +1147,39 @@ body {
     background: var(--bg-primary) !important;
 }
 
-/* ========== SEARCH PAGE FIXED LAYOUT ========== */
-.search-container {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
+/* FORCED STATIC HEADERS */
+
+/* 1. Search Page: Lock Header and Map */
+.search-controls, 
+.search-map {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    flex-shrink: 0 !important;
 }
 
-/* Static Search Header & Map */
-.search-controls,
-.search-map {
+/* 2. Profile Page: Lock Picture, Stats, and Buttons */
+.profile-fixed-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
     flex-shrink: 0 !important;
-    position: relative !important;
-    z-index: 10 !important;
     background: var(--bg-primary) !important;
 }
 
-.search-map {
-    height: 35vh !important; /* Adjust height as needed */
-    width: 100% !important;
-}
-
-/* Only the Provider List Scrolls */
-.provider-drawer {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 80px !important; /* Space for tab bar */
-}
-
-/* ========== PROFILE PAGE FIXED LAYOUT ========== */
+/* 3. Ensure the containers don't allow internal page-wide scrolling */
+.search-container, 
 .profile-container {
     display: flex !important;
     flex-direction: column !important;
     height: 100dvh !important;
-    overflow: hidden !important;
+    overflow: hidden !important; 
 }
 
-/* Static Profile Top Section */
-.profile-fixed-header {
-    flex-shrink: 0 !important;
-    position: relative !important;
-    padding: 20px 20px 10px 20px !important;
-    background: var(--bg-primary) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    z-index: 10 !important;
-}
-
-/* Scrollable Bio, Services, and Portfolio */
+/* 4. Ensure only these specific areas scroll */
+.provider-drawer, 
 .profile-scrollable {
     flex: 1 !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 15px 20px 100px 20px !important; /* Bottom padding for tab bar */
-    margin-top: 0 !important; /* Removes the old fixed header offset */
+    margin-top: 0 !important; /* Removes the gap from previous fixes */
 }
-
