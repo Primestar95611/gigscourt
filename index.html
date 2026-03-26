@@ -65,9 +65,21 @@
 <body style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);">
     <!-- App Container -->
     <div id="app"></div>
+
+    <!-- Main JavaScript - Split modules -->
+<script src="utils.js"></script>
+<script src="auth.js"></script>
+<script src="upload.js"></script>
+<script src="home.js"></script>
+<script src="search.js"></script>
+<script src="messages.js"></script>
+<script src="profile.js"></script>
+<script src="admin.js"></script>
+<script src="main.js"></script>
     
     <!-- Main JavaScript -->
-    <script src="app.js?v=2"></script>
+    <!-- <script src="app.js?v=2"></script> -->
+
 
     <!-- Service Worker Registration (PWA) -->
     <script>
