@@ -15,10 +15,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // Firestore settings
-firebase.firestore().settings({
-    experimentalForceLongPolling: true,
-    useFetchStreams: false
-});
+//firebase.firestore().settings({
+   // experimentalForceLongPolling: true,
+    //useFetchStreams: false
+//});
 
 // Enable offline persistence
 firebase.firestore().enablePersistence({
