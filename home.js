@@ -5,9 +5,6 @@ let providers = [];
 let lastDoc = null;
 let loading = false;
 let hasMore = true;
-let homeCurrentPage = 1;
-let homeTotalLoaded = 0;
-const HOME_PAGE_SIZE = 10;
 let observer = null;
 
 // Load home tab
