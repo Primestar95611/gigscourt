@@ -64,6 +64,35 @@ window.onunhandledrejection = function(event) {
     }
 };
 
+// ========== VISIBLE DEBUG CONSOLE (FOR MOBILE) ==========
+window.debugLog = function(msg) {
+    var div = document.getElementById('debug-console');
+    if (!div) {
+        div = document.createElement('div');
+        div.id = 'debug-console';
+        div.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; padding:8px; font-size:11px; z-index:999999; max-height:150px; overflow-y:auto; font-family:monospace; pointer-events:none;';
+        document.body.appendChild(div);
+    }
+    var line = document.createElement('div');
+    line.textContent = new Date().toLocaleTimeString() + ': ' + msg;
+    div.appendChild(line);
+    div.scrollTop = div.scrollHeight;
+    console.log(msg);
+};
+
+// Catch all errors and show them
+window.onerror = function(msg, url, line) {
+    window.debugLog('ERROR: ' + msg + ' at line ' + line);
+    return false;
+};
+
+window.onunhandledrejection = function(event) {
+    window.debugLog('PROMISE ERROR: ' + (event.reason?.message || event.reason));
+};
+
+window.debugLog('Debug console ready');
+// ========== END DEBUG ==========
+
 // Initialize ImageKit
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
