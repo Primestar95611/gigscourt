@@ -64,35 +64,6 @@ window.onunhandledrejection = function(event) {
     }
 };
 
-// ========== VISIBLE DEBUG CONSOLE (FOR MOBILE) ==========
-window.debugLog = function(msg) {
-    var div = document.getElementById('debug-console');
-    if (!div) {
-        div = document.createElement('div');
-        div.id = 'debug-console';
-        div.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; padding:8px; font-size:11px; z-index:999999; max-height:150px; overflow-y:auto; font-family:monospace; pointer-events:none;';
-        document.body.appendChild(div);
-    }
-    var line = document.createElement('div');
-    line.textContent = new Date().toLocaleTimeString() + ': ' + msg;
-    div.appendChild(line);
-    div.scrollTop = div.scrollHeight;
-    console.log(msg);
-};
-
-// Catch all errors and show them
-window.onerror = function(msg, url, line) {
-    window.debugLog('ERROR: ' + msg + ' at line ' + line);
-    return false;
-};
-
-window.onunhandledrejection = function(event) {
-    window.debugLog('PROMISE ERROR: ' + (event.reason?.message || event.reason));
-};
-
-window.debugLog('Debug console ready');
-// ========== END DEBUG ==========
-
 // Initialize ImageKit
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
@@ -284,26 +255,24 @@ window.saveProfile = async function() {
     }
     
     try {
-        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).set({
+        // Only send fields allowed by security rules for self-update
+        const updateData = {
             businessName: businessName,
-            email: firebase.auth().currentUser.email,
+            bio: bio,
             services: window.selectedServices || [],
             pendingServices: [],
-            bio: bio,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            emailVerified: true,
-            phoneVerified: false,
-            signupMethod: 'email',
+            profileImage: '',
+            portfolioImages: [],
+            locationGeo: null,
+            savedProfiles: {},
+            points: 15,
             rating: 0,
             reviewCount: 0,
             jobsDone: 0,
-            profileImage: '',
-            portfolioImages: [],
-            location: null,
-            locationGeo: null,
-            savedProfiles: {},
-            points: 15
-        });
+            jobsThisMonth: 0
+        };
+        
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).set(updateData, { merge: true });
         
         loadMainApp();
     } catch (error) {
@@ -1094,13 +1063,7 @@ window.submitReview = async function(providerId, jobId) {
         // Define providerRef for later use
         const providerRef = firebase.firestore().collection('users').doc(providerId);
         const providerDoc = await providerRef.get();
-
-        // DEBUG: Check job status
-        const jobCheck = await firebase.firestore().collection('jobs').doc(jobId).get();
-        console.log('JOB STATUS:', jobCheck.data()?.status);
-        console.log('JOB ID:', jobId);
-        console.log('PROVIDER ID:', providerId);
-        console.log('CLIENT ID:', clientId);
+        
         const existingReviewQuery = await firebase.firestore()
             .collection('reviews')
             .where('providerId', '==', providerId)
@@ -1108,17 +1071,6 @@ window.submitReview = async function(providerId, jobId) {
             .get();
         
         let reviewId;
-
-        console.log('=== REVIEW DATA ===');
-        console.log('providerId:', providerId);
-        console.log('clientId:', clientId);
-        console.log('clientBusinessName:', clientData.businessName);
-        console.log('clientProfileImage:', clientData.profileImage || '');
-        console.log('rating:', parseInt(rating));
-        console.log('reviewText:', reviewText);
-        console.log('lastJobId:', jobId);
-        console.log('jobsTogether:', 1);
-        console.log('===================');
         
         if (existingReviewQuery.empty) {
             const newReviewRef = await firebase.firestore().collection('reviews').add({
@@ -1146,28 +1098,9 @@ window.submitReview = async function(providerId, jobId) {
             reviewId = reviewDoc.id;
         }
         
-        // DEDUCT POINTS AFTER REVIEW IS CREATED
-        if (!jobData.pointsDeducted) {
-            const providerPoints = providerDoc.data()?.points || 0;
-            
-            if (providerPoints < JOB_COST) {
-                showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
-                modal.remove();
-                return;
-            }
-            
-            await providerRef.update({
-                points: firebase.firestore.FieldValue.increment(-JOB_COST)
-            });
-            
-            await jobRef.update({
-                pointsDeducted: true,
-                pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-        
+        // CRITICAL: Update ALL provider stats in ONE atomic update
+        // This matches the security rule's hasOnly() check
         const provider = providerDoc.data();
-        
         let newRating;
         let newReviewCount;
         
@@ -1185,13 +1118,38 @@ window.submitReview = async function(providerId, jobId) {
             newReviewCount = provider.reviewCount;
         }
         
-        await providerRef.update({
+        // Prepare the update data for provider (all fields in one update)
+        const providerUpdateData = {
             rating: parseFloat(newRating.toFixed(1)),
             reviewCount: newReviewCount,
-            jobsDone: firebase.firestore.FieldValue.increment(1),
-            jobsThisMonth: firebase.firestore.FieldValue.increment(1),
+            jobsDone: (provider.jobsDone || 0) + 1,
+            jobsThisMonth: (provider.jobsThisMonth || 0) + 1,
             lastReviewId: reviewId
-        });
+        };
+        
+        // Deduct points if not already deducted
+        if (!jobData.pointsDeducted) {
+            const providerPoints = providerDoc.data()?.points || 0;
+            
+            if (providerPoints < JOB_COST) {
+                showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
+                modal.remove();
+                return;
+            }
+            
+            providerUpdateData.points = providerPoints - JOB_COST;
+            
+            await jobRef.update({
+                pointsDeducted: true,
+                pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // Keep points unchanged
+            providerUpdateData.points = providerDoc.data()?.points || 0;
+        }
+        
+        // SINGLE UPDATE to provider document
+        await providerRef.update(providerUpdateData);
         
         await jobRef.update({
             status: 'reviewed',
@@ -2429,12 +2387,15 @@ window.saveEditProfile = async function() {
     }
     
     try {
-        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update({
+        // Only update allowed fields
+        const updateData = {
             businessName: businessName,
             username: username,
             bio: bio,
             phoneNumber: phone
-        });
+        };
+        
+        await firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).update(updateData);
 
         sessionStorage.removeItem(`profile_${firebase.auth().currentUser.uid}`);
         
