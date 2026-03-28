@@ -1062,28 +1062,7 @@ window.submitReview = async function(providerId, jobId) {
         const jobDoc = await jobRef.get();
         const jobData = jobDoc.data();
         
-        if (!jobData.pointsDeducted) {
-            const providerRefTemp = firebase.firestore().collection('users').doc(providerId);
-            const providerDocTemp = await providerRefTemp.get();
-            const providerPoints = providerDocTemp.data()?.points || 0;
-            
-            if (providerPoints < JOB_COST) {
-                showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
-                modal.remove();
-                return;
-            }
-            
-            await providerRefTemp.update({
-                points: firebase.firestore.FieldValue.increment(-JOB_COST)
-            });
-            
-            await jobRef.update({
-                pointsDeducted: true,
-                pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-        
-        // Define providerRef for later use in rating update
+        // Define providerRef for later use
         const providerRef = firebase.firestore().collection('users').doc(providerId);
         const providerDoc = await providerRef.get();
         
@@ -1109,6 +1088,37 @@ window.submitReview = async function(providerId, jobId) {
                 lastJobId: jobId
             });
             reviewId = newReviewRef.id;
+        } else {
+            const reviewDoc = existingReviewQuery.docs[0];
+            await reviewDoc.ref.update({
+                rating: parseInt(rating),
+                reviewText: reviewText,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                jobsTogether: firebase.firestore.FieldValue.increment(1),
+                lastJobId: jobId
+            });
+            reviewId = reviewDoc.id;
+        }
+        
+        // DEDUCT POINTS AFTER REVIEW IS CREATED
+        if (!jobData.pointsDeducted) {
+            const providerPoints = providerDoc.data()?.points || 0;
+            
+            if (providerPoints < JOB_COST) {
+                showToast('⚠️ Provider has insufficient credits. Job cannot be completed.');
+                modal.remove();
+                return;
+            }
+            
+            await providerRef.update({
+                points: firebase.firestore.FieldValue.increment(-JOB_COST)
+            });
+            
+            await jobRef.update({
+                pointsDeducted: true,
+                pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
         } else {
             const reviewDoc = existingReviewQuery.docs[0];
             await reviewDoc.ref.update({
