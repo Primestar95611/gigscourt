@@ -66,18 +66,7 @@
     <!-- App Container -->
     <div id="app"></div>
     
-   <!-- <script src="firebase-config.js"></script>
-<script src="utils.js"></script>
-<script src="upload.js"></script>
-<script src="home.js"></script>
-<script src="search.js"></script>
-<script src="messages.js"></script>
-<script src="profile.js"></script>
-<script src="admin.js"></script>
-<script src="main.js"></script>
-<script src="auth.js"></script> -->
-    
-    <!-- Old app.js (commented out - kept as backup) -->
+    <!-- Main JavaScript -->
     <script src="app.js?v=2"></script>
 
     <!-- Service Worker Registration (PWA) -->
@@ -139,8 +128,25 @@
   })();
 </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-
+    <!-- Debug Button -->
+    <div id="debug-btn" style="position:fixed; bottom:100px; right:10px; background:#8B0000; color:white; padding:10px 15px; border-radius:25px; font-size:14px; z-index:99999; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.3);">🐛 Debug Console</div>
+    <script>
+    document.getElementById('debug-btn').onclick = function() {
+        var btn = document.getElementById('debug-btn');
+        btn.style.display = 'none';
+        var script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/npm/eruda";
+        document.body.appendChild(script);
+        script.onload = function() {
+            eruda.init();
+            alert('Console ready! Tap the circle button at bottom right.');
+        };
+        script.onerror = function() {
+            alert('Failed to load debug console. Check internet.');
+            btn.style.display = 'block';
+        };
+    };
+    </script>
+    
 </body>
 </html>
