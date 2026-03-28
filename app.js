@@ -30,6 +30,41 @@ firebase.firestore().enablePersistence({
 });
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
+// Global Error Logger
+window.onerror = function(msg, url, line, col, error) {
+    try {
+        firebase.firestore().collection('errors').add({
+            message: msg,
+            url: url,
+            line: line,
+            column: col,
+            stack: error?.stack || 'No stack trace',
+            userId: firebase.auth().currentUser?.uid || 'not logged in',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            userAgent: navigator.userAgent
+        });
+    } catch(e) {
+        console.error('Error logger failed:', e);
+    }
+};
+
+// Catches promise errors (like failed Firestore calls)
+window.onunhandledrejection = function(event) {
+    try {
+        firebase.firestore().collection('errors').add({
+            message: event.reason?.message || 'Unknown promise error',
+            stack: event.reason?.stack || 'No stack trace',
+            userId: firebase.auth().currentUser?.uid || 'not logged in',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            type: 'unhandled_promise',
+            userAgent: navigator.userAgent
+        });
+    } catch(e) {
+        console.error('Error logger failed:', e);
+    }
+};
+
+
 // Initialize ImageKit
 var imagekit = new ImageKit({
     publicKey: "public_t2gpKmHQ/9binh9kNSsQBq0zsys=",
