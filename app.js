@@ -1119,17 +1119,6 @@ window.submitReview = async function(providerId, jobId) {
                 pointsDeductedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
-        } else {
-            const reviewDoc = existingReviewQuery.docs[0];
-            await reviewDoc.ref.update({
-                rating: parseInt(rating),
-                reviewText: reviewText,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                jobsTogether: firebase.firestore.FieldValue.increment(1),
-                lastJobId: jobId
-            });
-            reviewId = reviewDoc.id;
-        }
         
         const provider = providerDoc.data();
         
@@ -1163,11 +1152,6 @@ window.submitReview = async function(providerId, jobId) {
             reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        await jobRef.update({
-            status: 'reviewed',
-            reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
         // Send notification to provider with boost message
         try {
             const providerToken = providerDoc.data()?.fcmToken;
@@ -1189,12 +1173,6 @@ window.submitReview = async function(providerId, jobId) {
         } catch (notifyError) {
             console.log('Failed to send review notification:', notifyError);
         }
-        
-        // Show toast to provider (via push, no client toast)
-        
-        // Toast for provider (will be sent via push, not client)
-        // The toast below is for client - removing it
-        // showToast removed for client
         
         modal.remove();
         let scrollableContainer = document.querySelector('.home-container, .profile-container, .search-container, .chat-messages');
