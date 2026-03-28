@@ -3165,14 +3165,14 @@ function startReminderTracking(chatId, otherUserId) {
             .where('status', '==', 'reviewed')
             .get();
         
-        const messagesSnapshot = await firebase.firestore()
+        // Get total message count for this chat
+        const messagesCountSnapshot = await firebase.firestore()
             .collection('chats').doc(chatId)
             .collection('messages')
-            .orderBy('timestamp', 'desc')
-            .limit(1)
+            .count()
             .get();
         
-        let currentCount = messagesSnapshot.size;
+        let currentCount = messagesCountSnapshot.data().count;
         
         if (currentCount >= 10 && currentCount !== lastMessageCountChat) {
             lastMessageCountChat = currentCount;
@@ -3231,6 +3231,7 @@ async function checkAndShowReviewButton(chatId, otherUserId) {
                 </div>
                 <button class="btn confirm-gig-btn" onclick="confirmGig('${jobId}', '${otherUserId}')">Accept & Review</button>
             `;
+            // Insert at top but preserve after messages load
             messagesContainer.insertBefore(reviewDiv, messagesContainer.firstChild);
         }
     }
@@ -3364,7 +3365,16 @@ function loadMessages(chatId) {
                 }
             });
             
+            // Save review button if exists
+            const existingReviewBtn = document.getElementById('review-button-container');
+            
             messagesContainer.innerHTML = html;
+            
+            // Restore review button if it existed
+            if (existingReviewBtn && !document.getElementById('review-button-container')) {
+                messagesContainer.insertBefore(existingReviewBtn, messagesContainer.firstChild);
+            }
+            
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         } catch (error) {
             console.error('Error loading messages:', error);
