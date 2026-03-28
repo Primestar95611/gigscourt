@@ -1143,6 +1143,7 @@ window.submitReview = async function(providerId, jobId) {
             reviewCount: newReviewCount,
             jobsDone: firebase.firestore.FieldValue.increment(1),
             jobsThisMonth: firebase.firestore.FieldValue.increment(1)
+            lastReviewId: reviewDoc.id
         });
         
         await jobRef.update({
