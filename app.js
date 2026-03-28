@@ -1065,7 +1065,13 @@ window.submitReview = async function(providerId, jobId) {
         // Define providerRef for later use
         const providerRef = firebase.firestore().collection('users').doc(providerId);
         const providerDoc = await providerRef.get();
-        
+
+        // DEBUG: Check job status
+        const jobCheck = await firebase.firestore().collection('jobs').doc(jobId).get();
+        console.log('JOB STATUS:', jobCheck.data()?.status);
+        console.log('JOB ID:', jobId);
+        console.log('PROVIDER ID:', providerId);
+        console.log('CLIENT ID:', clientId);
         const existingReviewQuery = await firebase.firestore()
             .collection('reviews')
             .where('providerId', '==', providerId)
