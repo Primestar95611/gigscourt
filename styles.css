@@ -1,4 +1,4 @@
-/* styles.css */
+/* styles.css - Cleaned & Fixed */
 * {
     margin: 0;
     padding: 0;
@@ -30,7 +30,6 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        /* Dark mode */
         --bg-primary: #000000;
         --bg-secondary: #1c1c1e;
         --text-primary: #ffffff;
@@ -56,6 +55,11 @@ body {
     color: var(--text-primary);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    /* Keep bottom/left/right safe areas, remove top padding to eliminate gap */
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    /* padding-top removed - headers handle it */
 }
 
 #app {
@@ -349,7 +353,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px 24px;
+    /* Original padding 16px top + safe area */
+    padding-top: calc(env(safe-area-inset-top) + 16px);
+    padding-bottom: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -359,7 +367,7 @@ body {
 
 .header-actions {
     position: absolute;
-    top: 20px;
+    top: calc(env(safe-area-inset-top) + 16px);
     right: 24px;
     display: flex;
     gap: 16px;
@@ -704,7 +712,7 @@ body {
 /* Notification Panel */
 .notification-panel {
     position: fixed;
-    top: 64px;
+    top: calc(env(safe-area-inset-top) + 64px);
     right: 16px;
     left: 16px;
     background: var(--bg-primary);
@@ -782,7 +790,7 @@ body {
     display: flex;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
-    padding: 8px 0 16px;
+    padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
     z-index: 100;
     backdrop-filter: blur(10px);
     background: rgba(var(--bg-primary-rgb, 255, 255, 255), 0.95);
@@ -824,24 +832,11 @@ body {
     font-weight: 500;
 }
 
-/* Dark mode variables - ensure these exist */
-:root {
-    --tab-inactive: #8e8e93;
-    --tab-active: #1d1d1f;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --tab-inactive: #8e8e93;
-        --tab-active: #ffffff;
-    }
-}
-
 .tab-content {
     min-height: 100vh;
     padding-bottom: 80px;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    /* No padding-top needed – headers handle safe area */
 }
 
 /* Profile Completion Screen */
@@ -900,6 +895,7 @@ body {
     max-width: 600px;
     margin: 0 auto;
     padding: 24px 24px 80px 24px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 .profile-business-name {
@@ -1456,7 +1452,7 @@ body {
 /* Directions Toggle Button */
 .directions-toggle-btn {
     position: absolute;
-    top: 70px;
+    top: calc(env(safe-area-inset-top) + 70px);
     right: 20px;
     background: var(--btn-primary-bg);
     color: white;
@@ -1508,7 +1504,10 @@ body {
 }
 
 .messages-header {
-    padding: 20px 24px;
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+    padding-bottom: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-primary);
     position: sticky;
@@ -1615,7 +1614,10 @@ body {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 14px 20px;
+    padding-top: calc(env(safe-area-inset-top) + 14px);
+    padding-bottom: 14px;
+    padding-left: 20px;
+    padding-right: 20px;
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -1863,7 +1865,10 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 16px 20px;
+    padding-top: calc(env(safe-area-inset-top) + 16px);
+    padding-bottom: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
@@ -2060,7 +2065,10 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 16px 20px;
+    padding-top: calc(env(safe-area-inset-top) + 16px);
+    padding-bottom: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-primary);
     z-index: 10;
@@ -2315,7 +2323,7 @@ body {
 /* ========== TOAST NOTIFICATION ========== */
 .toast-notification {
     position: fixed;
-    bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     background: var(--button-bg);
@@ -2348,7 +2356,10 @@ body {
 }
 
 .admin-header {
-    padding: 20px 24px;
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+    padding-bottom: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-primary);
     position: sticky;
@@ -2396,10 +2407,12 @@ body {
 
 /* Dashboard Stats */
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 32px;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    gap: 12px !important;
+    justify-content: space-between !important;
 }
 
 .stat-card {
@@ -2416,15 +2429,14 @@ body {
 }
 
 .stat-number {
-    font-size: 34px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 20px !important;
+    font-weight: 700 !important;
     margin-bottom: 6px;
 }
 
 .stat-label {
-    font-size: 12px;
-    color: var(--text-secondary);
+    font-size: 12px !important;
+    font-weight: 500 !important;
 }
 
 /* Recent Section */
@@ -2706,33 +2718,6 @@ body {
     display: flex;
     justify-content: center;
     padding: 48px;
-}
-
-/* Force stats into horizontal row */
-.stats-grid {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    width: 100% !important;
-    gap: 12px !important;
-    justify-content: space-between !important;
-}
-
-.stat-item {
-    flex: 1 !important;
-    min-width: 0 !important;
-    align-items: center !important;
-}
-
-/* Keep original font sizes */
-.stat-number {
-    font-size: 20px !important;
-    font-weight: 700 !important;
-}
-
-.stat-label {
-    font-size: 12px !important;
-    font-weight: 500 !important;
 }
 
 .profile-contact.clickable-location {
@@ -3160,119 +3145,47 @@ body {
 }
 
 /* ========================================
-   RESPONSIVE & SAFE AREA ENHANCEMENTS
-   Adds notch/Dynamic Island support + responsive scaling
-   Does NOT break any existing styles
+   RESPONSIVE BREAKPOINTS (preserved)
    ======================================== */
-
-/* ---------- GLOBAL SAFE AREA SUPPORT ---------- */
-/* Apply to all containers that touch edges */
-body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-}
-
-/* Fix for fixed/sticky headers - they need safe area padding */
-.home-header,
-.messages-header,
-.admin-header,
-.chat-header,
-.edit-profile-header,
-.location-picker-header {
-    padding-top: max(15px, env(safe-area-inset-top));
-}
-
-/* Sticky headers need extra top positioning */
-.home-header,
-.messages-header,
-.admin-header,
-.chat-header {
-    top: env(safe-area-inset-top);
-}
-
-/* Tab bar needs bottom safe area padding */
-.tab-bar {
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-}
-
-/* Bottom sheet needs bottom safe area */
-.bottom-sheet .sheet-content {
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-}
-
-/* Modals need safe area */
-.modal-container,
-.review-modal,
-.reviews-modal,
-.register-job-modal {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Full-height containers */
-#app,
-.home-container,
-.messages-container,
-.admin-container,
-.search-container,
-.chat-container,
-.profile-container {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-}
-
-/* ---------- RESPONSIVE BREAKPOINTS ---------- */
 
 /* Small phones (iPhone SE, Galaxy S8, etc.) - up to 375px */
 @media (max-width: 375px) {
-    /* Tighter spacing for small screens */
     .providers-grid {
         gap: 12px;
         padding: 12px;
     }
-    
     .profile-container {
         padding: 16px 16px 80px 16px;
     }
-    
     .home-header,
     .messages-header,
     .admin-header {
-        padding: 12px 16px;
-        padding-top: max(12px, env(safe-area-inset-top));
+        padding-top: calc(env(safe-area-inset-top) + 12px);
+        padding-left: 16px;
+        padding-right: 16px;
     }
-    
     .profile-business-name {
         font-size: 24px;
     }
-    
     .section-title {
         font-size: 16px;
     }
-    
     .auth-container,
     .profile-completion-container,
     .verification-container {
         padding: 32px 16px;
     }
-    
     .chat-messages {
         padding: 16px;
     }
-    
     .message-bubble {
         max-width: 85%;
     }
-    
     .quick-view-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-    
     .quick-view-image {
         width: 100px;
         height: 100px;
@@ -3285,24 +3198,19 @@ body {
         gap: 20px;
         padding: 20px;
     }
-    
     .profile-container {
         max-width: 650px;
     }
-    
     .home-header .logo {
         font-size: 26px;
     }
-    
     .messages-title,
     .admin-title {
         font-size: 32px;
     }
-    
     .profile-business-name {
         font-size: 32px;
     }
-    
     .auth-container {
         max-width: 450px;
     }
@@ -3310,7 +3218,6 @@ body {
 
 /* Tablets (iPad, small tablets) - 768px and up */
 @media (min-width: 768px) {
-    /* Center content with max-width for better readability */
     .home-container,
     .messages-container,
     .admin-container,
@@ -3318,54 +3225,38 @@ body {
         max-width: 800px;
         margin: 0 auto;
     }
-    
-    /* 3-column grid for tablets */
     .providers-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 24px;
         padding: 24px;
     }
-    
-    /* Larger cards on tablets */
     .provider-card {
         border-radius: 24px;
     }
-    
     .provider-name {
         font-size: 16px;
     }
-    
-    /* Center auth forms */
     .auth-container {
         margin-top: 60px;
     }
-    
-    /* Larger profile picture */
     .profile-picture {
         width: 100px;
         height: 100px;
     }
-    
     .profile-business-name {
         font-size: 36px;
     }
-    
-    /* Search map adjustments for tablet */
     .search-map {
         height: 50vh;
         margin: 16px;
     }
-    
     .provider-drawer {
         height: 40vh;
     }
-    
-    /* Chat max-width for better readability */
     .chat-container {
         max-width: 600px;
         margin: 0 auto;
     }
-    
     .message-bubble {
         max-width: 65%;
     }
@@ -3378,42 +3269,33 @@ body {
         max-width: 1200px;
         margin: 0 auto;
     }
-    
     .profile-container {
         max-width: 900px;
     }
 }
 
-/* ---------- RESPONSIVE TYPOGRAPHY (Scales smoothly) ---------- */
-/* Headers scale with screen size */
+/* Responsive Typography (Scales smoothly) */
 .auth-header h1,
 .verification-container h2,
 .profile-business-name {
     font-size: clamp(28px, 6vw, 36px);
 }
-
 .messages-title,
 .admin-title {
     font-size: clamp(24px, 5vw, 32px);
 }
-
 .section-title {
     font-size: clamp(16px, 4vw, 18px);
 }
-
 .provider-name {
     font-size: clamp(14px, 3.5vw, 16px);
 }
-
-/* Body text stays readable */
 body,
 .btn,
 .form-group input,
 .chat-input {
     font-size: clamp(14px, 3vw, 16px);
 }
-
-/* Small text scales down gracefully */
 .stat-label,
 .provider-services,
 .provider-distance,
@@ -3422,50 +3304,30 @@ body,
     font-size: clamp(11px, 2.5vw, 12px);
 }
 
-/* ---------- FLEXIBLE SPACING UTILITIES ---------- */
-/* Responsive padding/margin classes (optional - can be used in HTML) */
-.p-responsive {
-    padding-left: clamp(12px, 4vw, 24px);
-    padding-right: clamp(12px, 4vw, 24px);
-}
-
-.m-responsive {
-    margin-left: clamp(12px, 4vw, 24px);
-    margin-right: clamp(12px, 4vw, 24px);
-}
-
-.gap-responsive {
-    gap: clamp(8px, 2vw, 16px);
-}
-
-/* ---------- BOTTOM SHEET RESPONSIVE HEIGHT ---------- */
+/* Bottom sheet responsive height */
 @media (max-height: 700px) {
     .bottom-sheet {
         max-height: 85vh;
     }
-    
     .quick-view-portfolio {
         grid-template-columns: repeat(4, 1fr);
         gap: 4px;
     }
 }
 
-/* ---------- LANDSCAPE MODE ADJUSTMENTS ---------- */
+/* Landscape mode adjustments */
 @media (orientation: landscape) and (max-height: 500px) {
     .bottom-sheet {
         max-height: 90vh;
     }
-    
     .quick-view-header {
         flex-direction: row;
         text-align: left;
     }
-    
     .quick-view-image {
         width: 60px;
         height: 60px;
     }
-    
     .review-modal-content,
     .reviews-modal-content,
     .register-job-modal-content {
@@ -3473,57 +3335,25 @@ body,
     }
 }
 
-/* ---------- ENSURE NOTCH/DYNAMIC ISLAND SUPPORT FOR ALL HEADERS ---------- */
-/* Any sticky or fixed element needs safe area */
-.sticky-header,
-.fixed-header,
-[position="sticky"],
-[position="fixed"] {
-    padding-top: env(safe-area-inset-top);
-}
-
-/* Fix for any element that might be hidden behind notch */
-.header-actions,
-.notification-bell {
-    top: max(5px, env(safe-area-inset-top));
-}
-
-/* ---------- IMPROVED SCROLL BEHAVIOR ---------- */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Better touch scrolling on iOS */
-body,
-.home-container,
-.messages-container,
-.chat-messages {
-    -webkit-overflow-scrolling: touch;
-}
-
-/* ---------- RESPONSIVE GRID ADJUSTMENTS FOR EDGE CASES ---------- */
-/* Very narrow screens (rare) */
+/* Very narrow screens */
 @media (max-width: 320px) {
     .providers-grid {
         grid-template-columns: 1fr;
     }
-    
     .profile-stats-row {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-    
     .stats-grid {
         justify-content: center;
     }
-    
     .profile-bio {
         text-align: center;
     }
 }
 
-/* ---------- ACCESSIBILITY: REDUCED MOTION PREFERENCE ---------- */
+/* Accessibility: Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
