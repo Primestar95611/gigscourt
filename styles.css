@@ -3158,3 +3158,379 @@ body {
 .confirm-gig-btn:active {
     transform: scale(0.96);
 }
+
+/* ========================================
+   RESPONSIVE & SAFE AREA ENHANCEMENTS
+   Adds notch/Dynamic Island support + responsive scaling
+   Does NOT break any existing styles
+   ======================================== */
+
+/* ---------- GLOBAL SAFE AREA SUPPORT ---------- */
+/* Apply to all containers that touch edges */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Fix for fixed/sticky headers - they need safe area padding */
+.home-header,
+.messages-header,
+.admin-header,
+.chat-header,
+.edit-profile-header,
+.location-picker-header {
+    padding-top: max(15px, env(safe-area-inset-top));
+}
+
+/* Sticky headers need extra top positioning */
+.home-header,
+.messages-header,
+.admin-header,
+.chat-header {
+    top: env(safe-area-inset-top);
+}
+
+/* Tab bar needs bottom safe area padding */
+.tab-bar {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Bottom sheet needs bottom safe area */
+.bottom-sheet .sheet-content {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+/* Modals need safe area */
+.modal-container,
+.review-modal,
+.reviews-modal,
+.register-job-modal {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Full-height containers */
+#app,
+.home-container,
+.messages-container,
+.admin-container,
+.search-container,
+.chat-container,
+.profile-container {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+}
+
+/* ---------- RESPONSIVE BREAKPOINTS ---------- */
+
+/* Small phones (iPhone SE, Galaxy S8, etc.) - up to 375px */
+@media (max-width: 375px) {
+    /* Tighter spacing for small screens */
+    .providers-grid {
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .profile-container {
+        padding: 16px 16px 80px 16px;
+    }
+    
+    .home-header,
+    .messages-header,
+    .admin-header {
+        padding: 12px 16px;
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+    
+    .profile-business-name {
+        font-size: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+    }
+    
+    .auth-container,
+    .profile-completion-container,
+    .verification-container {
+        padding: 32px 16px;
+    }
+    
+    .chat-messages {
+        padding: 16px;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+    }
+    
+    .quick-view-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .quick-view-image {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+/* Large phones (iPhone Plus/Pro Max, Pixel XL) - 428px and up */
+@media (min-width: 428px) {
+    .providers-grid {
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .profile-container {
+        max-width: 650px;
+    }
+    
+    .home-header .logo {
+        font-size: 26px;
+    }
+    
+    .messages-title,
+    .admin-title {
+        font-size: 32px;
+    }
+    
+    .profile-business-name {
+        font-size: 32px;
+    }
+    
+    .auth-container {
+        max-width: 450px;
+    }
+}
+
+/* Tablets (iPad, small tablets) - 768px and up */
+@media (min-width: 768px) {
+    /* Center content with max-width for better readability */
+    .home-container,
+    .messages-container,
+    .admin-container,
+    .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    /* 3-column grid for tablets */
+    .providers-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        padding: 24px;
+    }
+    
+    /* Larger cards on tablets */
+    .provider-card {
+        border-radius: 24px;
+    }
+    
+    .provider-name {
+        font-size: 16px;
+    }
+    
+    /* Center auth forms */
+    .auth-container {
+        margin-top: 60px;
+    }
+    
+    /* Larger profile picture */
+    .profile-picture {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profile-business-name {
+        font-size: 36px;
+    }
+    
+    /* Search map adjustments for tablet */
+    .search-map {
+        height: 50vh;
+        margin: 16px;
+    }
+    
+    .provider-drawer {
+        height: 40vh;
+    }
+    
+    /* Chat max-width for better readability */
+    .chat-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .message-bubble {
+        max-width: 65%;
+    }
+}
+
+/* Large tablets / small desktops - 1024px and up */
+@media (min-width: 1024px) {
+    .providers-grid {
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .profile-container {
+        max-width: 900px;
+    }
+}
+
+/* ---------- RESPONSIVE TYPOGRAPHY (Scales smoothly) ---------- */
+/* Headers scale with screen size */
+.auth-header h1,
+.verification-container h2,
+.profile-business-name {
+    font-size: clamp(28px, 6vw, 36px);
+}
+
+.messages-title,
+.admin-title {
+    font-size: clamp(24px, 5vw, 32px);
+}
+
+.section-title {
+    font-size: clamp(16px, 4vw, 18px);
+}
+
+.provider-name {
+    font-size: clamp(14px, 3.5vw, 16px);
+}
+
+/* Body text stays readable */
+body,
+.btn,
+.form-group input,
+.chat-input {
+    font-size: clamp(14px, 3vw, 16px);
+}
+
+/* Small text scales down gracefully */
+.stat-label,
+.provider-services,
+.provider-distance,
+.notification-time,
+.conversation-time {
+    font-size: clamp(11px, 2.5vw, 12px);
+}
+
+/* ---------- FLEXIBLE SPACING UTILITIES ---------- */
+/* Responsive padding/margin classes (optional - can be used in HTML) */
+.p-responsive {
+    padding-left: clamp(12px, 4vw, 24px);
+    padding-right: clamp(12px, 4vw, 24px);
+}
+
+.m-responsive {
+    margin-left: clamp(12px, 4vw, 24px);
+    margin-right: clamp(12px, 4vw, 24px);
+}
+
+.gap-responsive {
+    gap: clamp(8px, 2vw, 16px);
+}
+
+/* ---------- BOTTOM SHEET RESPONSIVE HEIGHT ---------- */
+@media (max-height: 700px) {
+    .bottom-sheet {
+        max-height: 85vh;
+    }
+    
+    .quick-view-portfolio {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+    }
+}
+
+/* ---------- LANDSCAPE MODE ADJUSTMENTS ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+    .bottom-sheet {
+        max-height: 90vh;
+    }
+    
+    .quick-view-header {
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .quick-view-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .review-modal-content,
+    .reviews-modal-content,
+    .register-job-modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* ---------- ENSURE NOTCH/DYNAMIC ISLAND SUPPORT FOR ALL HEADERS ---------- */
+/* Any sticky or fixed element needs safe area */
+.sticky-header,
+.fixed-header,
+[position="sticky"],
+[position="fixed"] {
+    padding-top: env(safe-area-inset-top);
+}
+
+/* Fix for any element that might be hidden behind notch */
+.header-actions,
+.notification-bell {
+    top: max(5px, env(safe-area-inset-top));
+}
+
+/* ---------- IMPROVED SCROLL BEHAVIOR ---------- */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better touch scrolling on iOS */
+body,
+.home-container,
+.messages-container,
+.chat-messages {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- RESPONSIVE GRID ADJUSTMENTS FOR EDGE CASES ---------- */
+/* Very narrow screens (rare) */
+@media (max-width: 320px) {
+    .providers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-stats-row {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .stats-grid {
+        justify-content: center;
+    }
+    
+    .profile-bio {
+        text-align: center;
+    }
+}
+
+/* ---------- ACCESSIBILITY: REDUCED MOTION PREFERENCE ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
