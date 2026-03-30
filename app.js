@@ -685,6 +685,9 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
     let threshold = 85;
     let maxPull = 120;
     let isRefreshing = false;
+    let startTime = 0;
+let isIntentionalPull = false;
+let touchPauseTimer = null;
     
     // Create spinner element
     const spinner = document.createElement('div');
@@ -781,54 +784,93 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
     
     // Touch handlers
     function onTouchStart(e) {
-        // Only trigger if at top of scroll
-        if (container.scrollTop <= 0 && !isRefreshing) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-            originalTransform = container.style.transform;
-        }
+    // Only trigger if at top of scroll
+    if (container.scrollTop <= 0 && !isRefreshing) {
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+        pulling = true;
+        isIntentionalPull = false;
+        originalTransform = container.style.transform;
+        
+        // Clear any existing timer
+        if (touchPauseTimer) clearTimeout(touchPauseTimer);
+        
+        // Set a short delay to determine if this is an intentional hold or quick flick
+        touchPauseTimer = setTimeout(() => {
+            // If user hasn't moved much during the pause, treat as intentional pull
+            const timeElapsed = Date.now() - startTime;
+            const distanceMoved = Math.abs(currentY - startY) || 0;
+            
+            if (timeElapsed >= 50 && distanceMoved < 10) {
+                isIntentionalPull = true;
+            }
+        }, 50);
     }
+}
     
     function onTouchMove(e) {
-        if (!pulling || isRefreshing) return;
-        
-        currentY = e.touches[0].clientY;
-        let diff = currentY - startY;
-        
-        if (diff > 0) {
-            e.preventDefault();
-            let pullDistance = Math.min(diff * 0.4, maxPull);
-            animateContent(pullDistance);
-        }
+    if (!pulling || isRefreshing) return;
+    
+    currentY = e.touches[0].clientY;
+    let diff = currentY - startY;
+    let timeElapsed = Date.now() - startTime;
+    let velocity = timeElapsed > 0 ? Math.abs(diff) / timeElapsed : 0;
+    
+    // If velocity is high (quick flick), cancel the pull gesture
+    if (velocity > 0.8 && !isIntentionalPull) {
+        // This is a quick flick - treat as scroll, not pull
+        snapBackContent();
+        pulling = false;
+        return;
     }
     
-    function onTouchEnd(e) {
-        if (!pulling) return;
+    if (diff > 0) {
+        e.preventDefault();
         
-        let diff = currentY - startY;
-        let pullDistance = Math.min(diff * 0.4, maxPull);
-        
-        if (pullDistance >= threshold && !isRefreshing) {
-            // User pulled past threshold - trigger refresh
-            startRefresh();
+        // Only allow pull if it's intentional or we're already pulling
+        if (isIntentionalPull || diff > 15) {
+            let pullDistance = Math.min(diff * 0.4, maxPull);
+            animateContent(pullDistance);
         } else {
-            // Not enough pull - just snap back
+            // Small movement without intentional hold - snap back
             snapBackContent();
+            pulling = false;
         }
-        
+    }
+}
+    
+    function onTouchEnd(e) {
+    if (!pulling) return;
+    
+    // Clear the pause timer
+    if (touchPauseTimer) clearTimeout(touchPauseTimer);
+    
+    let diff = currentY - startY;
+    let pullDistance = Math.min(diff * 0.4, maxPull);
+    
+    // Only trigger refresh if it was an intentional pull AND reached threshold
+    if (pullDistance >= threshold && !isRefreshing && isIntentionalPull) {
+        startRefresh();
+    } else {
+        snapBackContent();
+    }
+    
+    pulling = false;
+    startY = 0;
+    currentY = 0;
+    isIntentionalPull = false;
+}
+    
+    function onTouchCancel() {
+    if (pulling) {
+        if (touchPauseTimer) clearTimeout(touchPauseTimer);
+        snapBackContent();
         pulling = false;
         startY = 0;
         currentY = 0;
+        isIntentionalPull = false;
     }
-    
-    function onTouchCancel() {
-        if (pulling) {
-            snapBackContent();
-            pulling = false;
-            startY = 0;
-            currentY = 0;
-        }
-    }
+}
     
     // Add event listeners
     container.addEventListener('touchstart', onTouchStart, { passive: false });
