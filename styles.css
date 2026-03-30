@@ -3461,9 +3461,3 @@ body,
     animation: global-ptr-spin 0.8s linear infinite;
 }
 
-/* Prevent browser pull-to-refresh interference */
-.home-scrollable,
-.provider-drawer,
-.messages-scrollable {
-    overscroll-behavior: contain;
-}
