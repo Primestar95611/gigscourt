@@ -302,10 +302,6 @@ function loadHomeTab() {
     </div>
     
     <div class="home-scrollable">
-        <div id="pull-to-refresh-indicator" class="ptr-indicator">
-            <span class="ptr-spinner"></span>
-            <span class="ptr-text">Pull to refresh</span>
-        </div>
         
         <div id="providers-grid" class="providers-grid">
             <!-- Providers will load here -->
