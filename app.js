@@ -1600,6 +1600,12 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
 <div class="profile-sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px 16px;">
     <button class="profile-back-btn" onclick="goBack()" style="background: none; border: none; font-size: 28px; cursor: pointer; padding: 0;">←</button>
     <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">${profile.businessName || 'Profile'}</span>
+    ${isOwnProfile ? `<button class="history-btn" onclick="openJobHistory()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 0;">⏱️</button>` : '<span style="width: 32px;"></span>'}
+</div>
+` : isOwnProfile ? `
+<div class="profile-sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px 16px;">
+    <span style="width: 32px;"></span>
+    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">${profile.businessName || 'Profile'}</span>
     <button class="history-btn" onclick="openJobHistory()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 0;">⏱️</button>
 </div>
 ` : ''}
