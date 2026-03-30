@@ -679,12 +679,13 @@ activePullContent = container.querySelector('.providers-grid, .provider-list, .c
     
     // Touch handlers
     function onTouchStart(e) {
-        // Only trigger if at top of scroll and not refreshing
-        if (container.scrollTop <= 0 && !isRefreshing) {
-            pullStartY = e.touches[0].clientY;
-            isPulling = true;
-        }
+    console.log('PTR - Touch start, scrollTop:', container.scrollTop);
+    // Only trigger if at top of scroll and not refreshing
+    if (container.scrollTop <= 0 && !isRefreshing) {
+        pullStartY = e.touches[0].clientY;
+        isPulling = true;
     }
+}
     
     function onTouchMove(e) {
         if (!isPulling || isRefreshing) return;
