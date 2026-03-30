@@ -334,11 +334,11 @@ function loadHomeTab() {
     hasMore = true;
     
     loadProviders(true);
-    // Replace old pull-to-refresh with modern version
-    if (window.ptrHomeCleanup) window.ptrHomeCleanup();
-    window.ptrHomeCleanup = setupModernPullToRefresh('providers-grid', async () => {
-        await refreshProviders();
-    });
+    // Setup pull to refresh
+if (window.ptrHomeCleanup) window.ptrHomeCleanup();
+window.ptrHomeCleanup = setupPullToRefresh('providers-grid', async () => {
+    await refreshProviders();
+});
     
     const enableBtn = document.getElementById('enable-notify-btn');
     if (enableBtn) {
@@ -562,13 +562,6 @@ function escapeHtml(str) {
 }
 
 async function refreshProviders() {
-    const indicator = document.getElementById('pull-to-refresh-indicator');
-    if (indicator) {
-        indicator.classList.add('refreshing');
-        const textEl = indicator.querySelector('.ptr-text');
-        if (textEl) textEl.textContent = 'Refreshing...';
-    }
-    
     providers = [];
     lastDoc = null;
     hasMore = true;
@@ -579,17 +572,6 @@ async function refreshProviders() {
     if (grid) grid.innerHTML = '';
     
     await loadProviders(true);
-    
-    setTimeout(() => {
-        if (indicator) {
-            indicator.style.transform = '';
-            indicator.classList.remove('refreshing');
-            const textEl = indicator.querySelector('.ptr-text');
-            if (textEl) textEl.textContent = 'Pull to refresh';
-            const spinnerEl = indicator.querySelector('.ptr-spinner');
-            if (spinnerEl) spinnerEl.style.transform = '';
-        }
-    }, 500);
 }
 
 // GLOBAL PULL TO REFRESH - ONE SPINNER FOR ALL TABS
