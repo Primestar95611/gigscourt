@@ -302,10 +302,6 @@ function loadHomeTab() {
     </div>
     
     <div class="home-scrollable">
-        <div id="pull-to-refresh-indicator" class="ptr-indicator">
-            <span class="ptr-spinner"></span>
-            <span class="ptr-text">Pull to refresh</span>
-        </div>
         
         <div id="providers-grid" class="providers-grid">
             <!-- Providers will load here -->
@@ -687,7 +683,7 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
     let startY = 0;
     let currentY = 0;
     let pulling = false;
-    let threshold = 60;
+    let threshold = 85;
     let maxPull = 120;
     let isRefreshing = false;
     let pullStartTime = 0;
@@ -803,7 +799,7 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
         
         if (diff > 0) {
             e.preventDefault();
-            let pullDistance = Math.min(diff * 0.6, maxPull);
+            let pullDistance = Math.min(diff * 0.4, maxPull);
             animateContent(pullDistance);
         }
     }
