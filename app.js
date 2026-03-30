@@ -570,6 +570,7 @@ async function refreshProviders() {
 let globalSpinner = null;
 let activePullContainer = null;
 let activeRefreshCallback = null;
+let activePullContent = null;
 let isPulling = false;
 let pullStartY = 0;
 let pullCurrentY = 0;
@@ -603,23 +604,21 @@ function updateSpinnerProgress(pullPercent) {
 }
 
 function animateContentPull(pullDistance) {
-    if (!activePullContainer) return;
+    if (!activePullContent) return;
     const translateY = Math.min(pullDistance, pullMax);
-    activePullContainer.style.transform = `translateY(${translateY}px)`;
-    activePullContainer.style.transition = 'none';
-    
+    activePullContent.style.transform = `translateY(${translateY}px)`;
+    activePullContent.style.transition = 'none';
     const pullPercent = Math.min(pullDistance / pullThreshold, 1);
     updateSpinnerProgress(pullPercent);
 }
 
 function snapBackContent() {
-    if (!activePullContainer) return;
-    activePullContainer.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-    activePullContainer.style.transform = 'translateY(0px)';
+    if (!activePullContent) return;
+    activePullContent.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+    activePullContent.style.transform = 'translateY(0px)';
     resetGlobalSpinner();
-    
     setTimeout(() => {
-        if (activePullContainer) activePullContainer.style.transition = '';
+        if (activePullContent) activePullContent.style.transition = '';
     }, 300);
 }
 
@@ -669,7 +668,8 @@ function setupPullToRefresh(containerId, refreshCallback) {
     initGlobalSpinner();
     
     // Store current active container and callback
-    activePullContainer = container;
+    activePullContainer = container;  // For scroll detection
+activePullContent = container.querySelector('.providers-grid, .provider-list, .conversations-list');
     activeRefreshCallback = refreshCallback;
     
     // Ensure container has proper styling
@@ -739,17 +739,20 @@ function setupPullToRefresh(containerId, refreshCallback) {
     
     // Return cleanup function
     return () => {
-        container.removeEventListener('touchstart', onTouchStart);
-        container.removeEventListener('touchmove', onTouchMove);
-        container.removeEventListener('touchend', onTouchEnd);
-        container.removeEventListener('touchcancel', onTouchCancel);
-        if (activePullContainer === container) {
-            activePullContainer = null;
-            activeRefreshCallback = null;
-        }
-        container.style.transform = '';
-        container.style.transition = '';
-    };
+    container.removeEventListener('touchstart', onTouchStart);
+    container.removeEventListener('touchmove', onTouchMove);
+    container.removeEventListener('touchend', onTouchEnd);
+    container.removeEventListener('touchcancel', onTouchCancel);
+    if (activePullContainer === container) {
+        activePullContainer = null;
+        activeRefreshCallback = null;
+    }
+    if (activePullContent) {
+        activePullContent.style.transform = '';
+        activePullContent.style.transition = '';
+        activePullContent = null;
+    }
+};
 }
 
 // Quick View Bottom Sheet
