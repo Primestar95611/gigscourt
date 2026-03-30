@@ -302,11 +302,7 @@ function loadHomeTab() {
     </div>
     
     <div class="home-scrollable">
-        <div id="pull-to-refresh-indicator" class="ptr-indicator">
-            <span class="ptr-spinner"></span>
-            <span class="ptr-text">Pull to refresh</span>
-        </div>
-        
+                
         <div id="providers-grid" class="providers-grid">
             <!-- Providers will load here -->
         </div>
@@ -565,68 +561,6 @@ function escapeHtml(str) {
     });
 }
 
-function setupPullToRefresh() {
-    const container = document.querySelector('.home-container');
-    if (!container) return;
-    
-    let startY = 0;
-    let currentY = 0;
-    let pulling = false;
-    
-    container.addEventListener('touchstart', (e) => {
-        if (window.scrollY === 0) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-        }
-    }, { passive: true });
-    
-    container.addEventListener('touchmove', (e) => {
-        if (!pulling) return;
-        
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-        
-        if (diff > 0) {
-            e.preventDefault();
-            
-            const indicator = document.getElementById('pull-to-refresh-indicator');
-            const spinner = indicator.querySelector('.ptr-spinner');
-            const text = indicator.querySelector('.ptr-text');
-            
-            const pullDistance = Math.min(diff * 0.3, 80);
-            indicator.style.transform = `translateY(${pullDistance}px)`;
-            
-            if (pullDistance > 60) {
-                text.textContent = 'Release to refresh';
-                spinner.style.transform = 'rotate(180deg)';
-            } else {
-                text.textContent = 'Pull to refresh';
-                spinner.style.transform = `rotate(${pullDistance * 3}deg)`;
-            }
-        }
-    }, { passive: false });
-    
-    container.addEventListener('touchend', () => {
-        if (pulling) {
-            const diff = currentY - startY;
-            const pullDistance = Math.min(diff * 0.3, 80);
-            
-            if (pullDistance > 60) {
-                refreshProviders();
-            } else {
-                resetPullToRefresh();
-            }
-            
-            pulling = false;
-        }
-    });
-    
-    container.addEventListener('touchcancel', () => {
-        resetPullToRefresh();
-        pulling = false;
-    });
-}
-
 async function refreshProviders() {
     const indicator = document.getElementById('pull-to-refresh-indicator');
     if (indicator) {
@@ -658,183 +592,172 @@ async function refreshProviders() {
     }, 500);
 }
 
-function resetPullToRefresh() {
-    const indicator = document.getElementById('pull-to-refresh-indicator');
-    indicator.style.transform = '';
-    indicator.classList.remove('refreshing');
-    indicator.querySelector('.ptr-text').textContent = 'Pull to refresh';
-    indicator.querySelector('.ptr-spinner').style.transform = '';
+// GLOBAL PULL TO REFRESH - ONE SPINNER FOR ALL TABS
+let globalSpinner = null;
+let activePullContainer = null;
+let activeRefreshCallback = null;
+let isPulling = false;
+let pullStartY = 0;
+let pullCurrentY = 0;
+let pullThreshold = 60;
+let pullMax = 120;
+let isRefreshing = false;
+
+// Create global spinner once
+function initGlobalSpinner() {
+    if (globalSpinner) return;
+    globalSpinner = document.createElement('div');
+    globalSpinner.className = 'global-ptr-spinner';
+    document.body.appendChild(globalSpinner);
 }
 
-// Modern pull to refresh with content translation, top-edge spinner, haptic feedback
-function setupModernPullToRefresh(containerId, refreshCallback) {
+function resetGlobalSpinner() {
+    if (!globalSpinner) return;
+    globalSpinner.style.transform = 'translateX(-50%) scale(0)';
+    globalSpinner.style.opacity = '0';
+    globalSpinner.classList.remove('spinning');
+}
+
+function updateSpinnerProgress(pullPercent) {
+    if (!globalSpinner) return;
+    // pullPercent from 0 to 1
+    const scale = 0.3 + (pullPercent * 0.7);
+    const rotation = pullPercent * 180;
+    const opacity = 0.4 + (pullPercent * 0.6);
+    globalSpinner.style.transform = `translateX(-50%) scale(${scale}) rotate(${rotation}deg)`;
+    globalSpinner.style.opacity = opacity;
+}
+
+function animateContentPull(pullDistance) {
+    if (!activePullContainer) return;
+    const translateY = Math.min(pullDistance, pullMax);
+    activePullContainer.style.transform = `translateY(${translateY}px)`;
+    activePullContainer.style.transition = 'none';
+    
+    const pullPercent = Math.min(pullDistance / pullThreshold, 1);
+    updateSpinnerProgress(pullPercent);
+}
+
+function snapBackContent() {
+    if (!activePullContainer) return;
+    activePullContainer.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+    activePullContainer.style.transform = 'translateY(0px)';
+    resetGlobalSpinner();
+    
+    setTimeout(() => {
+        if (activePullContainer) activePullContainer.style.transition = '';
+    }, 300);
+}
+
+function triggerRefresh() {
+    if (isRefreshing || !activeRefreshCallback) return;
+    isRefreshing = true;
+    
+    // Haptic feedback
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    // Start spinner animation
+    if (globalSpinner) {
+        globalSpinner.classList.add('spinning');
+        globalSpinner.style.transform = 'translateX(-50%) scale(1)';
+    }
+    
+    // Execute refresh
+    activeRefreshCallback()
+        .then(() => {
+            snapBackContent();
+            setTimeout(() => {
+                if (globalSpinner) {
+                    globalSpinner.classList.remove('spinning');
+                    resetGlobalSpinner();
+                }
+                isRefreshing = false;
+            }, 300);
+        })
+        .catch(() => {
+            snapBackContent();
+            setTimeout(() => {
+                if (globalSpinner) {
+                    globalSpinner.classList.remove('spinning');
+                    resetGlobalSpinner();
+                }
+                isRefreshing = false;
+            }, 300);
+        });
+}
+
+// Main setup function - registers a container for pull-to-refresh
+function setupPullToRefresh(containerId, refreshCallback) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // Clean up any existing spinner first (prevent duplicates)
-    const existingSpinner = container.querySelector('.ptr-spinner-modern');
-    if (existingSpinner) existingSpinner.remove();
+    // Initialize global spinner once
+    initGlobalSpinner();
     
-    container.classList.add('ptr-container');
+    // Store current active container and callback
+    activePullContainer = container;
+    activeRefreshCallback = refreshCallback;
+    
+    // Ensure container has proper styling
     container.style.position = 'relative';
     container.style.overflowY = 'auto';
     container.style.webkitOverflowScrolling = 'touch';
     
-    // Store original transform to restore later
-    let originalTransform = '';
-    
-    let startY = 0;
-    let currentY = 0;
-    let pulling = false;
-    let threshold = 60;
-    let maxPull = 120;
-    let isRefreshing = false;
-    
-    // Create spinner element
-    const spinner = document.createElement('div');
-    spinner.className = 'ptr-spinner-modern';
-    spinner.style.position = 'fixed';
-    spinner.style.top = 'calc(env(safe-area-inset-top) + 10px)';
-    spinner.style.left = '50%';
-    spinner.style.transform = 'translateX(-50%) scale(0)';
-    spinner.style.width = '40px';
-    spinner.style.height = '40px';
-    spinner.style.border = '3px solid var(--border-color)';
-    spinner.style.borderTopColor = 'var(--btn-primary-bg)';
-    spinner.style.borderRadius = '50%';
-    spinner.style.opacity = '0';
-    spinner.style.transition = 'none';
-    spinner.style.zIndex = '1000';
-    spinner.style.pointerEvents = 'none';
-    document.body.appendChild(spinner);
-    
-    function resetSpinner() {
-        spinner.style.transform = 'translateX(-50%) scale(0)';
-        spinner.style.opacity = '0';
-        spinner.style.transition = 'none';
-    }
-    
-    function setSpinnerProgress(pullPercent) {
-        // pullPercent from 0 to 1 (0 = no pull, 1 = at threshold)
-        const scale = 0.3 + (pullPercent * 0.7); // Scale from 0.3 to 1
-        const rotation = pullPercent * 180; // Rotate up to 180 degrees
-        const opacity = 0.4 + (pullPercent * 0.6); // Fade in
-        spinner.style.transform = `translateX(-50%) scale(${scale}) rotate(${rotation}deg)`;
-        spinner.style.opacity = opacity;
-        spinner.style.transition = 'none';
-    }
-    
-    function animateContent(pullDistance) {
-        // Apply transform to move content down
-        const translateY = Math.min(pullDistance, maxPull);
-        container.style.transform = `translateY(${translateY}px)`;
-        container.style.transition = 'none';
-        
-        // Update spinner progress based on pull distance relative to threshold
-        const pullPercent = Math.min(pullDistance / threshold, 1);
-        setSpinnerProgress(pullPercent);
-    }
-    
-    function snapBackContent() {
-        container.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-        container.style.transform = 'translateY(0px)';
-        resetSpinner();
-        
-        // Clean up transition after animation ends
-        setTimeout(() => {
-            container.style.transition = '';
-        }, 300);
-    }
-    
-    function startRefresh() {
-        if (isRefreshing) return;
-        isRefreshing = true;
-        
-        // Haptic feedback
-        if (navigator.vibrate) navigator.vibrate(50);
-        
-        // Show spinner spinning
-        spinner.style.transition = 'none';
-        spinner.style.transform = 'translateX(-50%) scale(1)';
-        spinner.classList.add('spinning');
-        spinner.style.animation = 'ptr-spin 0.8s linear infinite';
-        
-        // Execute refresh callback
-        refreshCallback()
-            .then(() => {
-                // Success - snap back
-                snapBackContent();
-                setTimeout(() => {
-                    spinner.classList.remove('spinning');
-                    spinner.style.animation = '';
-                    resetSpinner();
-                    isRefreshing = false;
-                }, 300);
-            })
-            .catch(() => {
-                // Error - still snap back
-                snapBackContent();
-                setTimeout(() => {
-                    spinner.classList.remove('spinning');
-                    spinner.style.animation = '';
-                    resetSpinner();
-                    isRefreshing = false;
-                }, 300);
-            });
-    }
-    
     // Touch handlers
     function onTouchStart(e) {
-        // Only trigger if at top of scroll
+        // Only trigger if at top of scroll and not refreshing
         if (container.scrollTop <= 0 && !isRefreshing) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-            originalTransform = container.style.transform;
+            pullStartY = e.touches[0].clientY;
+            isPulling = true;
         }
     }
     
     function onTouchMove(e) {
-        if (!pulling || isRefreshing) return;
+        if (!isPulling || isRefreshing) return;
         
-        currentY = e.touches[0].clientY;
-        let diff = currentY - startY;
+        pullCurrentY = e.touches[0].clientY;
+        let diff = pullCurrentY - pullStartY;
         
         if (diff > 0) {
             e.preventDefault();
-            let pullDistance = Math.min(diff * 0.6, maxPull);
-            animateContent(pullDistance);
+            let pullDistance = Math.min(diff * 0.6, pullMax);
+            animateContentPull(pullDistance);
         }
     }
     
     function onTouchEnd(e) {
-        if (!pulling) return;
+        if (!isPulling) return;
         
-        let diff = currentY - startY;
-        let pullDistance = Math.min(diff * 0.6, maxPull);
+        let diff = pullCurrentY - pullStartY;
+        let pullDistance = Math.min(diff * 0.6, pullMax);
         
-        if (pullDistance >= threshold && !isRefreshing) {
-            // User pulled past threshold - trigger refresh
-            startRefresh();
+        if (pullDistance >= pullThreshold && !isRefreshing) {
+            triggerRefresh();
         } else {
-            // Not enough pull - just snap back
             snapBackContent();
         }
         
-        pulling = false;
-        startY = 0;
-        currentY = 0;
+        isPulling = false;
+        pullStartY = 0;
+        pullCurrentY = 0;
     }
     
     function onTouchCancel() {
-        if (pulling) {
+        if (isPulling) {
             snapBackContent();
-            pulling = false;
-            startY = 0;
-            currentY = 0;
+            isPulling = false;
+            pullStartY = 0;
+            pullCurrentY = 0;
         }
     }
     
-    // Add event listeners
+    // Remove old listeners if any
+    container.removeEventListener('touchstart', onTouchStart);
+    container.removeEventListener('touchmove', onTouchMove);
+    container.removeEventListener('touchend', onTouchEnd);
+    container.removeEventListener('touchcancel', onTouchCancel);
+    
+    // Add new listeners
     container.addEventListener('touchstart', onTouchStart, { passive: false });
     container.addEventListener('touchmove', onTouchMove, { passive: false });
     container.addEventListener('touchend', onTouchEnd);
@@ -846,7 +769,10 @@ function setupModernPullToRefresh(containerId, refreshCallback) {
         container.removeEventListener('touchmove', onTouchMove);
         container.removeEventListener('touchend', onTouchEnd);
         container.removeEventListener('touchcancel', onTouchCancel);
-        if (spinner && spinner.parentNode) spinner.remove();
+        if (activePullContainer === container) {
+            activePullContainer = null;
+            activeRefreshCallback = null;
+        }
         container.style.transform = '';
         container.style.transition = '';
     };
@@ -3069,13 +2995,13 @@ function loadSearchTab() {
    getUserLocation();
     setupSearchListeners();
     
-    // Add modern pull to refresh to provider list
-    setTimeout(() => {
-        if (window.ptrSearchCleanup) window.ptrSearchCleanup();
-        window.ptrSearchCleanup = setupModernPullToRefresh('provider-list', async () => {
-            await loadNearbyProviders(true);
-        });
-    }, 500);
+    // Setup pull to refresh (no auto-refresh on tab switch)
+setTimeout(() => {
+    if (window.ptrSearchCleanup) window.ptrSearchCleanup();
+    window.ptrSearchCleanup = setupPullToRefresh('provider-list', async () => {
+        await loadNearbyProviders(true);
+    });
+}, 500);
 }
 
 function getUserLocation() {
@@ -3088,7 +3014,6 @@ function getUserLocation() {
                 };
                 localStorage.setItem('userLocation', JSON.stringify(userLocation));
                 initializeMap();
-                loadNearbyProviders(true);
             },
             (error) => {
                 console.error('Geolocation error:', error);
@@ -3099,7 +3024,6 @@ function getUserLocation() {
                     userLocation = { lat: 6.5244, lng: 3.3792 };
                 }
                 initializeMap();
-                loadNearbyProviders(true);
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -3111,7 +3035,6 @@ function getUserLocation() {
             userLocation = { lat: 6.5244, lng: 3.3792 };
         }
         initializeMap();
-        loadNearbyProviders(true);
     }
 }
 
@@ -4001,13 +3924,13 @@ function loadMessagesTab() {
     
     loadConversations();
     
-    // Add modern pull to refresh to conversations list
-    setTimeout(() => {
-        if (window.ptrMessagesCleanup) window.ptrMessagesCleanup();
-        window.ptrMessagesCleanup = setupModernPullToRefresh('conversations-list', async () => {
-            await loadConversations();
-        });
-    }, 500);
+    // Setup pull to refresh
+setTimeout(() => {
+    if (window.ptrMessagesCleanup) window.ptrMessagesCleanup();
+    window.ptrMessagesCleanup = setupPullToRefresh('conversations-list', async () => {
+        await loadConversations();
+    });
+}, 500);
 }
 
 window.addEventListener('tabChange', () => {
