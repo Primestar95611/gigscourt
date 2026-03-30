@@ -890,15 +890,6 @@ body {
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
-/* Scrollable containers - required for pull-to-refresh */
-.home-scrollable,
-.provider-drawer,
-.messages-scrollable {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y pinch-zoom;
-}
-
 /* ========== PROFILE TAB STYLES ========== */
 .profile-container {
     max-width: 600px;
@@ -3428,45 +3419,39 @@ body,
 }
 
 /* ========================================
-   MODERN PULL TO REFRESH - GLOBAL SPINNER
+   MODERN PULL TO REFRESH
    ======================================== */
 
-/* Container that can be pulled */
 .ptr-container {
     position: relative;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Global spinner - fixed at top of screen */
-.global-ptr-spinner {
-    position: fixed;
-    top: calc(env(safe-area-inset-top) + 8px);
+.ptr-spinner-modern {
+    position: absolute;
+    top: -60px;
     left: 50%;
-    transform: translateX(-50%) scale(0);
-    width: 40px;
-    height: 40px;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 36px;
     border: 3px solid var(--border-color);
-    border-top-color: var(--btn-primary-bg);
+    border-top-color: #b91c1c;
     border-radius: 50%;
+    transition: transform 0.1s ease, opacity 0.1s ease;
     opacity: 0;
-    z-index: 9999;
     pointer-events: none;
-    transition: none;
-    will-change: transform, opacity;
+    will-change: transform;
 }
 
-/* Spinner spinning animation */
-@keyframes global-ptr-spin {
-    from {
-        transform: translateX(-50%) rotate(0deg);
-    }
-    to {
-        transform: translateX(-50%) rotate(360deg);
-    }
+.ptr-spinner-modern.visible {
+    opacity: 1;
 }
 
-.global-ptr-spinner.spinning {
-    animation: global-ptr-spin 0.8s linear infinite;
+.ptr-spinner-modern.spinning {
+    animation: ptr-spin 0.8s linear infinite;
 }
 
+@keyframes ptr-spin {
+    to { transform: translateX(-50%) rotate(360deg); }
+}
