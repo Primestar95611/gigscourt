@@ -314,10 +314,6 @@ function loadHomeTab() {
             <div id="load-more-end" class="hidden" style="color: var(--text-secondary); font-size: 12px;">You've seen all providers</div>
         </div>
         
-        <div id="loading-spinner" class="loading-spinner hidden">
-            <div class="spinner"></div>
-        </div>
-        
         <div id="empty-state" class="empty-state hidden">
             <p>No providers found nearby</p>
         </div>
@@ -411,9 +407,6 @@ async function loadProviders(reset = true) {
         loading = false;
         return;
     }
-    
-    const spinner = document.getElementById('loading-spinner');
-    if (spinner) spinner.classList.remove('hidden');
 
     if (!reset) {
         const moreSpinner = document.getElementById('load-more-spinner');
@@ -506,7 +499,6 @@ async function loadProviders(reset = true) {
         if (moreSpinner) moreSpinner.classList.add('hidden');
     }
     
-    if (spinner) spinner.classList.add('hidden');
     loading = false;
 }
 
@@ -581,7 +573,7 @@ let activeRefreshCallback = null;
 let isPulling = false;
 let pullStartY = 0;
 let pullCurrentY = 0;
-let pullThreshold = 60;
+let pullThreshold = 50;
 let pullMax = 120;
 let isRefreshing = false;
 
