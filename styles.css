@@ -934,11 +934,21 @@ body {
     font-size: 28px;
     cursor: pointer;
     color: var(--text-primary);
-    padding: 12px 16px 8px 16px;
+    padding: 16px 16px 12px 16px;
     display: inline-flex;
     align-items: center;
     gap: 12px;
     font-weight: 600;
+}
+
+.profile-sticky-header {
+    position: sticky;
+    top: 0;
+    background: var(--bg-primary);
+    z-index: 10;
+    padding-top: env(safe-area-inset-top);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
 }
 
 .profile-back-btn span {
