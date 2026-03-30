@@ -666,93 +666,189 @@ function resetPullToRefresh() {
     indicator.querySelector('.ptr-spinner').style.transform = '';
 }
 
-// Modern pull to refresh with red spinner and haptic feedback
+// Modern pull to refresh with content translation, top-edge spinner, haptic feedback
 function setupModernPullToRefresh(containerId, refreshCallback) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
+    // Clean up any existing spinner first (prevent duplicates)
+    const existingSpinner = container.querySelector('.ptr-spinner-modern');
+    if (existingSpinner) existingSpinner.remove();
+    
     container.classList.add('ptr-container');
+    container.style.position = 'relative';
+    container.style.overflowY = 'auto';
+    container.style.webkitOverflowScrolling = 'touch';
+    
+    // Store original transform to restore later
+    let originalTransform = '';
     
     let startY = 0;
     let currentY = 0;
     let pulling = false;
     let threshold = 60;
-    let spinner = null;
+    let maxPull = 120;
+    let isRefreshing = false;
     
-    spinner = document.createElement('div');
+    // Create spinner element
+    const spinner = document.createElement('div');
     spinner.className = 'ptr-spinner-modern';
-    container.style.position = 'relative';
-    container.insertBefore(spinner, container.firstChild);
+    spinner.style.position = 'fixed';
+    spinner.style.top = 'calc(env(safe-area-inset-top) + 10px)';
+    spinner.style.left = '50%';
+    spinner.style.transform = 'translateX(-50%) scale(0)';
+    spinner.style.width = '40px';
+    spinner.style.height = '40px';
+    spinner.style.border = '3px solid var(--border-color)';
+    spinner.style.borderTopColor = 'var(--btn-primary-bg)';
+    spinner.style.borderRadius = '50%';
+    spinner.style.opacity = '0';
+    spinner.style.transition = 'none';
+    spinner.style.zIndex = '1000';
+    spinner.style.pointerEvents = 'none';
+    document.body.appendChild(spinner);
     
-    let touchStartHandler = (e) => {
-        if (container.scrollTop <= 0) {
+    function resetSpinner() {
+        spinner.style.transform = 'translateX(-50%) scale(0)';
+        spinner.style.opacity = '0';
+        spinner.style.transition = 'none';
+    }
+    
+    function setSpinnerProgress(pullPercent) {
+        // pullPercent from 0 to 1 (0 = no pull, 1 = at threshold)
+        const scale = 0.3 + (pullPercent * 0.7); // Scale from 0.3 to 1
+        const rotation = pullPercent * 180; // Rotate up to 180 degrees
+        const opacity = 0.4 + (pullPercent * 0.6); // Fade in
+        spinner.style.transform = `translateX(-50%) scale(${scale}) rotate(${rotation}deg)`;
+        spinner.style.opacity = opacity;
+        spinner.style.transition = 'none';
+    }
+    
+    function animateContent(pullDistance) {
+        // Apply transform to move content down
+        const translateY = Math.min(pullDistance, maxPull);
+        container.style.transform = `translateY(${translateY}px)`;
+        container.style.transition = 'none';
+        
+        // Update spinner progress based on pull distance relative to threshold
+        const pullPercent = Math.min(pullDistance / threshold, 1);
+        setSpinnerProgress(pullPercent);
+    }
+    
+    function snapBackContent() {
+        container.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+        container.style.transform = 'translateY(0px)';
+        resetSpinner();
+        
+        // Clean up transition after animation ends
+        setTimeout(() => {
+            container.style.transition = '';
+        }, 300);
+    }
+    
+    function startRefresh() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+        
+        // Haptic feedback
+        if (navigator.vibrate) navigator.vibrate(50);
+        
+        // Show spinner spinning
+        spinner.style.transition = 'none';
+        spinner.style.transform = 'translateX(-50%) scale(1)';
+        spinner.classList.add('spinning');
+        spinner.style.animation = 'ptr-spin 0.8s linear infinite';
+        
+        // Execute refresh callback
+        refreshCallback()
+            .then(() => {
+                // Success - snap back
+                snapBackContent();
+                setTimeout(() => {
+                    spinner.classList.remove('spinning');
+                    spinner.style.animation = '';
+                    resetSpinner();
+                    isRefreshing = false;
+                }, 300);
+            })
+            .catch(() => {
+                // Error - still snap back
+                snapBackContent();
+                setTimeout(() => {
+                    spinner.classList.remove('spinning');
+                    spinner.style.animation = '';
+                    resetSpinner();
+                    isRefreshing = false;
+                }, 300);
+            });
+    }
+    
+    // Touch handlers
+    function onTouchStart(e) {
+        // Only trigger if at top of scroll
+        if (container.scrollTop <= 0 && !isRefreshing) {
             startY = e.touches[0].clientY;
             pulling = true;
+            originalTransform = container.style.transform;
         }
-    };
+    }
     
-    let touchMoveHandler = (e) => {
-        if (!pulling) return;
+    function onTouchMove(e) {
+        if (!pulling || isRefreshing) return;
         
         currentY = e.touches[0].clientY;
         let diff = currentY - startY;
         
         if (diff > 0) {
             e.preventDefault();
-            let pullDistance = Math.min(diff * 0.5, 120);
-            let scale = Math.min(0.5 + (pullDistance / threshold) * 0.5, 1);
-            spinner.classList.add('visible');
-            let rotation = (pullDistance / threshold) * 180;
-            spinner.style.transform = `translateX(-50%) scale(${scale}) rotate(${rotation}deg)`;
-            spinner.style.opacity = Math.min(0.3 + (pullDistance / threshold) * 0.7, 1);
+            let pullDistance = Math.min(diff * 0.6, maxPull);
+            animateContent(pullDistance);
         }
-    };
+    }
     
-    let touchEndHandler = (e) => {
+    function onTouchEnd(e) {
         if (!pulling) return;
         
         let diff = currentY - startY;
-        let pullDistance = Math.min(diff * 0.5, 120);
+        let pullDistance = Math.min(diff * 0.6, maxPull);
         
-        if (pullDistance >= threshold) {
-            spinner.classList.add('spinning');
-            spinner.style.transform = 'translateX(-50%) scale(1)';
-            if (navigator.vibrate) navigator.vibrate(50);
-            refreshCallback().then(() => {
-                spinner.classList.remove('spinning', 'visible');
-                spinner.style.transform = '';
-                spinner.style.opacity = '';
-            }).catch(() => {
-                spinner.classList.remove('spinning', 'visible');
-                spinner.style.transform = '';
-                spinner.style.opacity = '';
-            });
+        if (pullDistance >= threshold && !isRefreshing) {
+            // User pulled past threshold - trigger refresh
+            startRefresh();
         } else {
-            spinner.classList.remove('visible', 'spinning');
-            spinner.style.transform = '';
-            spinner.style.opacity = '';
+            // Not enough pull - just snap back
+            snapBackContent();
         }
+        
         pulling = false;
-    };
+        startY = 0;
+        currentY = 0;
+    }
     
-    let touchCancelHandler = () => {
-        spinner.classList.remove('visible', 'spinning');
-        spinner.style.transform = '';
-        spinner.style.opacity = '';
-        pulling = false;
-    };
+    function onTouchCancel() {
+        if (pulling) {
+            snapBackContent();
+            pulling = false;
+            startY = 0;
+            currentY = 0;
+        }
+    }
     
-    container.addEventListener('touchstart', touchStartHandler, { passive: false });
-    container.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    container.addEventListener('touchend', touchEndHandler);
-    container.addEventListener('touchcancel', touchCancelHandler);
+    // Add event listeners
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd);
+    container.addEventListener('touchcancel', onTouchCancel);
     
+    // Return cleanup function
     return () => {
-        container.removeEventListener('touchstart', touchStartHandler);
-        container.removeEventListener('touchmove', touchMoveHandler);
-        container.removeEventListener('touchend', touchEndHandler);
-        container.removeEventListener('touchcancel', touchCancelHandler);
+        container.removeEventListener('touchstart', onTouchStart);
+        container.removeEventListener('touchmove', onTouchMove);
+        container.removeEventListener('touchend', onTouchEnd);
+        container.removeEventListener('touchcancel', onTouchCancel);
         if (spinner && spinner.parentNode) spinner.remove();
+        container.style.transform = '';
+        container.style.transition = '';
     };
 }
 
