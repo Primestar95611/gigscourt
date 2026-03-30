@@ -918,16 +918,6 @@ body {
     margin-bottom: 24px;
 }
 
-.profile-sticky-header {
-    position: sticky;
-    top: 0;
-    background: var(--bg-primary);
-    z-index: 10;
-    padding-top: env(safe-area-inset-top);
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 16px;
-}
-
 .profile-back-btn {
     background: none;
     border: none;
@@ -948,7 +938,17 @@ body {
     z-index: 10;
     padding-top: env(safe-area-inset-top);
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: 8px;
+}
+
+.profile-back-btn,
+.history-btn {
+    transition: var(--transition-default);
+}
+
+.profile-back-btn:active,
+.history-btn:active {
+    transform: scale(0.92);
+    opacity: 0.7;
 }
 
 .profile-back-btn span {
