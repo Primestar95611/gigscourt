@@ -700,7 +700,7 @@ function openQuickView(provider) {
             <div class="quick-view-actions">
                 <button class="btn" onclick="viewProfile('${provider.id}', '${window.currentTab || 'home'}')">View Profile</button>
                 <button class="btn" onclick="messageUser('${provider.id}', '${window.currentTab || 'home'}')">Message</button>
-                <button class="btn" onclick="getDirections('${provider.id}')">Directions</button>
+                <button class="btn" onclick="getDirectionsToProvider('${provider.id}', 'quickview')">Directions</button>
             </div>
         </div>
     `;
@@ -1360,7 +1360,7 @@ function generateStarString(rating) {
     return stars;
 }
 
-window.getDirectionsToProvider = async function(providerId) {
+window.getDirectionsToProvider = async function(providerId, fromScreen = 'profile') {
     try {
         const providerDoc = await firebase.firestore().collection('users').doc(providerId).get();
         const provider = providerDoc.data();
@@ -1376,10 +1376,55 @@ window.getDirectionsToProvider = async function(providerId) {
                 lat: provider.locationGeo.latitude,
                 lng: provider.locationGeo.longitude
             },
-            name: provider.businessName
+            name: provider.businessName,
+            fromScreen: fromScreen
         };
         
+        // Switch to search tab but hide the provider list and search controls
         switchTab('search');
+        
+        // Hide provider drawer and search controls after map loads
+        setTimeout(() => {
+            const providerDrawer = document.querySelector('.provider-drawer');
+            const searchStickyTop = document.querySelector('.search-sticky-top');
+            
+            if (providerDrawer) providerDrawer.style.display = 'none';
+            
+            // Add back button if not exists
+            if (!document.getElementById('directions-back-btn')) {
+                const backBtn = document.createElement('button');
+                backBtn.id = 'directions-back-btn';
+                backBtn.className = 'directions-back-btn';
+                backBtn.innerHTML = '← Back';
+                backBtn.style.cssText = `
+                    position: fixed;
+                    top: calc(env(safe-area-inset-top) + 16px);
+                    left: 16px;
+                    background: var(--bg-primary);
+                    border: 1px solid var(--border-color);
+                    padding: 10px 16px;
+                    border-radius: 30px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    z-index: 1001;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    color: var(--text-primary);
+                `;
+                backBtn.onclick = () => {
+                    // Restore search view
+                    if (providerDrawer) providerDrawer.style.display = 'flex';
+                    backBtn.remove();
+                    const directionsToggle = document.querySelector('.directions-toggle-btn');
+                    if (directionsToggle) directionsToggle.remove();
+                    if (routingControl) {
+                        map.removeControl(routingControl);
+                        routingControl = null;
+                    }
+                };
+                document.querySelector('.search-container').appendChild(backBtn);
+            }
+        }, 500);
         
         let attempts = 0;
         const maxAttempts = 10;
@@ -1551,8 +1596,14 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         container.innerHTML = `
 <div class="profile-container">
     <div class="profile-fixed-header">
-        ${hideTabBar ? '<button class="back-btn" onclick="goBack()" style="position:absolute; top:20px; left:20px; font-size:24px; background:none; border:none; z-index:10; cursor:pointer;">←</button>' : ''}
-        <div class="profile-stats-row">
+        ${hideTabBar ? `
+<div class="profile-sticky-header">
+    <button class="profile-back-btn" onclick="goBack()">
+        ← <span>${profile.businessName || 'Profile'}</span>
+    </button>
+</div>
+` : ''}
+<div class="profile-stats-row" style="${hideTabBar ? 'margin-top: 0;' : ''}">
             <div class="profile-picture">
                 <img src="${profile.profileImage ? profile.profileImage + '?tr=w-80,h-80,format-webp' : 'https://via.placeholder.com/80'}" alt="${profile.businessName}">
                 ${isOwnProfile ? '<div class="camera-icon" onclick="openImageUpload()">📷</div>' : ''}
@@ -2556,9 +2607,10 @@ window.saveLocation = function() {
         locationDescription: description
     }).then(() => {
         showToast('Location saved!');
+        // Do NOT navigate away - stay on location picker
+        // Just update currentUserData in background
         firebase.firestore().collection('users').doc(firebase.auth().currentUser.uid).get().then(doc => {
             currentUserData = doc.data();
-            loadProfileTab(null, false);
         });
     }).catch(error => {
         console.error('Error saving location:', error);
@@ -2775,20 +2827,22 @@ function loadSearchTab() {
     
     container.innerHTML = `
 <div class="search-container">
-    <div class="search-controls">
-        <div class="search-input-container">
-            <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
+    <div class="search-sticky-top">
+        <div class="search-controls">
+            <div class="search-input-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search by service...">
+            </div>
+            
+            <div class="radius-control">
+                <span class="radius-icon">📍</span>
+                <span class="radius-value" id="radius-value">${currentRadius} km</span>
+                <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
+            </div>
+            <div id="search-hint" style="font-size:12px; color:var(--text-secondary); text-align:center; margin-top:5px;">⭐ Top providers have completed jobs and reviews</div>
         </div>
         
-        <div class="radius-control">
-            <span class="radius-icon">📍</span>
-            <span class="radius-value" id="radius-value">${currentRadius} km</span>
-            <input type="range" id="radius-slider" class="radius-slider" min="1" max="200" value="${currentRadius}" step="1">
-        </div>
-        <div id="search-hint" style="font-size:12px; color:var(--text-secondary); text-align:center; margin-top:5px;">⭐ Top providers have completed jobs and reviews</div>
+        <div id="search-map" class="search-map"></div>
     </div>
-    
-    <div id="search-map" class="search-map"></div>
     
     <div class="provider-drawer">
         <div class="drawer-handle"></div>
