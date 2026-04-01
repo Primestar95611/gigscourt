@@ -3734,7 +3734,6 @@ window.sendMessage = async function() {
             messageCount: firebase.firestore.FieldValue.increment(1)
         });
         
-        loadMessages(currentChatId);
 
         // Check if message count just reached 10
         const updatedChatDoc = await chatRef.get();
