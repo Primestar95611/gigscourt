@@ -179,6 +179,43 @@ function isActive(provider) {
     return lastJob >= sevenDaysAgo;
 }
 
+// ========== PROVIDER CACHE SYSTEM ==========
+const PROVIDER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getProviderCacheKey(lat, lng, radius = 10) {
+    return `providers_${Math.round(lat * 10)}_${Math.round(lng * 10)}_${radius}`;
+}
+
+function getCachedProviders(lat, lng, radius) {
+    try {
+        const key = getProviderCacheKey(lat, lng, radius);
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+        
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp > PROVIDER_CACHE_TTL) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        console.log('Cache read failed:', e);
+        return null;
+    }
+}
+
+function setCachedProviders(lat, lng, radius, providers) {
+    try {
+        const key = getProviderCacheKey(lat, lng, radius);
+        localStorage.setItem(key, JSON.stringify({
+            data: providers,
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        console.log('Cache write failed:', e);
+    }
+}
+
 // Debounce function to limit map move events
 function debounce(func, delay) {
     let timeout;
@@ -496,6 +533,34 @@ async function loadProviders(reset = true) {
     }
     
     try {
+        // Check cache for home providers
+        if (reset) {
+            let cacheLat = 6.5244;
+            let cacheLng = 3.3792;
+            
+            if (window.userLocation) {
+                cacheLat = window.userLocation.lat;
+                cacheLng = window.userLocation.lng;
+            } else {
+                const savedLocation = localStorage.getItem('userLocation');
+                if (savedLocation) {
+                    const loc = JSON.parse(savedLocation);
+                    cacheLat = loc.lat;
+                    cacheLng = loc.lng;
+                }
+            }
+            
+            const cached = getCachedProviders(cacheLat, cacheLng, 10);
+            if (cached && cached.length > 0) {
+                providers = cached;
+                renderProviders();
+                // Refresh in background
+                setTimeout(() => refreshProviders(), 100);
+                loading = false;
+                return;
+            }
+        }
+        
         let userLat = 6.5244;
         let userLng = 3.3792;
         
@@ -566,6 +631,12 @@ async function loadProviders(reset = true) {
             providers.push(...newProviders);
             
             renderProviders();
+            
+            // Save to cache
+            if (reset) {
+                setCachedProviders(userLat, userLng, 10, providers);
+            }
+            
             homeTotalLoaded += snapshot.docs.length;
         }
         
@@ -595,9 +666,21 @@ function renderProviders() {
     const grid = document.getElementById('providers-grid');
     if (!grid) return;
     
-    grid.innerHTML = '';
+    // Clear existing if first load
+    if (providers.length === grid.children.length) {
+        grid.innerHTML = '';
+    }
+    
+    // Track existing provider IDs to avoid duplicates
+    const existingIds = new Set();
+    Array.from(grid.children).forEach(child => {
+        const id = child.id?.replace('provider-', '');
+        if (id) existingIds.add(id);
+    });
     
     providers.forEach(provider => {
+        if (existingIds.has(provider.id)) return;
+        
         const card = document.createElement('div');
         card.id = `provider-${provider.id}`;
         card.className = 'provider-card';
@@ -608,8 +691,8 @@ function renderProviders() {
         const hasMoreServices = services.length > 2 ? '...' : '';
         
         const profileImage = provider.profileImage 
-    ? `${provider.profileImage}?tr=w-300,h-300,fo-auto,format-webp` 
-    : 'https://via.placeholder.com/300';
+            ? `${provider.profileImage}?tr=w-300,h-300,fo-auto,format-webp` 
+            : 'https://via.placeholder.com/300';
         
         card.innerHTML = `
             <div class="provider-image">
@@ -617,9 +700,9 @@ function renderProviders() {
             </div>
             <div class="provider-info">
                 <h3 class="provider-name">
-    ${escapeHtml(provider.businessName)}
-    ${isActive(provider) ? '<span class="active-text"> • Active</span>' : ''}
-</h3>
+                    ${escapeHtml(provider.businessName)}
+                    ${isActive(provider) ? '<span class="active-text"> • Active</span>' : ''}
+                </h3>
                 <div class="provider-rating">
                     <span class="stars">⭐ ${provider.rating || '0.0'}</span>
                     <span class="review-count">(${provider.reviewCount || 0})</span>
