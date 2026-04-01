@@ -3478,3 +3478,11 @@ body,
 @keyframes home-spin {
     to { transform: rotate(360deg); }
 }
+
+/* Active Provider Text */
+.active-text {
+    color: #10b981;
+    font-weight: 500;
+    display: inline;
+    margin-left: 4px;
+}
