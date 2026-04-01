@@ -179,43 +179,6 @@ function isActive(provider) {
     return lastJob >= sevenDaysAgo;
 }
 
-// ========== PROVIDER CACHE SYSTEM ==========
-const PROVIDER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-function getProviderCacheKey(lat, lng, radius = 10) {
-    return `providers_${Math.round(lat * 10)}_${Math.round(lng * 10)}_${radius}`;
-}
-
-function getCachedProviders(lat, lng, radius) {
-    try {
-        const key = getProviderCacheKey(lat, lng, radius);
-        const cached = localStorage.getItem(key);
-        if (!cached) return null;
-        
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp > PROVIDER_CACHE_TTL) {
-            localStorage.removeItem(key);
-            return null;
-        }
-        return data;
-    } catch (e) {
-        console.log('Cache read failed:', e);
-        return null;
-    }
-}
-
-function setCachedProviders(lat, lng, radius, providers) {
-    try {
-        const key = getProviderCacheKey(lat, lng, radius);
-        localStorage.setItem(key, JSON.stringify({
-            data: providers,
-            timestamp: Date.now()
-        }));
-    } catch (e) {
-        console.log('Cache write failed:', e);
-    }
-}
-
 // Debounce function to limit map move events
 function debounce(func, delay) {
     let timeout;
@@ -398,11 +361,18 @@ window.saveProfile = async function() {
 };
 
 // ========== HOME TAB ==========
-function loadHomeTab() {
+   function loadHomeTab() {
     const container = document.getElementById('tab-content');
     if (!container) return;
     
-    container.innerHTML = `
+    // Check if home tab already exists
+    const existingHome = document.querySelector('.home-container');
+    if (existingHome) {
+        // Just restore scroll position, don't reload
+        setTimeout(() => restoreScrollPosition('home'), 200);
+        return;
+    } 
+container.innerHTML = `
 <div class="home-container">
     <div class="home-header">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -533,32 +503,6 @@ async function loadProviders(reset = true) {
     }
     
     try {
-        // Check cache for home providers
-        if (reset) {
-            let cacheLat = 6.5244;
-            let cacheLng = 3.3792;
-            
-            if (window.userLocation) {
-                cacheLat = window.userLocation.lat;
-                cacheLng = window.userLocation.lng;
-            } else {
-                const savedLocation = localStorage.getItem('userLocation');
-                if (savedLocation) {
-                    const loc = JSON.parse(savedLocation);
-                    cacheLat = loc.lat;
-                    cacheLng = loc.lng;
-                }
-            }
-            
-            const cached = getCachedProviders(cacheLat, cacheLng, 10);
-            if (cached && cached.length > 0) {
-    providers = cached;
-    renderProviders();
-    // setTimeout(() => refreshProviders(), 100);  // COMMENT OUT OR DELETE
-    loading = false;
-    return;
-}
-        }
         
         let userLat = 6.5244;
         let userLng = 3.3792;
@@ -630,11 +574,6 @@ async function loadProviders(reset = true) {
             providers.push(...newProviders);
             
             renderProviders();
-            
-            // Save to cache
-            if (reset) {
-                setCachedProviders(userLat, userLng, 10, providers);
-            }
             
             homeTotalLoaded += snapshot.docs.length;
         }
