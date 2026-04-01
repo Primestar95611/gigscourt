@@ -160,6 +160,15 @@ function deg2rad(deg) {
     return deg * (Math.PI/180);
 }
 
+// Helper function to check if provider is active (completed job in last 7 days)
+function isActive(provider) {
+    if (!provider.lastJobDate) return false;
+    const lastJob = provider.lastJobDate.toDate();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return lastJob >= sevenDaysAgo;
+}
+
 // Toast notification helper
 function showToast(message, duration = 3000) {
     const existingToast = document.querySelector('.toast-notification');
@@ -536,7 +545,10 @@ function renderProviders() {
                 <img src="${profileImage}" alt="${escapeHtml(provider.businessName)}" loading="lazy">
             </div>
             <div class="provider-info">
-                <h3 class="provider-name">${escapeHtml(provider.businessName)}</h3>
+                <h3 class="provider-name">
+    ${escapeHtml(provider.businessName)}
+    ${isActive(provider) ? '<span class="active-text"> • Active</span>' : ''}
+</h3>
                 <div class="provider-rating">
                     <span class="stars">⭐ ${provider.rating || '0.0'}</span>
                     <span class="review-count">(${provider.reviewCount || 0})</span>
@@ -1077,12 +1089,13 @@ window.submitReview = async function(providerId, jobId) {
         
         // Prepare the update data for provider (all fields in one update)
         const providerUpdateData = {
-            rating: parseFloat(newRating.toFixed(1)),
-            reviewCount: newReviewCount,
-            jobsDone: (provider.jobsDone || 0) + 1,
-            jobsThisMonth: (provider.jobsThisMonth || 0) + 1,
-            lastReviewId: reviewId
-        };
+    rating: parseFloat(newRating.toFixed(1)),
+    reviewCount: newReviewCount,
+    jobsDone: (provider.jobsDone || 0) + 1,
+    jobsThisMonth: (provider.jobsThisMonth || 0) + 1,
+    lastReviewId: reviewId,
+    lastJobDate: firebase.firestore.FieldValue.serverTimestamp()
+};
         
         // Deduct points if not already deducted
         if (!jobData.pointsDeducted) {
@@ -1563,13 +1576,19 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         ${hideTabBar ? `
 <div class="profile-sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px 16px;">
     <button class="profile-back-btn" onclick="goBack()" style="background: none; border: none; font-size: 28px; cursor: pointer; padding: 0;">←</button>
-    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">${profile.businessName || 'Profile'}</span>
+    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">
+    ${profile.businessName || 'Profile'}
+    ${isActive(profile) ? '<span class="active-text"> • Active</span>' : ''}
+</span>
     ${isOwnProfile ? `<button class="history-btn" onclick="openJobHistory()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 0;">⏱️</button>` : '<span style="width: 32px;"></span>'}
 </div>
 ` : isOwnProfile ? `
 <div class="profile-sticky-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 12px 16px;">
     <span style="width: 32px;"></span>
-    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">${profile.businessName || 'Profile'}</span>
+    <span style="font-size: 18px; font-weight: 600; flex: 1; text-align: center;">
+    ${profile.businessName || 'Profile'}
+    ${isActive(profile) ? '<span class="active-text"> • Active</span>' : ''}
+</span>
     <button class="history-btn" onclick="openJobHistory()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 0;">⏱️</button>
 </div>
 ` : ''}
@@ -3090,7 +3109,10 @@ function renderProviderList() {
         <div class="provider-list-item" onclick="openQuickViewFromSearch('${provider.id}')">
             <img src="${provider.profileImage ? provider.profileImage + '?tr=w-40,h-40,format-webp' : 'https://via.placeholder.com/40'}" class="list-item-image">
             <div class="list-item-info">
-                <div class="list-item-name">${provider.businessName}</div>
+                <div class="list-item-name">
+    ${provider.businessName}
+    ${isActive(provider) ? '<span class="active-text"> • Active</span>' : ''}
+</div>
                 <div class="list-item-details">
                     <span>⭐ ${provider.rating || '0.0'}</span>
                     <span>(${provider.reviewCount || 0})</span>
