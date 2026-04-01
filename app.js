@@ -179,6 +179,43 @@ function isActive(provider) {
     return lastJob >= sevenDaysAgo;
 }
 
+// ========== PROVIDER CACHE SYSTEM ==========
+const PROVIDER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getProviderCacheKey(lat, lng, radius = 10) {
+    return `providers_${Math.round(lat * 10)}_${Math.round(lng * 10)}_${radius}`;
+}
+
+function getCachedProviders(lat, lng, radius) {
+    try {
+        const key = getProviderCacheKey(lat, lng, radius);
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+        
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp > PROVIDER_CACHE_TTL) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        console.log('Cache read failed:', e);
+        return null;
+    }
+}
+
+function setCachedProviders(lat, lng, radius, providers) {
+    try {
+        const key = getProviderCacheKey(lat, lng, radius);
+        localStorage.setItem(key, JSON.stringify({
+            data: providers,
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        console.log('Cache write failed:', e);
+    }
+}
+
 // Debounce function to limit map move events
 function debounce(func, delay) {
     let timeout;
@@ -361,17 +398,11 @@ window.saveProfile = async function() {
 };
 
 // ========== HOME TAB ==========
-   function loadHomeTab() {
-    const homePane = document.getElementById('home-tab');
-    if (!homePane) return;
+function loadHomeTab() {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
     
-    // Check if already loaded
-    if (homePane.innerHTML !== '') {
-        // Already loaded, just show it
-        return;
-    }
-    
-    homePane.innerHTML = `
+    container.innerHTML = `
 <div class="home-container">
     <div class="home-header">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -502,6 +533,32 @@ async function loadProviders(reset = true) {
     }
     
     try {
+        // Check cache for home providers
+        if (reset) {
+            let cacheLat = 6.5244;
+            let cacheLng = 3.3792;
+            
+            if (window.userLocation) {
+                cacheLat = window.userLocation.lat;
+                cacheLng = window.userLocation.lng;
+            } else {
+                const savedLocation = localStorage.getItem('userLocation');
+                if (savedLocation) {
+                    const loc = JSON.parse(savedLocation);
+                    cacheLat = loc.lat;
+                    cacheLng = loc.lng;
+                }
+            }
+            
+            const cached = getCachedProviders(cacheLat, cacheLng, 10);
+            if (cached && cached.length > 0) {
+    providers = cached;
+    renderProviders();
+    // setTimeout(() => refreshProviders(), 100);  // COMMENT OUT OR DELETE
+    loading = false;
+    return;
+}
+        }
         
         let userLat = 6.5244;
         let userLng = 3.3792;
@@ -573,6 +630,11 @@ async function loadProviders(reset = true) {
             providers.push(...newProviders);
             
             renderProviders();
+            
+            // Save to cache
+            if (reset) {
+                setCachedProviders(userLat, userLng, 10, providers);
+            }
             
             homeTotalLoaded += snapshot.docs.length;
         }
@@ -1544,65 +1606,60 @@ function showDirectionsToTarget() {
 }
 
 // ========== MAIN APP LOADER ==========
-function loadMainApp() {document.getElementById('app').innerHTML = `
-    <div class="app-container">
-        <div id="tab-content" class="tab-content">
-            <div id="home-tab" class="tab-pane active"></div>
-            <div id="search-tab" class="tab-pane"></div>
-            <div id="messages-tab" class="tab-pane"></div>
-            <div id="profile-tab" class="tab-pane"></div>
-            <div id="admin-tab" class="tab-pane"></div>
+function loadMainApp() {
+    document.getElementById('app').innerHTML = `
+        <div class="app-container">
+            <div id="tab-content" class="tab-content"></div>
+            
+            <div class="tab-bar">
+                <button class="tab-btn active">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Home</span>
+                </button>
+                <button class="tab-btn">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                            <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Search</span>
+                </button>
+                <button class="tab-btn">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Messages</span>
+                </button>
+                <button class="tab-btn">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                            <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Profile</span>
+                </button>
+                ${firebase.auth().currentUser?.email === 'agboghidiaugust@gmail.com' ? `
+                <button class="tab-btn">
+                    <span class="tab-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6-2.28 0-2.56 4-4 6-4s6 1.44 6 4c-1.57 1.46-3.97 2.28-6 2.28z" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="tab-label">Admin</span>
+                </button>
+                ` : ''}
+            </div>
         </div>
-        
-        <div class="tab-bar">
-            <button class="tab-btn active">
-                <span class="tab-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
-                    </svg>
-                </span>
-                <span class="tab-label">Home</span>
-            </button>
-            <button class="tab-btn">
-                <span class="tab-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                        <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </span>
-                <span class="tab-label">Search</span>
-            </button>
-            <button class="tab-btn">
-                <span class="tab-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </span>
-                <span class="tab-label">Messages</span>
-            </button>
-            <button class="tab-btn">
-                <span class="tab-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
-                        <path d="M5 20V19C5 15.1 8.1 12 12 12C15.9 12 19 15.1 19 19V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </span>
-                <span class="tab-label">Profile</span>
-            </button>
-            ${firebase.auth().currentUser?.email === 'agboghidiaugust@gmail.com' ? `
-            <button class="tab-btn">
-                <span class="tab-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6-2.28 0-2.56 4-4 6-4s6 1.44 6 4c-1.57 1.46-3.97 2.28-6 2.28z" fill="currentColor"/>
-                    </svg>
-                </span>
-                <span class="tab-label">Admin</span>
-            </button>
-            ` : ''}
-        </div>
-    </div>
-`;
+    `;
     
     loadHomeTab();
     
@@ -1634,7 +1691,7 @@ function loadMainApp() {document.getElementById('app').innerHTML = `
 }
 
 // ========== PROFILE TAB ==========
-async function loadProfileTab(profileUserId = null, hideTabBar = false, forceReload = false) {
+async function loadProfileTab(profileUserId = null, hideTabBar = false) {
     if (hideTabBar) {
         const tabBar = document.querySelector('.tab-bar');
         if (tabBar) tabBar.style.display = 'none';
@@ -1644,18 +1701,8 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false, forceRel
         window.currentTab = 'profile';
     }
     
-    const profilePane = document.getElementById('profile-tab');
-    if (!profilePane) return;
-    
-    // Check if already loaded and no profileUserId (own profile)
-// BUT if we're coming from edit profile or photo upload, we need to reload
-if (profilePane.innerHTML !== '' && !profileUserId && !forceReload) {
-    // Already loaded, just show it
-    return;
-}
-    
-    // For other profiles, we need to load fresh
-    const container = profilePane;
+    const container = document.getElementById('tab-content');
+    if (!container) return;
     
     const targetUserId = profileUserId || firebase.auth().currentUser.uid;
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
@@ -2308,7 +2355,7 @@ async function uploadProfileImage(event) {
                     showToast('Profile picture updated!');
                     
                     if (document.querySelector('.profile-container')) {
-                        loadProfileTab(null, false, true);  // forceReload = true
+                        loadProfileTab();
                     } else if (document.querySelector('.edit-profile-container')) {
                         window.openEditProfile();
                     }
@@ -2486,7 +2533,7 @@ window.openEditProfile = function() {
     container.innerHTML = `
         <div class="edit-profile-container">
             <div class="edit-profile-header">
-                <button class="back-btn" onclick="goBackFromEditProfile()">←</button>
+                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
                 <h1>Edit Profile</h1>
                 <button class="save-btn" onclick="saveEditProfile()">Save</button>
             </div>
@@ -2574,7 +2621,7 @@ window.saveEditProfile = async function() {
 
         sessionStorage.removeItem(`profile_${firebase.auth().currentUser.uid}`);
         
-        loadProfileTab(null, false, true);  // forceReload = true
+        loadProfileTab(null, false);
     } catch (error) {
         alert('Error saving profile: ' + error.message);
     }
@@ -2591,7 +2638,7 @@ window.openLocationPicker = function() {
     container.innerHTML = `
         <div class="location-picker-container">
             <div class="location-picker-header">
-                <button class="back-btn" onclick="goBackFromEditProfile()">←</button>
+                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
                 <h1>Set Location</h1>
                 <button class="save-btn" onclick="saveLocation()">Done</button>
             </div>
@@ -2946,15 +2993,10 @@ let radiusCircle = null;
 let currentRadius = 10;
 
 function loadSearchTab() {
-    const searchPane = document.getElementById('search-tab');
-    if (!searchPane) return;
+    const container = document.getElementById('tab-content');
+    if (!container) return;
     
-    // Check if already loaded
-    if (searchPane.innerHTML !== '') {
-        return;
-    }
-    
-    searchPane.innerHTML = `
+    container.innerHTML = `
 <div class="search-container">
     <div class="search-sticky-top">
         <div class="search-controls">
@@ -3712,8 +3754,12 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     
     const container = document.getElementById('tab-content');
     
-    let backAction = 'goBackFromChat()';
-// No need for loadMessagesTab() anymore - always use goBackFromChat
+    let backAction = 'loadMessagesTab()';
+    if (previousScreen === 'profile') {
+        backAction = 'goBackFromChat()';
+    } else if (previousScreen === 'home' || previousScreen === 'search') {
+        backAction = 'goBackFromChat()';
+    }
     
     container.innerHTML = `
         <div class="chat-container">
@@ -3950,15 +3996,10 @@ function loadMessagesTab() {
         tabBar.style.display = 'flex';
     }
     
-    const messagesPane = document.getElementById('messages-tab');
-    if (!messagesPane) return;
+    const container = document.getElementById('tab-content');
+    if (!container) return;
     
-    // Check if already loaded
-    if (messagesPane.innerHTML !== '') {
-        return;
-    }
-    
-    messagesPane.innerHTML = `
+    container.innerHTML = `
 <div class="messages-container">
     <div class="messages-header">
         <h1 class="messages-title">Messages</h1>
@@ -3996,20 +4037,23 @@ window.addEventListener('tabChange', () => {
 });
 
 window.switchTab = (tab) => {
-    // Save scroll position of current tab before leaving
+    // Save current tab's scroll position before leaving
     if (activeTab) {
         saveScrollPosition(activeTab);
     }
     
-    // Hide all tab panes
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-        pane.classList.remove('active');
-    });
-    
-    // Show the selected tab pane
-    const activePane = document.getElementById(`${tab}-tab`);
-    if (activePane) {
-        activePane.classList.add('active');
+    // Clean up intervals
+    if (window.conversationsInterval) {
+        clearInterval(window.conversationsInterval);
+        window.conversationsInterval = null;
+    }
+    if (window.messagesInterval) {
+        clearInterval(window.messagesInterval);
+        window.messagesInterval = null;
+    }
+
+    if (window.currentTab === 'home') {
+        cleanupInfiniteScroll();
     }
     
     // Update active tab button
@@ -4027,56 +4071,30 @@ window.switchTab = (tab) => {
     
     activeTab = tab;
     
-    // Clean up intervals
-    if (window.conversationsInterval) {
-        clearInterval(window.conversationsInterval);
-        window.conversationsInterval = null;
-    }
-    if (window.messagesInterval) {
-        clearInterval(window.messagesInterval);
-        window.messagesInterval = null;
-    }
-
-    if (window.currentTab === 'home') {
-        cleanupInfiniteScroll();
-    }
-    
-    // Load the selected tab content if not already loaded
+    // Load the selected tab
     switch(tab) {    
         case 'home':
-            if (document.getElementById('home-tab').innerHTML === '') {
-                loadHomeTab();
-            }
+            loadHomeTab();
             setTimeout(() => restoreScrollPosition('home'), 200);
             break;
         case 'search':
-            if (document.getElementById('search-tab').innerHTML === '') {
-                loadSearchTab();
-            }
+            loadSearchTab();
             setTimeout(() => restoreScrollPosition('search'), 200);
             break;
         case 'messages':
-            if (document.getElementById('messages-tab').innerHTML === '') {
-                loadMessagesTab();
-            }
+            loadMessagesTab();
             setTimeout(() => restoreScrollPosition('messages'), 200);
             break;
         case 'profile':
-            if (document.getElementById('profile-tab').innerHTML === '') {
-                loadProfileTab();
-            }
+            loadProfileTab();
             setTimeout(() => restoreScrollPosition('profile'), 200);
             break;
         case 'admin':
-            if (document.getElementById('admin-tab').innerHTML === '') {
-                loadAdminTab();
-            }
+            loadAdminTab();
             setTimeout(() => restoreScrollPosition('admin'), 200);
             break;
         default:
-            if (document.getElementById('home-tab').innerHTML === '') {
-                loadHomeTab();
-            }
+            loadHomeTab();
     }
 };
 
@@ -4352,15 +4370,8 @@ window.deleteAccount = function() {
 let adminCurrentTab = 'dashboard';
 
 async function loadAdminTab() {
-    const adminPane = document.getElementById('admin-tab');
-    if (!adminPane) return;
-    
-    // Check if already loaded
-    if (adminPane.innerHTML !== '') {
-        return;
-    }
-    
-    const container = adminPane;
+    const container = document.getElementById('tab-content');
+    if (!container) return;
     
     const currentUserEmail = firebase.auth().currentUser?.email;
     if (currentUserEmail !== 'agboghidiaugust@gmail.com') {
@@ -4830,18 +4841,22 @@ window.goBack = function() {
     }
     
     if (profilePreviousScreen === 'chat') {
-        // Just switch to messages tab, don't rebuild
-        switchTab('messages');
-        // Restore scroll position
-        setTimeout(() => restoreScrollPosition('messages'), 200);
+        const tabBar = document.querySelector('.tab-bar');
+        if (tabBar) {
+            tabBar.style.display = 'flex';
+        }
+        loadMessagesTab();
+        setTimeout(() => {
+            if (currentChatId) {
+                openChat(currentChatId, null, {});
+            }
+        }, 100);
     } else if (profilePreviousScreen === 'saved') {
         openSavedModal();
     } else if (profilePreviousScreen === 'home') {
         switchTab('home');
-        setTimeout(() => restoreScrollPosition('home'), 200);
     } else if (profilePreviousScreen === 'search') {
         switchTab('search');
-        setTimeout(() => restoreScrollPosition('search'), 200);
     } else {
         window.history.back();
     }
@@ -4850,49 +4865,26 @@ window.goBack = function() {
 };
     
 window.goBackFromChat = function() {
-    // Detach real-time listener
     if (messagesListener) {
-        messagesListener();
-        messagesListener = null;
-    }
-    
+    messagesListener();
+    messagesListener = null;
+}
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
     }
     
     if (chatPreviousScreen === 'profile' && lastProfileViewedId) {
-        // Switch to profile tab, don't rebuild
-        switchTab('profile');
-        // The profile content is already there, just show it
-        setTimeout(() => restoreScrollPosition('profile'), 200);
+        loadProfileTab(lastProfileViewedId, true);
     } else if (chatPreviousScreen === 'home') {
         switchTab('home');
-        setTimeout(() => restoreScrollPosition('home'), 200);
     } else if (chatPreviousScreen === 'search') {
         switchTab('search');
-        setTimeout(() => restoreScrollPosition('search'), 200);
     } else {
-        switchTab('messages');
-        setTimeout(() => restoreScrollPosition('messages'), 200);
+        loadMessagesTab();
     }
     
     chatPreviousScreen = null;
-};
-
-window.goBackFromEditProfile = function() {
-    // Switch back to profile tab
-    switchTab('profile');
-    
-    // Update the profile content with saved data
-    const profilePane = document.getElementById('profile-tab');
-    if (profilePane && currentUserData) {
-        // Clear and reload profile content with fresh data
-        profilePane.innerHTML = '';
-        loadProfileTab(null, false, true);  // forceReload = true
-    }
-    
-    setTimeout(() => restoreScrollPosition('profile'), 200);
 };
 
 window.viewProfileFromChat = function(userId) {
