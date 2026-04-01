@@ -302,10 +302,6 @@ function loadHomeTab() {
     </div>
     
     <div class="home-scrollable">
-        <div id="pull-to-refresh-indicator" class="ptr-indicator">
-            <span class="ptr-spinner"></span>
-            <span class="ptr-text">Pull to refresh</span>
-        </div>
         
         <div id="providers-grid" class="providers-grid">
             <!-- Providers will load here -->
@@ -338,11 +334,6 @@ function loadHomeTab() {
     hasMore = true;
     
     loadProviders(true);
-    // Replace old pull-to-refresh with modern version
-    if (window.ptrHomeCleanup) window.ptrHomeCleanup();
-    window.ptrHomeCleanup = setupModernPullToRefresh('providers-grid', async () => {
-        await refreshProviders();
-    });
     
     const enableBtn = document.getElementById('enable-notify-btn');
     if (enableBtn) {
@@ -565,67 +556,6 @@ function escapeHtml(str) {
     });
 }
 
-function setupPullToRefresh() {
-    const container = document.querySelector('.home-container');
-    if (!container) return;
-    
-    let startY = 0;
-    let currentY = 0;
-    let pulling = false;
-    
-    container.addEventListener('touchstart', (e) => {
-        if (window.scrollY === 0) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-        }
-    }, { passive: true });
-    
-    container.addEventListener('touchmove', (e) => {
-        if (!pulling) return;
-        
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-        
-        if (diff > 0) {
-            e.preventDefault();
-            
-            const indicator = document.getElementById('pull-to-refresh-indicator');
-            const spinner = indicator.querySelector('.ptr-spinner');
-            const text = indicator.querySelector('.ptr-text');
-            
-            const pullDistance = Math.min(diff * 0.3, 80);
-            indicator.style.transform = `translateY(${pullDistance}px)`;
-            
-            if (pullDistance > 60) {
-                text.textContent = 'Release to refresh';
-                spinner.style.transform = 'rotate(180deg)';
-            } else {
-                text.textContent = 'Pull to refresh';
-                spinner.style.transform = `rotate(${pullDistance * 3}deg)`;
-            }
-        }
-    }, { passive: false });
-    
-    container.addEventListener('touchend', () => {
-        if (pulling) {
-            const diff = currentY - startY;
-            const pullDistance = Math.min(diff * 0.3, 80);
-            
-            if (pullDistance > 60) {
-                refreshProviders();
-            } else {
-                resetPullToRefresh();
-            }
-            
-            pulling = false;
-        }
-    });
-    
-    container.addEventListener('touchcancel', () => {
-        resetPullToRefresh();
-        pulling = false;
-    });
-}
 
 async function refreshProviders() {
     const indicator = document.getElementById('pull-to-refresh-indicator');
@@ -658,103 +588,6 @@ async function refreshProviders() {
     }, 500);
 }
 
-function resetPullToRefresh() {
-    const indicator = document.getElementById('pull-to-refresh-indicator');
-    indicator.style.transform = '';
-    indicator.classList.remove('refreshing');
-    indicator.querySelector('.ptr-text').textContent = 'Pull to refresh';
-    indicator.querySelector('.ptr-spinner').style.transform = '';
-}
-
-// Modern pull to refresh with red spinner and haptic feedback
-function setupModernPullToRefresh(containerId, refreshCallback) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    container.classList.add('ptr-container');
-    
-    let startY = 0;
-    let currentY = 0;
-    let pulling = false;
-    let threshold = 60;
-    let spinner = null;
-    
-    spinner = document.createElement('div');
-    spinner.className = 'ptr-spinner-modern';
-    container.style.position = 'relative';
-    container.insertBefore(spinner, container.firstChild);
-    
-    let touchStartHandler = (e) => {
-        if (container.scrollTop <= 0) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-        }
-    };
-    
-    let touchMoveHandler = (e) => {
-        if (!pulling) return;
-        
-        currentY = e.touches[0].clientY;
-        let diff = currentY - startY;
-        
-        if (diff > 0) {
-            e.preventDefault();
-            let pullDistance = Math.min(diff * 0.5, 120);
-            let scale = Math.min(0.5 + (pullDistance / threshold) * 0.5, 1);
-            spinner.classList.add('visible');
-            let rotation = (pullDistance / threshold) * 180;
-            spinner.style.transform = `translateX(-50%) scale(${scale}) rotate(${rotation}deg)`;
-            spinner.style.opacity = Math.min(0.3 + (pullDistance / threshold) * 0.7, 1);
-        }
-    };
-    
-    let touchEndHandler = (e) => {
-        if (!pulling) return;
-        
-        let diff = currentY - startY;
-        let pullDistance = Math.min(diff * 0.5, 120);
-        
-        if (pullDistance >= threshold) {
-            spinner.classList.add('spinning');
-            spinner.style.transform = 'translateX(-50%) scale(1)';
-            if (navigator.vibrate) navigator.vibrate(50);
-            refreshCallback().then(() => {
-                spinner.classList.remove('spinning', 'visible');
-                spinner.style.transform = '';
-                spinner.style.opacity = '';
-            }).catch(() => {
-                spinner.classList.remove('spinning', 'visible');
-                spinner.style.transform = '';
-                spinner.style.opacity = '';
-            });
-        } else {
-            spinner.classList.remove('visible', 'spinning');
-            spinner.style.transform = '';
-            spinner.style.opacity = '';
-        }
-        pulling = false;
-    };
-    
-    let touchCancelHandler = () => {
-        spinner.classList.remove('visible', 'spinning');
-        spinner.style.transform = '';
-        spinner.style.opacity = '';
-        pulling = false;
-    };
-    
-    container.addEventListener('touchstart', touchStartHandler, { passive: false });
-    container.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    container.addEventListener('touchend', touchEndHandler);
-    container.addEventListener('touchcancel', touchCancelHandler);
-    
-    return () => {
-        container.removeEventListener('touchstart', touchStartHandler);
-        container.removeEventListener('touchmove', touchMoveHandler);
-        container.removeEventListener('touchend', touchEndHandler);
-        container.removeEventListener('touchcancel', touchCancelHandler);
-        if (spinner && spinner.parentNode) spinner.remove();
-    };
-}
 
 // Quick View Bottom Sheet
 function openQuickView(provider) {
@@ -2973,11 +2806,7 @@ function loadSearchTab() {
    getUserLocation();
     setupSearchListeners();
     
-    // Add modern pull to refresh to provider list
-    setTimeout(() => {
-        if (window.ptrSearchCleanup) window.ptrSearchCleanup();
-        window.ptrSearchCleanup = setupModernPullToRefresh('provider-list', async () => {
-            await loadNearbyProviders(true);
+    setTimeout(() => {      
         });
     }, 500);
 }
@@ -3905,12 +3734,7 @@ function loadMessagesTab() {
     
     loadConversations();
     
-    // Add modern pull to refresh to conversations list
     setTimeout(() => {
-        if (window.ptrMessagesCleanup) window.ptrMessagesCleanup();
-        window.ptrMessagesCleanup = setupModernPullToRefresh('conversations-list', async () => {
-            await loadConversations();
-        });
     }, 500);
 }
 
