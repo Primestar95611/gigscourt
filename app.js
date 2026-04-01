@@ -475,7 +475,13 @@ async function loadProviders(reset = true) {
                 });
             });
             
-            newProviders.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            newProviders.sort((a, b) => {
+    // First sort by distance (closest first)
+    const distanceDiff = parseFloat(a.distance) - parseFloat(b.distance);
+    if (distanceDiff !== 0) return distanceDiff;
+    // If same distance, sort by rating (highest first)
+    return (b.rating || 0) - (a.rating || 0);
+});
             
             providers.push(...newProviders);
             
