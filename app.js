@@ -1502,6 +1502,7 @@ function loadMainApp() {
             refreshHomeTab();
         }
     }, 1000);
+}
 
 // ========== PROFILE TAB ==========
 async function loadProfileTab(profileUserId = null, hideTabBar = false) {
