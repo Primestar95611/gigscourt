@@ -3478,14 +3478,6 @@ function loadMessages(chatId) {
     }
     
     fetchMessages();
-    
-    window.messagesInterval = setInterval(() => {
-        if (document.getElementById('chat-messages')) {
-            fetchMessages();
-        } else {
-            clearInterval(window.messagesInterval);
-        }
-    }, 30000);
 }
 
 function renderConversationItem(chat, currentUserId) {
