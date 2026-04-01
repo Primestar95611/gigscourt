@@ -3682,7 +3682,7 @@ async function checkPendingJobStatus(chatId, otherUserId) {
 
 function renderMessage(msg, currentUserId) {
     const isMine = msg.senderId === currentUserId;
-    const time = msg.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
     const status = isMine ? (msg.read ? '✓✓' : '✓') : '';
     
     return `
