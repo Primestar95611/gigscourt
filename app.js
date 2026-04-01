@@ -369,8 +369,7 @@ function loadHomeTab() {
                 </div>
             </div>
         </div>
-        <div class="discover-text">Discover providers near you</div>
-        <div id="home-refresh-spinner" class="home-refresh-spinner"></div>
+        <div class="discover-text">Discover providers near you!</div>
     </div>
     
     <div class="home-scrollable">
@@ -1527,7 +1526,7 @@ function loadMainApp() {
             <div id="tab-content" class="tab-content"></div>
             
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchTab('home')">
+                <button class="tab-btn active">
                     <span class="tab-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 3L3 9L5 9V19H9V15H15V19H19V9L21 9L12 3Z" fill="currentColor"/>
@@ -1535,7 +1534,7 @@ function loadMainApp() {
                     </span>
                     <span class="tab-label">Home</span>
                 </button>
-                <button class="tab-btn" onclick="switchTab('search')">
+                <button class="tab-btn">
                     <span class="tab-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
@@ -1544,7 +1543,7 @@ function loadMainApp() {
                     </span>
                     <span class="tab-label">Search</span>
                 </button>
-                <button class="tab-btn" onclick="switchTab('messages')">
+                <button class="tab-btn">
                     <span class="tab-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -1553,7 +1552,7 @@ function loadMainApp() {
                     </span>
                     <span class="tab-label">Messages</span>
                 </button>
-                <button class="tab-btn" onclick="switchTab('profile')">
+                <button class="tab-btn">
                     <span class="tab-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
@@ -1563,7 +1562,7 @@ function loadMainApp() {
                     <span class="tab-label">Profile</span>
                 </button>
                 ${firebase.auth().currentUser?.email === 'agboghidiaugust@gmail.com' ? `
-                <button class="tab-btn" onclick="switchTab('admin')">
+                <button class="tab-btn">
                     <span class="tab-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6-2.28 0-2.56 4-4 6-4s6 1.44 6 4c-1.57 1.46-3.97 2.28-6 2.28z" fill="currentColor"/>
