@@ -666,11 +666,6 @@ function renderProviders() {
     const grid = document.getElementById('providers-grid');
     if (!grid) return;
     
-    // Clear existing if first load
-    if (providers.length === grid.children.length) {
-        grid.innerHTML = '';
-    }
-    
     // Track existing provider IDs to avoid duplicates
     const existingIds = new Set();
     Array.from(grid.children).forEach(child => {
