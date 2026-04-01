@@ -143,6 +143,16 @@ let homeCurrentPage = 1;
 let homeTotalLoaded = 0;
 const HOME_PAGE_SIZE = 10;
 
+// Scroll position tracking
+let activeTab = 'home';
+let scrollPositions = {
+    home: 0,
+    search: 0,
+    messages: 0,
+    profile: 0,
+    admin: 0
+};
+
 // Helper function to calculate distance
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -167,6 +177,58 @@ function isActive(provider) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     return lastJob >= sevenDaysAgo;
+}
+
+// Get scrollable container for each tab
+function getScrollableContainer(tabName) {
+    switch(tabName) {
+        case 'home':
+            return document.querySelector('.home-scrollable');
+        case 'search':
+            return document.querySelector('.provider-drawer');
+        case 'messages':
+            return document.querySelector('.messages-scrollable');
+        case 'profile':
+            return document.querySelector('.profile-scrollable');
+        case 'admin':
+            return document.querySelector('.admin-content')?.parentElement;
+        default:
+            return null;
+    }
+}
+
+// Save current scroll position
+function saveScrollPosition(tabName) {
+    const container = getScrollableContainer(tabName);
+    if (container) {
+        scrollPositions[tabName] = container.scrollTop;
+    }
+}
+
+// Restore scroll position
+function restoreScrollPosition(tabName) {
+    const container = getScrollableContainer(tabName);
+    const savedPosition = scrollPositions[tabName];
+    if (container && savedPosition) {
+        setTimeout(() => {
+            container.scrollTop = savedPosition;
+        }, 100);
+    }
+}
+
+// Check if tab is scrolled to top
+function isScrolledToTop(tabName) {
+    const container = getScrollableContainer(tabName);
+    if (!container) return true;
+    return container.scrollTop <= 10;
+}
+
+// Scroll to top
+function scrollToTop(tabName) {
+    const container = getScrollableContainer(tabName);
+    if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
 // Toast notification helper
@@ -308,6 +370,7 @@ function loadHomeTab() {
             </div>
         </div>
         <div class="discover-text">Discover providers near you</div>
+        <div id="home-refresh-spinner" class="home-refresh-spinner"></div>
     </div>
     
     <div class="home-scrollable">
@@ -1521,6 +1584,23 @@ function loadMainApp() {
             refreshHomeTab();
         }
     }, 1000);
+
+    // Add tab tap listeners
+    setTimeout(() => {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            const tabName = btn.textContent.toLowerCase().trim();
+            btn.addEventListener('click', (e) => {
+                // Let switchTab handle the tab change first
+                // Then handle tap on active tab
+                setTimeout(() => {
+                    if (activeTab === tabName) {
+                        handleTabTap(tabName);
+                    }
+                }, 50);
+            });
+        });
+    }, 500);
 }
 
 // ========== PROFILE TAB ==========
@@ -3842,6 +3922,12 @@ window.addEventListener('tabChange', () => {
 });
 
 window.switchTab = (tab) => {
+    // Save current tab's scroll position before leaving
+    if (activeTab) {
+        saveScrollPosition(activeTab);
+    }
+    
+    // Clean up intervals
     if (window.conversationsInterval) {
         clearInterval(window.conversationsInterval);
         window.conversationsInterval = null;
@@ -3855,6 +3941,7 @@ window.switchTab = (tab) => {
         cleanupInfiniteScroll();
     }
     
+    // Update active tab button
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.textContent.toLowerCase().includes(tab) || 
@@ -3867,26 +3954,59 @@ window.switchTab = (tab) => {
         }
     });
     
+    activeTab = tab;
+    
+    // Load the selected tab
     switch(tab) {    
         case 'home':
             loadHomeTab();
+            setTimeout(() => restoreScrollPosition('home'), 200);
             break;
         case 'search':
             loadSearchTab();
+            setTimeout(() => restoreScrollPosition('search'), 200);
             break;
         case 'messages':
             loadMessagesTab();
+            setTimeout(() => restoreScrollPosition('messages'), 200);
             break;
         case 'profile':
             loadProfileTab();
+            setTimeout(() => restoreScrollPosition('profile'), 200);
             break;
         case 'admin':
             loadAdminTab();
+            setTimeout(() => restoreScrollPosition('admin'), 200);
             break;
         default:
             loadHomeTab();
     }
 };
+
+// Handle tap on active tab
+function handleTabTap(tabName) {
+    if (activeTab !== tabName) return;
+    
+    if (tabName === 'home') {
+        if (isScrolledToTop(tabName)) {
+            // Already at top → refresh
+            refreshHomeTab();
+        } else {
+            // Not at top → scroll to top
+            scrollToTop(tabName);
+        }
+    } 
+    else if (tabName === 'search') {
+        scrollToTop(tabName);
+    }
+    else if (tabName === 'messages') {
+        scrollToTop(tabName);
+    }
+    else if (tabName === 'admin') {
+        scrollToTop(tabName);
+    }
+    // Profile: no action
+}
 
 // ========== AUTH SCREENS ==========
 function loadAuthScreen() {
