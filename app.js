@@ -1601,7 +1601,6 @@ function loadMainApp() {
             });
         });
     }, 500);
-}
 
 // ========== PROFILE TAB ==========
 async function loadProfileTab(profileUserId = null, hideTabBar = false) {
