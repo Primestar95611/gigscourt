@@ -588,6 +588,30 @@ async function refreshProviders() {
     }, 500);
 }
 
+// Refresh home tab with spinner
+async function refreshHomeTab() {
+    const spinner = document.getElementById('home-refresh-spinner');
+    if (spinner) {
+        spinner.classList.add('visible', 'spinning');
+    }
+    
+    providers = [];
+    lastDoc = null;
+    hasMore = true;
+    homeTotalLoaded = 0;
+    homeCurrentPage = 1;
+    
+    const grid = document.getElementById('providers-grid');
+    if (grid) grid.innerHTML = '';
+    
+    await loadProviders(true);
+    
+    setTimeout(() => {
+        if (spinner) {
+            spinner.classList.remove('visible', 'spinning');
+        }
+    }, 500);
+}
 
 // Quick View Bottom Sheet
 function openQuickView(provider) {
@@ -1471,6 +1495,13 @@ function loadMainApp() {
     `;
     
     loadHomeTab();
+    
+    // Auto-refresh home tab once after app loads
+    setTimeout(() => {
+        if (window.currentTab === 'home') {
+            refreshHomeTab();
+        }
+    }, 1000);
 }
 
 // ========== PROFILE TAB ==========
