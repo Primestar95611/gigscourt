@@ -1644,8 +1644,17 @@ async function loadProfileTab(profileUserId = null, hideTabBar = false) {
         window.currentTab = 'profile';
     }
     
-    const container = document.getElementById('tab-content');
-    if (!container) return;
+    const profilePane = document.getElementById('profile-tab');
+    if (!profilePane) return;
+    
+    // Check if already loaded and no profileUserId (own profile)
+    if (profilePane.innerHTML !== '' && !profileUserId) {
+        // Already loaded, just show it
+        return;
+    }
+    
+    // For other profiles, we need to load fresh
+    const container = profilePane;
     
     const targetUserId = profileUserId || firebase.auth().currentUser.uid;
     const isOwnProfile = targetUserId === firebase.auth().currentUser.uid;
@@ -2936,10 +2945,15 @@ let radiusCircle = null;
 let currentRadius = 10;
 
 function loadSearchTab() {
-    const container = document.getElementById('tab-content');
-    if (!container) return;
+    const searchPane = document.getElementById('search-tab');
+    if (!searchPane) return;
     
-    container.innerHTML = `
+    // Check if already loaded
+    if (searchPane.innerHTML !== '') {
+        return;
+    }
+    
+    searchPane.innerHTML = `
 <div class="search-container">
     <div class="search-sticky-top">
         <div class="search-controls">
@@ -3939,10 +3953,15 @@ function loadMessagesTab() {
         tabBar.style.display = 'flex';
     }
     
-    const container = document.getElementById('tab-content');
-    if (!container) return;
+    const messagesPane = document.getElementById('messages-tab');
+    if (!messagesPane) return;
     
-    container.innerHTML = `
+    // Check if already loaded
+    if (messagesPane.innerHTML !== '') {
+        return;
+    }
+    
+    messagesPane.innerHTML = `
 <div class="messages-container">
     <div class="messages-header">
         <h1 class="messages-title">Messages</h1>
@@ -4336,8 +4355,15 @@ window.deleteAccount = function() {
 let adminCurrentTab = 'dashboard';
 
 async function loadAdminTab() {
-    const container = document.getElementById('tab-content');
-    if (!container) return;
+    const adminPane = document.getElementById('admin-tab');
+    if (!adminPane) return;
+    
+    // Check if already loaded
+    if (adminPane.innerHTML !== '') {
+        return;
+    }
+    
+    const container = adminPane;
     
     const currentUserEmail = firebase.auth().currentUser?.email;
     if (currentUserEmail !== 'agboghidiaugust@gmail.com') {
