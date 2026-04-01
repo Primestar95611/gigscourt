@@ -2485,7 +2485,7 @@ window.openEditProfile = function() {
     container.innerHTML = `
         <div class="edit-profile-container">
             <div class="edit-profile-header">
-                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
+                <button class="back-btn" onclick="goBackFromEditProfile()">←</button>
                 <h1>Edit Profile</h1>
                 <button class="save-btn" onclick="saveEditProfile()">Save</button>
             </div>
@@ -2590,7 +2590,7 @@ window.openLocationPicker = function() {
     container.innerHTML = `
         <div class="location-picker-container">
             <div class="location-picker-header">
-                <button class="back-btn" onclick="loadProfileTab(null, false)">←</button>
+                <button class="back-btn" onclick="goBackFromEditProfile()">←</button>
                 <h1>Set Location</h1>
                 <button class="save-btn" onclick="saveLocation()">Done</button>
             </div>
@@ -3711,12 +3711,8 @@ function openChat(chatId, otherUserId, chatData, previousScreen = null) {
     
     const container = document.getElementById('tab-content');
     
-    let backAction = 'loadMessagesTab()';
-    if (previousScreen === 'profile') {
-        backAction = 'goBackFromChat()';
-    } else if (previousScreen === 'home' || previousScreen === 'search') {
-        backAction = 'goBackFromChat()';
-    }
+    let backAction = 'goBackFromChat()';
+// No need for loadMessagesTab() anymore - always use goBackFromChat
     
     container.innerHTML = `
         <div class="chat-container">
@@ -4833,22 +4829,18 @@ window.goBack = function() {
     }
     
     if (profilePreviousScreen === 'chat') {
-        const tabBar = document.querySelector('.tab-bar');
-        if (tabBar) {
-            tabBar.style.display = 'flex';
-        }
-        loadMessagesTab();
-        setTimeout(() => {
-            if (currentChatId) {
-                openChat(currentChatId, null, {});
-            }
-        }, 100);
+        // Just switch to messages tab, don't rebuild
+        switchTab('messages');
+        // Restore scroll position
+        setTimeout(() => restoreScrollPosition('messages'), 200);
     } else if (profilePreviousScreen === 'saved') {
         openSavedModal();
     } else if (profilePreviousScreen === 'home') {
         switchTab('home');
+        setTimeout(() => restoreScrollPosition('home'), 200);
     } else if (profilePreviousScreen === 'search') {
         switchTab('search');
+        setTimeout(() => restoreScrollPosition('search'), 200);
     } else {
         window.history.back();
     }
@@ -4857,26 +4849,49 @@ window.goBack = function() {
 };
     
 window.goBackFromChat = function() {
+    // Detach real-time listener
     if (messagesListener) {
-    messagesListener();
-    messagesListener = null;
-}
+        messagesListener();
+        messagesListener = null;
+    }
+    
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) {
         tabBar.style.display = 'flex';
     }
     
     if (chatPreviousScreen === 'profile' && lastProfileViewedId) {
-        loadProfileTab(lastProfileViewedId, true);
+        // Switch to profile tab, don't rebuild
+        switchTab('profile');
+        // The profile content is already there, just show it
+        setTimeout(() => restoreScrollPosition('profile'), 200);
     } else if (chatPreviousScreen === 'home') {
         switchTab('home');
+        setTimeout(() => restoreScrollPosition('home'), 200);
     } else if (chatPreviousScreen === 'search') {
         switchTab('search');
+        setTimeout(() => restoreScrollPosition('search'), 200);
     } else {
-        loadMessagesTab();
+        switchTab('messages');
+        setTimeout(() => restoreScrollPosition('messages'), 200);
     }
     
     chatPreviousScreen = null;
+};
+
+window.goBackFromEditProfile = function() {
+    // Switch back to profile tab
+    switchTab('profile');
+    
+    // Update the profile content with saved data
+    const profilePane = document.getElementById('profile-tab');
+    if (profilePane && currentUserData) {
+        // Clear and reload profile content with fresh data
+        profilePane.innerHTML = '';
+        loadProfileTab(null, false);
+    }
+    
+    setTimeout(() => restoreScrollPosition('profile'), 200);
 };
 
 window.viewProfileFromChat = function(userId) {
