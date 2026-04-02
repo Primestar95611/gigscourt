@@ -533,32 +533,6 @@ async function loadProviders(reset = true) {
     }
     
     try {
-        // Check cache for home providers
-        if (reset) {
-            let cacheLat = 6.5244;
-            let cacheLng = 3.3792;
-            
-            if (window.userLocation) {
-                cacheLat = window.userLocation.lat;
-                cacheLng = window.userLocation.lng;
-            } else {
-                const savedLocation = localStorage.getItem('userLocation');
-                if (savedLocation) {
-                    const loc = JSON.parse(savedLocation);
-                    cacheLat = loc.lat;
-                    cacheLng = loc.lng;
-                }
-            }
-            
-            const cached = getCachedProviders(cacheLat, cacheLng, 10);
-            if (cached && cached.length > 0) {
-    providers = cached;
-    renderProviders();
-    // setTimeout(() => refreshProviders(), 100);  // COMMENT OUT OR DELETE
-    loading = false;
-    return;
-}
-        }
         
         let userLat = 6.5244;
         let userLng = 3.3792;
@@ -632,8 +606,7 @@ async function loadProviders(reset = true) {
             renderProviders();
             
             // Save to cache
-            if (reset) {
-                setCachedProviders(userLat, userLng, 10, providers);
+            if (reset) {  
             }
             
             homeTotalLoaded += snapshot.docs.length;
